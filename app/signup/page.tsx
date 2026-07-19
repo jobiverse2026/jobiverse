@@ -7,7 +7,7 @@ const validRoles: Role[] = ["candidate", "employer", "recruiter", "admin", "crea
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; ref?: string }>;
+  searchParams: Promise<{ role?: string; ref?: string; next?: string }>;
 }) {
   const params = await searchParams;
   const role = validRoles.includes(params.role as Role)
@@ -16,7 +16,7 @@ export default async function SignupPage({
 
   return (
     <LoginShell>
-      <SignupCard role={role} referralCode={params.ref} />
+      <SignupCard role={role} referralCode={params.ref} nextPath={params.next} />
     </LoginShell>
   );
 }

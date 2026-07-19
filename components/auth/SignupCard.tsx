@@ -62,9 +62,10 @@ function logAuthIssue(label: string, error: unknown) {
 type Props = {
   role?: Role;
   referralCode?: string;
+  nextPath?: string;
 };
 
-export default function SignupCard({ role = "candidate", referralCode }: Props) {
+export default function SignupCard({ role = "candidate", referralCode, nextPath }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -78,6 +79,7 @@ export default function SignupCard({ role = "candidate", referralCode }: Props) 
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
   const privilegedRole = role === "recruiter" || role === "admin";
+  const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +114,7 @@ export default function SignupCard({ role = "candidate", referralCode }: Props) 
             full_name: fullName,
             referral_code: referralCode?.trim().toUpperCase() || undefined,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`,
         },
       });
     } catch (reason) {
@@ -144,7 +146,7 @@ export default function SignupCard({ role = "candidate", referralCode }: Props) 
     }
 
     // Email confirmation disabled - user is signed in immediately
-    router.push(roleRedirect[role]);
+    router.push(safeNext ?? roleRedirect[role]);
     router.refresh();
   };
 
