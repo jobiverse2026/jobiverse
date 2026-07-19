@@ -30,7 +30,12 @@ export default async function PublicPassport({ params }: { params: Promise<{ slu
           <p className="relative z-10 mt-4 max-w-3xl text-zinc-400">A portable career card combining skills, experience, evidence and opportunity status inside the JobiVerse ecosystem.</p>
         </section>
         <div className="mt-7"><JobiVerseCard person={person} profile={profile} passport={passport} items={items} /></div>
-        <section className="mt-7 grid gap-4 md:grid-cols-2">
+        <section className="mt-7">
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Verified evidence</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Experience, skills and achievements.</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
           {items?.map((item) => (
             <article key={item.id} className="rounded-3xl border bg-white p-6">
               <div className="flex justify-between gap-3"><p className="text-xs font-bold uppercase text-zinc-400">{item.item_type}</p><span className={`text-[10px] font-bold uppercase ${item.verification_status === "verified" ? "text-emerald-700" : "text-zinc-400"}`}>{item.verification_status === "verified" && <BadgeCheck className="mr-1 inline" size={12} />} {item.verification_status?.replaceAll("_", " ")}</span></div>
@@ -40,6 +45,7 @@ export default async function PublicPassport({ params }: { params: Promise<{ slu
               {item.evidence_url && <a href={item.evidence_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-xs font-semibold underline">View evidence</a>}
             </article>
           ))}
+          </div>
         </section>
       </div>
     </main>
