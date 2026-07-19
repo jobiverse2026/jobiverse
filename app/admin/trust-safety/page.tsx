@@ -1,0 +1,25 @@
+import { BadgeCheck, Flag, ShieldCheck, ShieldAlert } from "lucide-react";
+
+import { resolveJobReport } from "./actions";
+import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
+
+export default async function TrustSafetyPage() {
+  await requireRole(["admin"]);
+  const [{ data: reports, error }, { data: requirements }, { data: companies }, { data: people }] = await Promise.all([
+    adminSupabase.from("job_reports").select("id,requirement_id,reporter_id,reason,details,status,admin_note,created_at").order("created_at", { ascending: false }).limit(200),
+    adminSupabase.from("requirements").select("id,company_id,job_title,is_public,status"),
+    adminSupabase.from("companies").select("id,company_name,is_verified"),
+    adminSupabase.from("users").select("id,full_name,email"),
+  ]);
+  if (error) throw new Error(error.message);
+  const requirementMap = new Map((requirements ?? []).map((item) => [item.id, item]));
+  const companyMap = new Map((companies ?? []).map((item) => [item.id, item]));
+  const peopleMap = new Map((people ?? []).map((item) => [item.id, item.full_name || item.email]));
+  const open = (reports ?? []).filter((item) => ["open", "reviewing"].includes(item.status)).length;
+  const verified = (companies ?? []).filter((item) => item.is_verified).length;
+
+  return <div className="space-y-8"><section className="rounded-[2.5rem] bg-zinc-950 p-8 text-white sm:p-10"><ShieldCheck/><p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Platform integrity</p><h1 className="mt-3 text-4xl font-bold">Trust & Safety</h1><p className="mt-3 max-w-3xl text-zinc-400">Protect candidates from fee requests, impersonation, misleading roles and suspicious hiring conduct.</p></section><section className="grid gap-4 sm:grid-cols-3"><Metric label="Open job reports" value={open} icon={<ShieldAlert size={20}/>} danger={open>0}/><Metric label="Verified employers" value={verified} icon={<BadgeCheck size={20}/>}/><Metric label="Published roles" value={(requirements??[]).filter((item)=>item.is_public).length} icon={<Flag size={20}/>}/></section><section className="rounded-3xl border border-zinc-200 bg-white p-7"><h2 className="text-2xl font-bold">Candidate safety reports</h2><p className="mt-1 text-sm text-zinc-500">Review evidence before changing a job or company verification state.</p><div className="mt-6 space-y-4">{reports?.length?reports.map((report)=>{const requirement=requirementMap.get(report.requirement_id);const company=requirement?companyMap.get(requirement.company_id):null;return <article key={report.id} className={`rounded-2xl border p-5 ${["open","reviewing"].includes(report.status)?"border-red-200 bg-red-50/40":"border-zinc-100 bg-zinc-50"}`}><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-zinc-400">{report.reason.replaceAll("_"," ")}</p><h3 className="mt-2 text-lg font-bold">{requirement?.job_title||"Removed opportunity"}</h3><p className="mt-1 text-sm text-zinc-500">{company?.company_name||"Unknown company"} | Reported by {peopleMap.get(report.reporter_id)||"Candidate"}</p></div><span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${report.status==="resolved"?"bg-emerald-100 text-emerald-700":report.status==="dismissed"?"bg-zinc-200 text-zinc-600":"bg-red-100 text-red-700"}`}>{report.status}</span></div><p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-zinc-700">{report.details}</p>{report.admin_note&&<p className="mt-3 text-xs text-zinc-500">Admin note: {report.admin_note}</p>}{["open","reviewing"].includes(report.status)&&<form action={resolveJobReport} className="mt-4 grid gap-3 border-t border-zinc-200 pt-4 lg:grid-cols-[1fr_auto]"><input type="hidden" name="reportId" value={report.id}/><input name="adminNote" required minLength={5} placeholder="Investigation result or next action" className="h-11 rounded-xl border border-zinc-200 bg-white px-4 text-sm"/><div className="flex flex-wrap gap-2"><button name="status" value="reviewing" className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 text-xs font-semibold">Reviewing</button><button name="status" value="resolved" className="cursor-pointer rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white">Resolve</button><button name="status" value="dismissed" className="cursor-pointer rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white">Dismiss</button></div></form>}</article>}):<p className="rounded-2xl border border-dashed border-zinc-200 p-12 text-center text-zinc-500">No job safety reports.</p>}</div></section></div>;
+}
+
+function Metric({label,value,icon,danger=false}:{label:string;value:number;icon:React.ReactNode;danger?:boolean}){return <article className={`rounded-3xl border bg-white p-6 ${danger?"border-red-200":"border-zinc-200"}`}><div className={danger?"text-red-600":"text-zinc-400"}>{icon}</div><p className="mt-5 text-sm text-zinc-500">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></article>}

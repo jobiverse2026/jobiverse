@@ -1,0 +1,32 @@
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, FileSearch, Gauge, Lightbulb, Target, WandSparkles } from "lucide-react";
+import { requireRole } from "@/lib/auth/authorization";
+import ResumeAnalyzerClient from "@/components/candidate/ResumeAnalyzerClient";
+
+type Analysis = { id: string; ats_score: number; impact_score: number; readability_score: number; keyword_score: number; summary: string; strengths: string[]; improvements: string[]; missing_keywords: string[]; suggested_roles: string[]; section_feedback: { section: string; feedback: string }[]; created_at: string };
+
+export default async function ResumeAnalysisPage() {
+  const aiEnabled = process.env.ENABLE_PAID_AI === "true";
+  const { supabase, user } = await requireRole(["candidate"]);
+  const [{ data: profile }, { data }] = await Promise.all([
+    supabase.from("candidate_profiles").select("resume_path").eq("user_id", user.id).maybeSingle(),
+    supabase.from("resume_analyses").select("*").eq("candidate_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  const analysis = data as Analysis | null;
+  const scores = analysis ? [["ATS Estimate", analysis.ats_score], ["Impact", analysis.impact_score], ["Readability", analysis.readability_score], ["Keywords", analysis.keyword_score]] : [];
+
+  return <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_8%,white,transparent_27%),radial-gradient(circle_at_90%_18%,rgba(99,102,241,.12),transparent_24%)]" /><div className="relative mx-auto max-w-7xl">
+    <Link href="/candidates/dashboard" className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700"><ArrowLeft size={16} /> Candidate Dashboard</Link>
+    <section className="my-8 rounded-[2.75rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl sm:p-12"><p className="text-xs font-bold uppercase tracking-[.22em] text-zinc-400">JobiVerse AI</p><div className="mt-4 flex items-end justify-between gap-8"><div><h1 className="text-4xl font-semibold tracking-[-.045em] sm:text-6xl">Resume intelligence,<br /><span className="text-zinc-400">built for your next move.</span></h1><p className="mt-5 max-w-2xl text-zinc-300">Turn your CV into clear, practical improvements before recruiters and employers see it.</p></div><WandSparkles className="hidden text-zinc-500 sm:block" size={72} /></div></section>
+    <div className="grid gap-7 lg:grid-cols-[.78fr_1.22fr]"><ResumeAnalyzerClient hasResume={Boolean(profile?.resume_path)} enabled={aiEnabled} />
+      {!analysis ? <div className="grid min-h-72 place-items-center rounded-[2rem] border border-dashed border-zinc-300 bg-white/65 p-8 text-center"><div><FileSearch className="mx-auto text-zinc-400" size={42} /><h2 className="mt-4 text-xl font-semibold">Your first report awaits</h2><p className="mt-2 text-sm text-zinc-500">Run the analysis to reveal ATS readiness and targeted improvements.</p></div></div> : <section className="rounded-[2rem] bg-white p-7 shadow-[0_25px_80px_-45px_rgba(0,0,0,.55)] sm:p-9"><div className="flex items-center justify-between gap-5"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Latest analysis</p><h2 className="mt-2 text-2xl font-semibold">Your Resume Report</h2></div><div className="grid h-24 w-24 place-items-center rounded-full bg-zinc-950 text-white"><div className="text-center"><span className="text-3xl font-bold">{analysis.ats_score}</span><span className="text-xs text-zinc-400">/100</span></div></div></div><p className="mt-7 leading-7 text-zinc-600">{analysis.summary}</p><p className="mt-4 text-xs text-zinc-400">Generated {new Date(analysis.created_at).toLocaleString("en-IN")}</p></section>}
+    </div>
+    {analysis && <><section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{scores.map(([label, score]) => <div key={String(label)} className="rounded-3xl border border-white bg-white/90 p-6 shadow-sm"><Gauge className="text-zinc-400" /><p className="mt-5 text-sm text-zinc-500">{label}</p><p className="mt-2 text-3xl font-bold">{score}<span className="text-sm font-normal text-zinc-400">/100</span></p><div className="mt-4 h-1.5 overflow-hidden rounded-full bg-zinc-100"><div className="h-full rounded-full bg-zinc-900" style={{ width: `${score}%` }} /></div></div>)}</section>
+      <section className="mt-7 grid gap-7 lg:grid-cols-2"><ReportCard title="What works" icon={<CheckCircle2 size={20} />} items={analysis.strengths} /><ReportCard title="Priority improvements" icon={<Lightbulb size={20} />} items={analysis.improvements} /><ReportCard title="Keywords to consider" icon={<Target size={20} />} items={analysis.missing_keywords} tags /><ReportCard title="Suggested roles" icon={<WandSparkles size={20} />} items={analysis.suggested_roles} tags /></section>
+      <section className="mt-7 rounded-[2rem] bg-white p-7 shadow-sm sm:p-9"><h2 className="text-2xl font-semibold">Section-by-section feedback</h2><div className="mt-6 divide-y divide-zinc-100">{analysis.section_feedback.map((item) => <div key={item.section} className="grid gap-2 py-5 sm:grid-cols-[180px_1fr]"><p className="font-semibold">{item.section}</p><p className="leading-7 text-zinc-600">{item.feedback}</p></div>)}</div></section></>}
+  </div></main>;
+}
+
+function ReportCard({ title, icon, items, tags = false }: { title: string; icon: React.ReactNode; items: string[]; tags?: boolean }) {
+  return <div className="rounded-[2rem] border border-white bg-white/90 p-7 shadow-sm"><div className="flex items-center gap-3 text-lg font-semibold">{icon}{title}</div>{tags ? <div className="mt-6 flex flex-wrap gap-2">{items.map((item) => <span key={item} className="rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-700">{item}</span>)}</div> : <ul className="mt-5 space-y-3">{items.map((item) => <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-600"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-900" />{item}</li>)}</ul>}</div>;
+}

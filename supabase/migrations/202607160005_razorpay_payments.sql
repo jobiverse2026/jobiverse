@@ -1,0 +1,12 @@
+begin;
+alter table public.marketplace_orders add column if not exists offer_id uuid references public.marketplace_offers(id) on delete set null;
+create unique index if not exists marketplace_orders_offer_unique on public.marketplace_orders(offer_id) where offer_id is not null;
+create table if not exists public.payment_attempts(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,target_type text not null check(target_type in ('marketplace_order','marketplace_offer','resume_download')),target_id text not null,local_order_id uuid references public.marketplace_orders(id) on delete set null,amount numeric(10,2) not null check(amount>0),currency text not null default 'INR',gateway text not null default 'razorpay',gateway_order_id text unique,gateway_payment_id text unique,status text not null default 'created' check(status in ('created','authorized','captured','failed','refunded')),failure_reason text,created_at timestamptz not null default now(),updated_at timestamptz not null default now());
+create index if not exists payment_attempts_user_idx on public.payment_attempts(user_id,created_at desc);
+create table if not exists public.resume_purchases(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,template_id text not null,payment_attempt_id uuid not null unique references public.payment_attempts(id) on delete restrict,amount numeric(10,2) not null,purchased_at timestamptz not null default now(),unique(user_id,template_id));
+alter table public.payment_attempts enable row level security;alter table public.resume_purchases enable row level security;
+drop policy if exists "Users can view own payment attempts" on public.payment_attempts;create policy "Users can view own payment attempts" on public.payment_attempts for select to authenticated using(user_id=auth.uid() or public.current_user_role()='admin');
+drop policy if exists "Users can view own resume purchases" on public.resume_purchases;create policy "Users can view own resume purchases" on public.resume_purchases for select to authenticated using(user_id=auth.uid() or public.current_user_role()='admin');
+grant select on public.payment_attempts,public.resume_purchases to authenticated;
+drop trigger if exists payment_attempts_updated_at on public.payment_attempts;create trigger payment_attempts_updated_at before update on public.payment_attempts for each row execute function public.set_marketplace_updated_at();
+commit;

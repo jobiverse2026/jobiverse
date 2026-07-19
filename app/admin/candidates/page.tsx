@@ -1,0 +1,32 @@
+import { BriefcaseBusiness, Mail, MapPin, Users } from "lucide-react";
+
+import { updateCandidateStatus } from "@/app/admin/directory-actions";
+import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
+
+const statuses = ["Submitted", "Screening", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
+
+export default async function AdminCandidatesPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
+  await requireRole(["admin"]);
+  const { q = "", status = "all" } = await searchParams;
+  const [{ data: candidates, error }, { data: requirements }, { data: companies }, { data: recruiters }] = await Promise.all([
+    adminSupabase.from("candidates").select("id,requirement_id,recruiter_id,full_name,email,phone,current_location,total_experience,current_company,primary_skills,status,created_at").order("created_at", { ascending: false }).limit(300),
+    adminSupabase.from("requirements").select("id,company_id,job_title"),
+    adminSupabase.from("companies").select("id,company_name"),
+    adminSupabase.from("users").select("id,full_name,email").eq("role", "recruiter"),
+  ]);
+  if (error) throw new Error(error.message);
+  const requirementMap=new Map((requirements??[]).map((item)=>[item.id,item]));
+  const companyMap=new Map((companies??[]).map((item)=>[item.id,item.company_name]));
+  const recruiterMap=new Map((recruiters??[]).map((item)=>[item.id,item.full_name||item.email]));
+  const normalized=q.trim().toLowerCase();
+  const rows=(candidates??[]).filter((candidate)=>(status==="all"||candidate.status===status)&&(!normalized||[candidate.full_name,candidate.email,candidate.phone,candidate.primary_skills,candidate.current_company].some((value)=>value?.toLowerCase().includes(normalized))));
+  const activeCount=(candidates??[]).filter((candidate)=>!["Joined","Rejected","Withdrawn"].includes(candidate.status)).length;
+
+  return <div className="space-y-8"><section className="rounded-[2.5rem] bg-zinc-950 p-8 text-white sm:p-10"><Users/><p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Talent operations</p><h1 className="mt-3 text-4xl font-bold">Candidate Management</h1><p className="mt-3 text-zinc-400">Search every submitted candidate and maintain accurate recruitment pipeline status.</p></section><section className="grid gap-4 sm:grid-cols-3"><Metric label="Candidate records" value={(candidates??[]).length}/><Metric label="Active pipeline" value={activeCount}/><Metric label="Joined" value={(candidates??[]).filter((item)=>item.status==="Joined").length}/></section><form className="grid gap-3 rounded-3xl border border-zinc-200 bg-white p-5 md:grid-cols-[1fr_220px_auto]"><input name="q" defaultValue={q} placeholder="Search name, email, company or skills" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4 outline-none focus:border-zinc-500"/><select name="status" defaultValue={status} className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4"><option value="all">All statuses</option>{statuses.map((item)=><option key={item} value={item}>{item}</option>)}</select><button className="cursor-pointer rounded-xl bg-zinc-950 px-6 font-semibold text-white">Apply filters</button></form><section className="space-y-4">{rows.length?rows.map((candidate)=>{const requirement=requirementMap.get(candidate.requirement_id);const company=requirement?companyMap.get(requirement.company_id):null;return <article key={candidate.id} className="rounded-3xl border border-zinc-200 bg-white p-6"><div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-start"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-bold">{candidate.full_name}</h2><Status status={candidate.status}/></div><div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-zinc-500"><span className="flex items-center gap-2"><Mail size={14}/>{candidate.email}</span>{candidate.current_location&&<span className="flex items-center gap-2"><MapPin size={14}/>{candidate.current_location}</span>}</div><p className="mt-4 text-sm text-zinc-600">{candidate.primary_skills||"Skills not provided"}</p></div><div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4 xl:w-[620px]"><Small label="Role" value={requirement?.job_title||"-"}/><Small label="Company" value={company||"-"}/><Small label="Recruiter" value={recruiterMap.get(candidate.recruiter_id)||"-"}/><Small label="Experience" value={candidate.total_experience||"-"}/></div></div><form action={updateCandidateStatus} className="mt-5 flex flex-col gap-3 border-t border-zinc-100 pt-5 sm:flex-row sm:items-center"><input type="hidden" name="candidateId" value={candidate.id}/><label className="text-xs font-bold uppercase text-zinc-400">Update pipeline status</label><select name="status" defaultValue={candidate.status} className="h-11 min-w-56 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm">{statuses.map((item)=><option key={item} value={item}>{item}</option>)}</select><button className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white"><BriefcaseBusiness size={15}/>Save status</button></form></article>}):<Empty text="No candidates match these filters."/>}</section></div>;
+}
+
+function Metric({label,value}:{label:string;value:number}){return <article className="rounded-3xl border border-zinc-200 bg-white p-6"><p className="text-sm text-zinc-500">{label}</p><p className="mt-2 text-3xl font-bold">{value}</p></article>}
+function Small({label,value}:{label:string;value:string}){return <div className="min-w-0 rounded-xl bg-zinc-50 p-3"><p className="text-[10px] font-bold uppercase text-zinc-400">{label}</p><p className="mt-1 truncate text-sm font-semibold">{value}</p></div>}
+function Status({status}:{status:string}){const tone=status==="Joined"?"bg-emerald-100 text-emerald-700":status==="Rejected"||status==="Withdrawn"?"bg-red-100 text-red-700":status==="Offered"||status==="Selected"?"bg-violet-100 text-violet-700":"bg-amber-100 text-amber-700";return <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${tone}`}>{status}</span>}
+function Empty({text}:{text:string}){return <p className="rounded-3xl border border-dashed border-zinc-200 bg-white p-12 text-center text-zinc-500">{text}</p>}

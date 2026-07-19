@@ -1,0 +1,13 @@
+begin;
+alter table public.marketplace_services add column if not exists is_featured boolean not null default false, add column if not exists featured_until timestamptz;
+create index if not exists marketplace_services_featured_idx on public.marketplace_services(is_featured,featured_until) where status='published';
+create table if not exists public.creator_marketplace_profiles (creator_id uuid primary key references auth.users(id) on delete cascade,verification_status text not null default 'unverified' check (verification_status in ('unverified','verified','suspended')),verification_note text,verified_by uuid references auth.users(id) on delete set null,verified_at timestamptz,updated_at timestamptz not null default now());
+alter table public.creator_marketplace_profiles enable row level security;
+drop policy if exists "Anyone can view creator verification" on public.creator_marketplace_profiles;
+create policy "Anyone can view creator verification" on public.creator_marketplace_profiles for select using (true);
+drop policy if exists "Creators can create own marketplace profile" on public.creator_marketplace_profiles;
+create policy "Creators can create own marketplace profile" on public.creator_marketplace_profiles for insert to authenticated with check (creator_id=auth.uid());
+grant select on public.creator_marketplace_profiles to anon,authenticated;
+grant insert on public.creator_marketplace_profiles to authenticated;
+insert into public.creator_marketplace_profiles(creator_id) select distinct provider_id from public.marketplace_services where provider_id is not null on conflict(creator_id) do nothing;
+commit;

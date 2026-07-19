@@ -1,0 +1,24 @@
+import { expect, test, type Page } from "@playwright/test";
+
+type Role="candidate"|"employer"|"recruiter"|"creator"|"admin";
+function hasAccount(role:Role){const prefix=`TEST_${role.toUpperCase()}`;return Boolean(process.env[`${prefix}_EMAIL`]&&process.env[`${prefix}_PASSWORD`])}
+function account(role:Role){const prefix=`TEST_${role.toUpperCase()}`;const email=process.env[`${prefix}_EMAIL`];const password=process.env[`${prefix}_PASSWORD`];if(!email||!password)throw new Error(`${prefix}_EMAIL and ${prefix}_PASSWORD must be configured.`);return{email,password}}
+async function login(page:Page,role:Role,expected:RegExp){const credentials=account(role);await page.goto(`/login/${role}`);await page.getByPlaceholder("Email address").fill(credentials.email);await page.getByPlaceholder("Password").fill(credentials.password);await page.getByRole("button",{name:"Continue"}).click();await expect(page).toHaveURL(expected,{timeout:30_000});await expect(page.locator("body")).not.toContainText(/Application error|Internal Server Error|Runtime Error/i)}
+
+test.describe("Public platform smoke coverage",()=>{
+  for(const route of ["/","/services","/students","/candidates","/employers","/about","/contact","/marketplace"]){test(`${route} renders without a runtime failure`,async({page})=>{await page.goto(route);await expect(page.locator("body")).not.toContainText(/Application error|Internal Server Error|Runtime Error/i);await expect(page.locator("main")).toBeVisible()})}
+  test("employer marketplace filter hides unrelated audiences",async({page})=>{await page.goto("/marketplace?audience=employer");await expect(page.getByText("For Employers",{exact:true})).toBeVisible();await expect(page.getByText("For Professionals",{exact:true})).toHaveCount(0);await expect(page.getByText("For Students & Graduates",{exact:true})).toHaveCount(0)})
+  test("SEO endpoints are available",async({request})=>{for(const route of ["/robots.txt","/sitemap.xml","/manifest.webmanifest"]){const response=await request.get(route);expect(response.ok(),`${route} should respond successfully`).toBeTruthy()}})
+});
+
+test.describe("Role workspace regression coverage",()=>{
+  test("candidate opens dashboard, jobs and career activity",async({page})=>{test.skip(!hasAccount("candidate"),"Candidate test credentials are not configured.");await login(page,"candidate",/\/candidates\/dashboard/);await expect(page.getByText("Candidate workspace")).toBeVisible();await page.goto("/candidates/jobs");await expect(page.getByText("Career opportunities")).toBeVisible();await page.goto("/candidates/applications");await expect(page.getByRole("heading",{name:"Career activity."})).toBeVisible()});
+  test("employer retains employer navigation on filtered services",async({page})=>{test.skip(!hasAccount("employer"),"Employer test credentials are not configured.");await login(page,"employer",/\/employers\/dashboard/);await page.goto("/marketplace?audience=employer");await expect(page.getByRole("link",{name:"Dashboard",exact:true})).toBeVisible();await expect(page.getByRole("link",{name:"Candidates",exact:true})).toBeVisible();await expect(page.getByText("For Professionals",{exact:true})).toHaveCount(0)});
+  test("recruiter dashboard has no services navigation",async({page})=>{test.skip(!hasAccount("recruiter"),"Recruiter test credentials are not configured.");await login(page,"recruiter",/\/recruiter(?:\/)?$/);await expect(page.getByText("Recruiter command center")).toBeVisible();await expect(page.getByRole("link",{name:"Services",exact:true})).toHaveCount(0)});
+  test("creator reaches service and earnings workspaces",async({page})=>{test.skip(!hasAccount("creator"),"Creator test credentials are not configured.");await login(page,"creator",/\/earn-with-jobiverse\/dashboard/);await expect(page.getByText("Creator workspace").first()).toBeVisible();await page.goto("/earn-with-jobiverse/dashboard/earnings");await expect(page.getByRole("heading",{name:"Earnings & payouts."})).toBeVisible()});
+  test("admin reaches analytics and template moderation",async({page})=>{test.skip(!hasAccount("admin"),"Admin test credentials are not configured.");await login(page,"admin",/\/admin(?:\/)?$/);await page.goto("/admin/analytics");await expect(page.getByRole("heading",{name:"Hiring Analytics."})).toBeVisible();await page.goto("/admin/templates");await expect(page.getByRole("heading",{name:"CV Template Center"})).toBeVisible()});
+});
+
+test.describe("Access-control smoke coverage",()=>{
+  test("anonymous user cannot stay on protected workspaces",async({page})=>{test.setTimeout(120_000);for(const route of ["/admin/finance","/employers/dashboard","/recruiter","/candidates/dashboard","/earn-with-jobiverse/dashboard"]){await page.goto(route);await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/","\\/")}$`))}})
+});

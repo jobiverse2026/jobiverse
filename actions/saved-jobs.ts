@@ -1,0 +1,5 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { requireRole } from "@/lib/auth/authorization";
+export async function toggleSavedJob(requirementId:string,shouldSave:boolean){const id=z.string().uuid().parse(requirementId);const{supabase,user}=await requireRole(["candidate"]);if(shouldSave){const{data:job}=await supabase.from("requirements").select("id").eq("id",id).eq("is_public",true).maybeSingle();if(!job)throw new Error("This opportunity is no longer available.");const{error}=await supabase.from("candidate_saved_jobs").upsert({candidate_user_id:user.id,requirement_id:id},{onConflict:"candidate_user_id,requirement_id"});if(error)throw new Error(error.message);}else{const{error}=await supabase.from("candidate_saved_jobs").delete().eq("candidate_user_id",user.id).eq("requirement_id",id);if(error)throw new Error(error.message);}revalidatePath("/candidates/jobs");revalidatePath(`/candidates/jobs/${id}`);revalidatePath("/candidates/applications");revalidatePath("/candidates/dashboard");}

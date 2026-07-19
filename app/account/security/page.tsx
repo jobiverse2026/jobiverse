@@ -1,0 +1,11 @@
+import Link from "next/link";
+import { ArrowLeft, KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
+import { requireRole } from "@/lib/auth/authorization";
+import { ChangePasswordForm } from "@/components/auth/change-password-form";
+
+const roles = ["candidate", "employer", "recruiter", "admin", "creator"] as const;
+
+export default async function AccountSecurityPage() {
+  const { profile } = await requireRole(roles);
+  return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-5xl"><Link href="/dashboard" className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16}/>Dashboard</Link><section className="relative mt-8 overflow-hidden rounded-[2.75rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl sm:p-12"><div className="absolute -right-20 -top-24 h-72 w-72 rounded-full border border-white/10"/><ShieldCheck size={30}/><p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Account security</p><h1 className="mt-3 text-4xl font-semibold sm:text-6xl">Protect your workspace.</h1><p className="mt-4 max-w-2xl leading-7 text-zinc-300">Verify your current password before choosing a new one. Your current signed-in session remains active after a successful change.</p></section><div className="mt-7 grid gap-6 lg:grid-cols-[.65fr_1.35fr]"><aside className="rounded-[2rem] border border-zinc-200 bg-white p-7"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><LockKeyhole size={21}/></div><h2 className="mt-5 text-xl font-semibold">Password standards</h2><ul className="mt-5 space-y-3 text-sm leading-6 text-zinc-500"><li>At least 8 characters</li><li>At least one letter and one number</li><li>Different from your current password</li><li>Never share passwords or OTPs</li></ul><div className="mt-6 rounded-2xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-500"><KeyRound className="mb-2" size={18}/>Signed in as <span className="font-semibold text-zinc-800">{profile.email}</span></div></aside><ChangePasswordForm email={profile.email} role={profile.role}/></div></div></main>;
+}

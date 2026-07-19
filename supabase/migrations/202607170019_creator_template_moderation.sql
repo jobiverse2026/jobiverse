@@ -1,0 +1,10 @@
+begin;
+alter table public.marketplace_services add column if not exists template_review_status text not null default 'not_applicable';
+alter table public.marketplace_services add column if not exists template_review_note text;
+alter table public.marketplace_services add column if not exists template_reviewed_by uuid references auth.users(id) on delete set null;
+alter table public.marketplace_services add column if not exists template_reviewed_at timestamptz;
+alter table public.marketplace_services drop constraint if exists marketplace_services_template_review_status_check;
+alter table public.marketplace_services add constraint marketplace_services_template_review_status_check check(template_review_status in('not_applicable','pending','approved','rejected'));
+update public.marketplace_services set template_review_status='pending' where is_editable=true and template_review_status='not_applicable';
+create index if not exists marketplace_template_review_idx on public.marketplace_services(template_review_status,created_at desc) where is_editable=true;
+commit;

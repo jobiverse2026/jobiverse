@@ -1,0 +1,10 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { randomUUID } from "crypto";
+import { z } from "zod";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+export async function startSupportChat(){const supabase=await createServerSupabaseClient();const{data:{user}}=await supabase.auth.getUser();if(!user)redirect("/login/candidate?next=/messages/support");const{error}=await supabase.rpc("get_or_create_support_conversation");if(error)throw new Error(error.message);redirect("/messages/support");}
+export async function sendSupportMessage(formData:FormData){const conversationId=z.string().uuid().parse(formData.get("conversationId"));const rawMessage=String(formData.get("message")??"").trim();const file=formData.get("attachment");if(!rawMessage&&!(file instanceof File&&file.size>0))throw new Error("Write a message or attach a file.");if(rawMessage.length>3000)throw new Error("Message must be under 3000 characters.");const supabase=await createServerSupabaseClient();const{data:{user}}=await supabase.auth.getUser();if(!user)throw new Error("Please log in.");let attachmentUrl:string|null=null;let attachmentName:string|null=null;if(file instanceof File&&file.size>0){if(file.size>10*1024*1024)throw new Error("Attachment must be under 10 MB.");const ext=file.name.split(".").pop()?.toLowerCase();if(!ext||!["pdf","docx","zip","png","jpg","jpeg","txt"].includes(ext))throw new Error("Upload PDF, DOCX, ZIP, PNG, JPG or TXT.");attachmentName=file.name;attachmentUrl=`${user.id}/${conversationId}/${randomUUID()}.${ext}`;const{error}=await supabase.storage.from("support-attachments").upload(attachmentUrl,file);if(error)throw new Error(error.message);}const message=attachmentName?`${rawMessage?`${rawMessage}\n\n`:""}Attachment: ${attachmentName}`:rawMessage;const{error}=await supabase.from("support_messages").insert({conversation_id:conversationId,sender_id:user.id,message,attachment_url:attachmentUrl,attachment_name:attachmentName});if(error)throw new Error(error.message);revalidatePath("/messages/support");revalidatePath("/admin/support");revalidatePath("/messages");}

@@ -1,0 +1,14 @@
+import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ArrowLeft, Camera, UserRound } from "lucide-react";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { updateUniversalProfile } from "./actions";
+
+const roleDashboard:Record<string,string>={candidate:"/candidates/dashboard",employer:"/employers/dashboard",recruiter:"/recruiter/dashboard",admin:"/admin/dashboard",creator:"/earn-with-jobiverse/dashboard"};
+
+export default async function UniversalProfilePage(){
+  const supabase=await createServerSupabaseClient();const{data:{user}}=await supabase.auth.getUser();if(!user)redirect("/login/candidate?next=/account/profile");
+  const{data:profile}=await supabase.from("users").select("full_name,email,role,avatar_url").eq("id",user.id).maybeSingle();const dashboard=roleDashboard[profile?.role??""]??"/dashboard";
+  return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-4xl"><Link href={dashboard} className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16}/>Back to dashboard</Link><section className="mt-7 rounded-[2.75rem] bg-zinc-950 p-8 text-white sm:p-12"><UserRound/><p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Universal JobiVerse identity</p><h1 className="mt-3 text-4xl font-semibold">Update your profile.</h1><p className="mt-3 text-zinc-400">Your name and photo appear in conversations and shared platform experiences.</p></section><form action={updateUniversalProfile} className="mt-7 rounded-[2rem] border border-zinc-200 bg-white p-7"><div className="flex flex-wrap items-center gap-6">{profile?.avatar_url?<Image src={profile.avatar_url} alt={profile.full_name??"Profile"} width={104} height={104} unoptimized className="h-26 w-26 rounded-[2rem] object-cover"/>:<div className="grid h-26 w-26 place-items-center rounded-[2rem] bg-zinc-100"><UserRound size={40} className="text-zinc-400"/></div>}<div><h2 className="text-xl font-semibold">{profile?.full_name??"Your profile"}</h2><p className="mt-1 text-sm text-zinc-500">{profile?.email} | {profile?.role}</p></div></div><label className="mt-7 block text-sm font-semibold">Display name<input name="fullName" required minLength={2} defaultValue={profile?.full_name??""} className="mt-2 h-12 w-full rounded-xl border border-zinc-200 px-4"/></label><label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-5 text-sm font-semibold"><Camera size={18}/>Upload or replace profile photo<input name="avatar" type="file" accept="image/png,image/jpeg,image/webp" className="sr-only"/></label><p className="mt-2 text-xs text-zinc-400">PNG, JPG or WEBP | maximum 5 MB</p><button className="mt-6 cursor-pointer rounded-xl bg-zinc-950 px-6 py-3 font-semibold text-white">Save profile</button></form></div></main>;
+}

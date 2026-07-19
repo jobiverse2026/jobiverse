@@ -1,0 +1,19 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { BarChart3, ChevronDown, CircleDollarSign, ExternalLink, Eye, PackageCheck, PencilLine } from "lucide-react";
+import { changeCreatorServiceStatus } from "@/app/earn-with-jobiverse/dashboard/service-actions";
+
+type Props={id:string;slug:string;title:string;audience:string;status:string;creatorEarning:number;totalOrders:number;viewCount:number;createdAt:string};
+
+export function CreatorListingStats({id,slug,title,audience,status,creatorEarning,totalOrders,viewCount,createdAt}:Props){const[open,setOpen]=useState(false);return <article className="overflow-hidden rounded-2xl bg-zinc-50"><div className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center"><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{title}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${status==="published"?"bg-emerald-100 text-emerald-700":status==="archived"?"bg-red-100 text-red-700":"bg-amber-100 text-amber-700"}`}>{status}</span></div><p className="mt-2 text-sm capitalize text-zinc-500">{audience} | Your earning INR {creatorEarning.toLocaleString("en-IN")} | {totalOrders} orders</p></div><button type="button" onClick={()=>setOpen(value=>!value)} aria-expanded={open} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white">{open?"Hide Stats":"View Stats"}<ChevronDown className={`transition ${open?"rotate-180":""}`} size={16}/></button></div>{open&&<div className="border-t border-zinc-200 bg-white p-5"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Stat icon={Eye} label="Listing views" value={viewCount.toLocaleString("en-IN")}/><Stat icon={PackageCheck} label="Total orders" value={totalOrders.toLocaleString("en-IN")}/><Stat icon={CircleDollarSign} label="Your earning / sale" value={`INR ${creatorEarning.toLocaleString("en-IN")}`}/><Stat icon={BarChart3} label="Created" value={new Date(createdAt).toLocaleDateString("en-IN")}/></div><div className="mt-5 flex flex-wrap gap-2 border-t border-zinc-100 pt-5"><Link href={`/earn-with-jobiverse/dashboard/services/${id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white">Edit listing <PencilLine size={13}/></Link><Link href={`/marketplace/services/${slug}`} className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2.5 text-xs font-semibold">Preview <ExternalLink size={13}/></Link>{status!=="published"&&<StatusButton id={id} status="published" label="Resume listing"/>}{status==="published"&&<StatusButton id={id} status="paused" label="Pause listing"/>}{status!=="archived"&&<StatusButton id={id} status="archived" label="Archive" danger/>}</div><p className="mt-4 text-xs text-zinc-400">Paused or archived services disappear from customer discovery without deleting order history.</p></div>}</article>}
+
+function StatusButton({id,status,label,danger}:{id:string;status:"published"|"paused"|"archived";label:string;danger?:boolean}){return <form action={changeCreatorServiceStatus}><input type="hidden" name="serviceId" value={id}/><button name="status" value={status} className={`cursor-pointer rounded-xl px-4 py-2.5 text-xs font-semibold ${danger?"bg-red-50 text-red-700":"bg-zinc-950 text-white"}`}>{label}</button></form>}
+function Stat({icon:Icon,label,value}:{icon:React.ElementType;label:string;value:string}){return <div className="rounded-2xl border border-zinc-200 p-4"><Icon className="text-zinc-400" size={18}/><p className="mt-4 text-xs text-zinc-500">{label}</p><p className="mt-1 font-semibold">{value}</p></div>}
+
+
+
+
+
+

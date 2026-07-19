@@ -1,0 +1,3 @@
+import { z } from "zod";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+export async function POST(request:Request){try{const{conversationId}=z.object({conversationId:z.string().uuid()}).parse(await request.json());const supabase=await createServerSupabaseClient();const{data:{user}}=await supabase.auth.getUser();if(!user)return Response.json({error:"Unauthorized"},{status:401});const{error}=await supabase.rpc("mark_support_read",{target_conversation:conversationId});if(error)throw new Error(error.message);return Response.json({success:true});}catch(error){return Response.json({error:error instanceof Error?error.message:"Unable to update support messages."},{status:400});}}
