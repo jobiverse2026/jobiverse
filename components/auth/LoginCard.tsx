@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { loginWithRoleAction } from "@/app/login/actions";
+import { loginWithRole } from "@/lib/auth/login";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 
@@ -59,16 +59,16 @@ export default function LoginCard({ role = "candidate" }: Props) {
 
     sessionStorage.setItem("jobiverse-browser-session", "active");
 
-    const result = await loginWithRoleAction(
+    const result = await loginWithRole(
       email,
       password,
-      role,
-      searchParams.get("next")??undefined
+      role
     );
 
-    if(result.error)throw new Error(result.error);
     if(!result.redirect)throw new Error("Unable to open your dashboard. Please try again.");
-    window.location.assign(result.redirect);
+    await supabase.auth.getSession();
+    await new Promise((resolve) => window.setTimeout(resolve, 120));
+    window.location.replace(safeDestination(result.redirect));
 
 
   } catch (error: unknown) {

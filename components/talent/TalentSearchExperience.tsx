@@ -24,8 +24,9 @@ const statuses = [
   ["open_to_offers", "Open to offers"],
 ] as const;
 
-export async function TalentSearchExperience({ role, userId, searchParams }: { role: TalentRole; userId: string; searchParams: SearchParams }) {
-  const canUnlock = role === "recruiter" || await hasTalentSearchAccess(userId);
+export async function TalentSearchExperience({ role, userId, userEmail, searchParams }: { role: TalentRole; userId: string; userEmail: string; searchParams: SearchParams }) {
+  const access = role === "recruiter" ? { allowed: true, reason: "Internal recruiter access" } : await getEmployerTalentSearchAccess(userId, userEmail);
+  const canUnlock = access.allowed;
   const queryText = clean(searchParams.q);
   const location = clean(searchParams.location);
   const skills = clean(searchParams.skills);
@@ -86,7 +87,7 @@ export async function TalentSearchExperience({ role, userId, searchParams }: { r
                     <LockKeyhole size={19} />
                     <p className="font-semibold">Paid access locked</p>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">Activate Talent Search to unlock full profiles, shortlist support and JobiVerse-assisted contact.</p>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">{access.reason || "Activate Talent Search to unlock full profiles, shortlist support and JobiVerse-assisted contact."}</p>
                 </div>
               )}
             </div>
@@ -136,7 +137,7 @@ export async function TalentSearchExperience({ role, userId, searchParams }: { r
                 <h2 className="text-2xl font-semibold text-amber-950">Talent Search is a premium employer service.</h2>
               </div>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-amber-900">
-                You can preview talent supply now. Full profile visibility, shortlist actions and contact coordination unlock after JobiVerse approves Talent Search access.
+                You can preview talent supply now. Full profile visibility, shortlist actions and contact coordination unlock only for approved company domains with an active Talent Search plan.
               </p>
             </div>
             <Link href="/plans" className="group flex items-center justify-between gap-4 rounded-[2rem] bg-zinc-950 p-7 text-white transition hover:-translate-y-1 hover:shadow-2xl">
@@ -199,7 +200,21 @@ function TalentCard({ candidate, locked, index }: { candidate: any; locked: bool
   );
 }
 
-async function hasTalentSearchAccess(userId: string) {
+async function getEmployerTalentSearchAccess(userId: string, email: string) {
+  const domain = email.split("@")[1]?.trim().toLowerCase();
+  const { data: company } = await adminSupabase
+    .from("companies")
+    .select("id,is_verified,company_email,allowed_email_domains")
+    .eq("owner_id", userId)
+    .maybeSingle();
+
+  if (!company) return { allowed: false, reason: "Complete your company profile first, then request Talent Search access." };
+  if (!company.is_verified) return { allowed: false, reason: "Your company needs JobiVerse verification before full Talent Search access." };
+  const allowedDomains = Array.isArray(company.allowed_email_domains) ? company.allowed_email_domains.map((item: string) => item.toLowerCase().trim()).filter(Boolean) : [];
+  const fallbackDomain = company.company_email?.split("@")[1]?.trim().toLowerCase();
+  const effectiveDomains = allowedDomains.length ? allowedDomains : fallbackDomain ? [fallbackDomain] : [];
+  if (!domain || !effectiveDomains.includes(domain)) return { allowed: false, reason: `This login email domain is not approved for Talent Search. Allowed domains: ${effectiveDomains.join(", ") || "not configured"}.` };
+
   const { data } = await adminSupabase
     .from("platform_subscriptions")
     .select("id,platform_plans!inner(slug)")
@@ -208,7 +223,8 @@ async function hasTalentSearchAccess(userId: string) {
     .in("platform_plans.slug", ["employer-talent-search", "employer-enterprise"])
     .maybeSingle();
 
-  return Boolean(data);
+  if (!data) return { allowed: false, reason: "Talent Search is locked until an active employer Talent Search plan is approved." };
+  return { allowed: true, reason: "Approved company domain with active Talent Search access." };
 }
 
 function clean(value?: string) {

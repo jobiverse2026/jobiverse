@@ -55,9 +55,9 @@ export async function loginWithRole(
     error: profileError,
   } = await supabase
     .from("users")
-    .select("role")
+    .select("role,is_active")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
 
   if (profileError) {
@@ -65,9 +65,17 @@ export async function loginWithRole(
       await supabase.auth.signOut({ scope: "local" });
       throw new Error("Your device clock is out of sync. Sync Windows date and time, then log in again.");
     }
-    throw new Error(
-      "User profile not found"
-    );
+    throw new Error("User profile not found.");
+  }
+
+  if (!profile?.role) {
+    await supabase.auth.signOut();
+    throw new Error("User profile not found.");
+  }
+
+  if (profile.is_active === false) {
+    await supabase.auth.signOut();
+    throw new Error("This account is currently inactive. Contact JobiVerse support.");
   }
 
 

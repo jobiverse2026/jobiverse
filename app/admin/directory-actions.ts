@@ -17,6 +17,19 @@ export async function updateCompanyVerification(formData: FormData) {
   revalidatePath("/admin/companies");
 }
 
+export async function updateCompanyTalentDomains(formData: FormData) {
+  await requireRole(["admin"]);
+  const id = z.string().uuid().parse(formData.get("companyId"));
+  const domains = z.string().max(1000).parse(formData.get("domains") ?? "")
+    .split(/[,\n]/)
+    .map((item) => item.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, ""))
+    .filter(Boolean)
+    .filter((item, index, list) => list.indexOf(item) === index);
+  const { error } = await adminSupabase.from("companies").update({ allowed_email_domains: domains }).eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/companies");
+}
+
 export async function updateRecruiterAccess(formData: FormData) {
   await requireRole(["admin"]);
   const id = z.string().uuid().parse(formData.get("recruiterId"));
