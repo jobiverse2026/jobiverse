@@ -2,10 +2,11 @@ import Link from "next/link";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 export default async function JobiverseSubmittedCard() {
-  const { supabase, user } = await requireRole(["employer"]);
-  const { count } = await supabase
+  const { user } = await requireRole(["employer"]);
+  const { count } = await adminSupabase
     .from("candidates")
     .select("id,requirements!inner(employer_id)", { count: "exact", head: true })
     .eq("requirements.employer_id", user.id)

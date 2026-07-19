@@ -7,15 +7,16 @@ import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export default async function AdminSubmitCandidatePage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole(["admin"]);
   const { id } = await params;
+  await requireRole(["admin"]);
 
-  const { data: requirement } = await adminSupabase
+  const { data: requirement, error: requirementError } = await adminSupabase
     .from("requirements")
     .select("*")
     .eq("id", id)
     .maybeSingle();
 
+  if (requirementError) return <SubmitCandidateError id={id} message={requirementError.message} />;
   if (!requirement) notFound();
 
   const { data: company } = await adminSupabase
@@ -46,6 +47,25 @@ export default async function AdminSubmitCandidatePage({ params }: { params: Pro
       </section>
 
       <CandidateForm requirement={requirement} />
+    </main>
+  );
+}
+
+function SubmitCandidateError({ id, message }: { id: string; message: string }) {
+  return (
+    <main className="space-y-8">
+      <Link href={`/admin/requirements/${id}`} className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-black">
+        <ArrowLeft size={16} />
+        Back to requirement
+      </Link>
+      <section className="rounded-[2rem] border border-red-200 bg-red-50 p-8">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-red-700">Submit candidate unavailable</p>
+        <h1 className="mt-3 text-3xl font-semibold text-red-950">Requirement access needs a quick security policy check.</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-red-900">
+          The page is working, but Supabase did not allow this admin session to read the requirement yet.
+        </p>
+        <p className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-red-800">{message}</p>
+      </section>
     </main>
   );
 }
