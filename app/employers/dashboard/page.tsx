@@ -8,6 +8,7 @@ import HiringPipeline from "./HiringPipeline";
 import ActivityFeed from "./ActivityFeed";
 import { getEmployerDashboardData } from "@/actions/employer-dashboard";
 import ExternalApplicantsCard from "./ExternalApplicantsCard";
+import JobiverseSubmittedCard from "./JobiverseSubmittedCard";
 
 export default async function EmployerDashboardPage() {
   const data = await getEmployerDashboardData();
@@ -18,7 +19,10 @@ export default async function EmployerDashboardPage() {
 
         <StatsCards stats={data.stats} />
 
-        <ExternalApplicantsCard />
+        <div className="grid gap-5 xl:grid-cols-2">
+          <JobiverseSubmittedCard />
+          <ExternalApplicantsCard />
+        </div>
 
         <QuickActions />
 

@@ -6,23 +6,26 @@ import { firstRelation } from "@/lib/relations";
 
 const clientVisibleStatuses = ["Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 
-export default async function EmployerCandidatesPage() {
+export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string }> }) {
   const { supabase, user } = await requireRole(["employer"]);
+  const { source = "all" } = await searchParams;
 
   const { data: candidates, error } = await supabase
     .from("candidates")
-    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, created_at, requirements!inner(job_title,employer_id), placements(status, offered_ctc, joining_date, replacement_end_date)")
+    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(job_title,employer_id), placements(status, offered_ctc, joining_date, replacement_end_date)")
     .eq("requirements.employer_id", user.id)
     .in("status", clientVisibleStatuses)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  const offeredCandidates = (candidates ?? []).filter((candidate) => {
+  const allCandidates = candidates ?? [];
+  const visibleCandidates = source === "jobiverse" ? allCandidates.filter((candidate) => candidate.recruiter_name === "JobiVerse Hiring Team") : allCandidates;
+  const offeredCandidates = visibleCandidates.filter((candidate) => {
     const placement = firstRelation(candidate.placements);
     return placement ? ["offered", "accepted"].includes(placement.status.toLowerCase()) : false;
   });
-  const stageSummary=clientVisibleStatuses.map(status=>({status,count:(candidates??[]).filter(candidate=>candidate.status===status).length})).filter(item=>item.count>0);
+  const stageSummary=clientVisibleStatuses.map(status=>({status,count:visibleCandidates.filter(candidate=>candidate.status===status).length})).filter(item=>item.count>0);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -33,9 +36,14 @@ export default async function EmployerCandidatesPage() {
         </Link>
 
         <div className="mt-8 flex flex-col justify-between gap-6 rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-[0_35px_100px_-45px_rgba(0,0,0,.65)] sm:p-12 md:flex-row md:items-end">
-          <div><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Talent workspace</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">Submitted candidates.</h1><p className="mt-5 max-w-2xl text-zinc-300">Review candidates shared by your JobiVerse recruitment team across active hiring mandates.</p></div>
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4"><Users size={20} /><span className="text-2xl font-semibold">{candidates?.length ?? 0}</span><span className="text-sm text-zinc-400">profiles</span></div>
+          <div><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Talent workspace</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">{source==="jobiverse"?"JobiVerse submitted candidates.":"Submitted candidates."}</h1><p className="mt-5 max-w-2xl text-zinc-300">{source==="jobiverse"?"Profiles sourced, screened and introduced by JobiVerse Hiring Team.":"Review candidates shared by your JobiVerse recruitment team across active hiring mandates."}</p></div>
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4"><Users size={20} /><span className="text-2xl font-semibold">{visibleCandidates.length}</span><span className="text-sm text-zinc-400">profiles</span></div>
         </div>
+
+        <section className="mt-6 flex flex-wrap gap-3">
+          <Link href="/employers/candidates" className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source==="all"?"border-zinc-950 bg-zinc-950 text-white":"border-zinc-200 bg-white text-zinc-700"}`}>All submitted</Link>
+          <Link href="/employers/candidates?source=jobiverse" className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source==="jobiverse"?"border-amber-300 bg-amber-50 text-amber-800":"border-zinc-200 bg-white text-zinc-700"}`}>JobiVerse submitted</Link>
+        </section>
 
         {!!stageSummary.length&&<section className="mt-6 flex flex-wrap gap-3">{stageSummary.map(item=><div key={item.status} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 shadow-sm"><p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{item.status}</p><p className="mt-1 text-xl font-bold">{item.count}</p></div>)}</section>}
 
@@ -51,17 +59,18 @@ export default async function EmployerCandidatesPage() {
           </section>
         )}
 
-        {!candidates?.length ? (
+        {!visibleCandidates.length ? (
           <section className="mt-8 rounded-[2rem] border border-dashed border-zinc-300 bg-white/75 px-6 py-20 text-center backdrop-blur-xl">
             <Users className="mx-auto text-zinc-400" size={34} /><h2 className="mt-5 text-2xl font-semibold">No candidates shared yet</h2><p className="mx-auto mt-3 max-w-xl text-zinc-500">Profiles will appear here once your recruiter moves a candidate to Client Submitted.</p>
           </section>
         ) : (
           <section className="mt-12"><div className="mb-5"><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent pipeline</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">All candidates</h2></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {candidates.map((candidate) => (
+            {visibleCandidates.map((candidate) => (
               <Link href={`/employers/candidates/${candidate.id}`} key={candidate.id} className="block rounded-[2rem] border border-white bg-white/90 p-7 shadow-[0_24px_70px_-48px_rgba(0,0,0,.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl">
                 <div className="flex items-start justify-between gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 font-semibold text-white">{candidate.full_name.slice(0, 1).toUpperCase()}</div><span className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-600">{candidate.status}</span></div>
                 <h2 className="mt-6 text-2xl font-semibold tracking-tight">{candidate.full_name}</h2>
                 <p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><BriefcaseBusiness size={15} /> {candidate.requirements?.[0]?.job_title ?? "Hiring requirement"}</p>
+                {candidate.recruiter_name === "JobiVerse Hiring Team" && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Submitted by JobiVerse Hiring Team</p>}
                 <div className="mt-6 space-y-3 border-t border-zinc-100 pt-5 text-sm text-zinc-600"><p>{candidate.total_experience || "Experience not specified"}</p><p className="flex items-center gap-2"><MapPin size={15} /> {candidate.current_location || "Location not specified"}</p><p className="line-clamp-2">{candidate.primary_skills || "Skills under review"}</p></div>
                 {firstRelation(candidate.placements) && (
                   <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-950 to-zinc-700 text-white shadow-lg">

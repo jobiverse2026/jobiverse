@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Globe2, ShieldCheck, UsersRound } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 import CompanyCard from "@/components/admin/requirement/CompanyCard";
 import HiringCard from "@/components/admin/requirement/HiringCard";
@@ -24,23 +25,23 @@ export default async function RequirementDetailsPage({
 }: Props) {
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  await requireRole(["admin"]);
 
-  const { data: requirement } = await supabase
+  const { data: requirement } = await adminSupabase
     .from("requirements")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (!requirement) {
     notFound();
   }
 
-  const { data: company } = await supabase
+  const { data: company } = await adminSupabase
     .from("companies")
     .select("*")
     .eq("id", requirement.company_id)
-    .single();
+    .maybeSingle();
 
   return (
     <div className="space-y-8">

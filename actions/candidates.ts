@@ -158,9 +158,9 @@ export async function createCandidate(
 
     recruiter_id: user.id,
 
-    recruiter_name: profile.full_name,
+    recruiter_name: profile.role === "admin" ? "JobiVerse Hiring Team" : profile.full_name,
 
-    recruiter_email: profile.email,
+    recruiter_email: profile.role === "admin" ? "jobiverse@outlook.com" : profile.email,
 
     status: profile.role === "admin" ? "Client Submitted" : "Submitted",
 
