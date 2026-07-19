@@ -114,6 +114,24 @@ export async function updateOpenToWorkPreference(formData: FormData) {
   redirect(`/candidates/dashboard?visibility=${openToWork ? "open" : "hidden"}`);
 }
 
+export async function setOpenToWorkPreference(openToWork: boolean) {
+  const { supabase, user } = await requireRole(["candidate"]);
+  const { error } = await supabase.from("candidate_profiles").upsert({
+    user_id: user.id,
+    open_to_work: openToWork,
+    job_search_status: openToWork ? "open_to_offers" : "not_looking",
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/candidates/dashboard");
+  revalidatePath("/candidates/profile");
+  return {
+    success: openToWork
+      ? "Open to work is active. Verified employers and recruiters can discover your profile."
+      : "Open to work is off. Your profile stays private unless you apply to a role.",
+  };
+}
+
 export async function restoreResumeVersion(formData:FormData){const versionId=z.string().uuid().parse(formData.get("versionId"));const{supabase,user}=await requireRole(["candidate"]);const{data:version}=await supabase.from("candidate_resume_versions").select("id,storage_path").eq("id",versionId).eq("candidate_user_id",user.id).maybeSingle();if(!version)throw new Error("Resume version not found.");await supabase.from("candidate_resume_versions").update({is_current:false}).eq("candidate_user_id",user.id).eq("is_current",true);const[{error:versionError},{error:profileError}]=await Promise.all([supabase.from("candidate_resume_versions").update({is_current:true}).eq("id",version.id),supabase.from("candidate_profiles").update({resume_path:version.storage_path,updated_at:new Date().toISOString()}).eq("user_id",user.id)]);if(versionError||profileError)throw new Error(versionError?.message??profileError?.message);revalidatePath("/candidates/resume");revalidatePath("/candidates/profile");redirect("/candidates/resume?updated=restored");}
 
 export async function renameResumeVersion(formData:FormData){const versionId=z.string().uuid().parse(formData.get("versionId"));const label=z.string().trim().min(2).max(80).parse(formData.get("label"));const{supabase,user}=await requireRole(["candidate"]);const{error}=await supabase.from("candidate_resume_versions").update({label}).eq("id",versionId).eq("candidate_user_id",user.id);if(error)throw new Error(error.message);revalidatePath("/candidates/resume");redirect("/candidates/resume?updated=renamed");}

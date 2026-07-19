@@ -12,7 +12,7 @@ type Particle = {
   delay: number;
 };
 
-const CANVAS_SIZE = 190;
+const CANVAS_SIZE = 160;
 
 export default function ParticleLogo() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,8 +34,8 @@ export default function ParticleLogo() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = CANVAS_SIZE * dpr;
     canvas.height = CANVAS_SIZE * dpr;
-    canvas.style.width = `${CANVAS_SIZE}px`;
-    canvas.style.height = `${CANVAS_SIZE}px`;
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
     context.scale(dpr, dpr);
 
     const image = new window.Image();
@@ -114,7 +114,7 @@ export default function ParticleLogo() {
   }, []);
 
   return (
-    <div className="relative h-[190px] w-[190px]">
+    <div className="relative h-full w-full">
       <canvas
         ref={canvasRef}
         aria-hidden="true"
@@ -123,8 +123,8 @@ export default function ParticleLogo() {
       <Image
         src="/images/branding/jobiverse-logo.svg"
         alt="JobiVerse"
-        width={190}
-        height={190}
+        width={160}
+        height={160}
         priority
         className={`h-full w-full object-contain drop-shadow-[0_18px_45px_rgba(0,0,0,.12)] transition-all duration-700 ${assembled ? "scale-100 opacity-100 blur-0" : "scale-95 opacity-0 blur-sm"}`}
       />

@@ -201,21 +201,7 @@ export function AuthProvider({
       const hasActiveBrowserSession = sessionStorage.getItem(browserSessionKey) === "active";
       const isPasswordRecovery = window.location.pathname === "/reset-password";
 
-      if (validSession && !hasActiveBrowserSession && !isPasswordRecovery) {
-        sessionStorage.setItem(browserSessionKey, "active");
-        await supabase.auth.signOut({ scope: "local" });
-        if (!mounted) return;
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-        if (window.location.pathname !== "/") {
-          window.location.replace("/");
-        }
-        return;
-      } else {
-        sessionStorage.setItem(browserSessionKey, "active");
-      }
+      if (!hasActiveBrowserSession && !isPasswordRecovery) sessionStorage.setItem(browserSessionKey, "active");
       setSession(validSession);
 
       const currentUser = validSession?.user ?? null;

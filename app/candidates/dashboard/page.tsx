@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Bookmark, BrainCircuit, BriefcaseBusiness, CalendarDays, CircleDollarSign, FileText, Sparkles, UserRound } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
 import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
-import { updateOpenToWorkPreference } from "@/actions/candidate-profile";
+import { OpenToWorkToggle } from "@/components/candidate/OpenToWorkToggle";
 
 export default async function CandidateDashboardPage({ searchParams }: { searchParams: Promise<{ visibility?: string }> }) {
   const { supabase, user, profile: userProfile } = await requireRole(["candidate"]);
@@ -18,7 +18,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
   ]);
   const professional = profileResult.data;
   const isOpenToWork = Boolean(professional?.open_to_work);
-  const visibilityMessage = params.visibility === "open" ? "Your profile is now visible in Talent Search." : params.visibility === "hidden" ? "Your profile is now hidden from Talent Search." : null;
+  const visibilityMessage = params.visibility === "open" ? "Open to work is active. Verified employers and recruiters can discover your profile." : params.visibility === "hidden" ? "Open to work is off. Your profile stays private unless you apply to a role." : null;
   const stats = [
     ["Applications", applicationsResult.count ?? 0, BriefcaseBusiness, "/candidates/applications"], ["Interviews", interviewsResult.count ?? 0, CalendarDays, "/candidates/applications"],
     ["Offers", offersResult.count ?? 0, Sparkles, "/candidates/applications"], ["Saved jobs", savedResult.count ?? 0, Bookmark, "/candidates/saved-jobs"],
@@ -28,20 +28,13 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     <section className="mt-6 rounded-[2rem] border border-white bg-white/90 p-5 shadow-sm backdrop-blur md:flex md:items-center md:justify-between md:gap-6">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent visibility</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-[-.035em]">{isOpenToWork ? "Open to work is active" : "Hidden from Talent Search"}</h2>
+        <h2 className="mt-2 text-2xl font-semibold tracking-[-.035em]">{isOpenToWork ? "Open to work is active" : "Open to work is off"}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-          Turn this on when you want verified employers and recruiters to discover your JobiVerse profile in paid Talent Search.
+          Keep this on when you want verified employers and approved recruiters to discover your JobiVerse Card in paid Talent Search. Turn it off anytime to stay private except for roles you directly apply to.
         </p>
         {visibilityMessage && <p className="mt-3 text-sm font-semibold text-emerald-600">{visibilityMessage}</p>}
       </div>
-      <form action={updateOpenToWorkPreference} className="mt-5 flex shrink-0 items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-3 md:mt-0">
-        <label className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-zinc-700">
-          <input name="open_to_work" type="checkbox" defaultChecked={isOpenToWork} className="peer sr-only" />
-          <span className="relative h-8 w-14 rounded-full bg-zinc-300 transition peer-checked:bg-emerald-500 after:absolute after:left-1 after:top-1 after:h-6 after:w-6 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-6" />
-          {isOpenToWork ? "Visible" : "Private"}
-        </label>
-        <button className="cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white">Save</button>
-      </form>
+      <OpenToWorkToggle initialOpen={isOpenToWork} />
     </section>
     <section className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, Icon, href]) => <Link href={href} key={label} className="group rounded-3xl border border-white bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><Icon className="text-zinc-400" /><p className="mt-5 text-sm text-zinc-500">{label}</p><div className="mt-2 flex items-center justify-between"><p className="text-3xl font-bold">{value}</p><ArrowRight className="text-zinc-400 transition group-hover:translate-x-1" size={18}/></div></Link>)}</section>
     <section className="mt-8"><JobiVerseCard person={userProfile} profile={professional} passport={passportResult.data} items={itemsResult.data} editable /></section>

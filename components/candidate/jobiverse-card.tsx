@@ -103,7 +103,7 @@ export function JobiVerseCard({
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1.5">
-            {open && <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-[10px] font-bold text-emerald-300">Open</span>}
+            {open && <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[.12em] text-emerald-800 shadow-sm">Open to work</span>}
             {verifiedCount > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-zinc-950"><BadgeCheck size={12} />{verifiedCount}</span>}
           </div>
           </div>
