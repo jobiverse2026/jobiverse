@@ -1,6 +1,7 @@
 "use server";
 
 import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 
 export async function createCandidate(
@@ -17,7 +18,7 @@ export async function createCandidate(
 
   const { data: requirement, error: requirementError } = await supabase
     .from("requirements")
-    .select("id, assigned_recruiter")
+    .select("id, assigned_recruiter, employer_id, job_title")
     .eq("id", requirementId)
     .maybeSingle();
 
@@ -157,6 +158,12 @@ export async function createCandidate(
 
     recruiter_id: user.id,
 
+    recruiter_name: profile.full_name,
+
+    recruiter_email: profile.email,
+
+    status: profile.role === "admin" ? "Client Submitted" : "Submitted",
+
   };
 
 
@@ -184,6 +191,17 @@ export async function createCandidate(
       error.message
     );
 
+  }
+
+  if (profile.role === "admin" && requirement.employer_id) {
+    await adminSupabase.from("notifications").insert({
+      user_id: requirement.employer_id,
+      type: "candidate_submitted",
+      title: "New JobiVerse candidate submitted",
+      message: `${candidateData.full_name || "A candidate"} has been submitted for ${requirement.job_title || "your requirement"}.`,
+      href: `/employers/candidates/${data.id}`,
+      reference_id: data.id,
+    });
   }
 
 
