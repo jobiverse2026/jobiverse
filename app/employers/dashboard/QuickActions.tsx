@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Plus,
+  Search,
   Users,
   BriefcaseBusiness,
   Building2,
@@ -21,6 +22,11 @@ const actions = [
     title: "Browse Candidates",
     href: "/employers/candidates",
     icon: Users,
+  },
+  {
+    title: "Talent Search",
+    href: "/employers/talent-search",
+    icon: Search,
   },
   {
     title: "My Requirements",

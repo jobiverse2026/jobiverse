@@ -14,6 +14,17 @@ const profileSchema = z.object({
   primary_skills: z.string().trim().max(1000).optional(), secondary_skills: z.string().trim().max(1000).optional(),
   preferred_locations: z.string().trim().max(500).optional(), preferred_roles: z.string().trim().max(500).optional(),
   linkedin: z.string().trim().max(500).optional(), portfolio_url: z.string().trim().max(500).optional(), bio: z.string().trim().max(3000).optional(),
+  open_to_work: z.preprocess((value) => value === "on" || value === "true", z.boolean()).default(false),
+  job_search_status: z.enum(["actively_looking", "open_to_offers", "not_looking"]).default("not_looking"),
+  role_level: z.string().trim().max(80).optional(),
+  industry: z.string().trim().max(120).optional(),
+  functional_area: z.string().trim().max(120).optional(),
+  highest_education: z.string().trim().max(120).optional(),
+  employment_type: z.string().trim().max(80).optional(),
+  work_mode: z.string().trim().max(80).optional(),
+  expected_salary_min: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
+  expected_salary_max: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
+  searchable_keywords: z.string().trim().max(1200).optional(),
 });
 
 function normalizeUrl(value?: string) {
@@ -25,6 +36,7 @@ function normalizeUrl(value?: string) {
 export async function saveCandidateProfile(formData: FormData) {
   const { supabase, user } = await requireRole(["candidate"]);
   const raw = Object.fromEntries([...formData.entries()].filter(([key]) => key !== "resume"));
+  raw.open_to_work = formData.get("open_to_work") === "on" ? "on" : "false";
   const result = profileSchema.safeParse(raw);
   if (!result.success) throw new Error(result.error.issues[0]?.message ?? "Please check your profile details.");
 

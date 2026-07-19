@@ -9,6 +9,7 @@ import {
   MessagesSquare,
   Mic2,
   Palette,
+  Search,
   Sparkles,
   TrendingUp,
   UserRoundCheck,
@@ -30,6 +31,7 @@ const audiences = [
     icon: Building2,
     services: [
       ["IT & Non-IT Recruitment", "Specialist hiring across technology and business functions.", BriefcaseBusiness, "candidate-screening"],
+      ["Talent Search Access", "Paid access to open-to-work JobiVerse profiles with filters and privacy-safe contact flow.", Search, "talent-search-access"],
       ["Executive Search", "Confidential search for leaders, senior managers and domain experts.", UserRoundCheck, "hiring-consultation"],
       ["Hiring Strategy", "Requirement discovery, market mapping and structured hiring support.", TrendingUp, "job-description-writing"],
     ],
@@ -108,7 +110,7 @@ export default function ServicesPage() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {audience.services.map(([title, description, Icon, serviceSlug], index) => (
-                    <Link href={serviceSlug === "sell-cv-templates" ? "/earn-with-jobiverse" : `/marketplace/services/${serviceSlug}`} key={title} className={`group rounded-[1.75rem] border p-6 transition hover:-translate-y-1 hover:shadow-xl ${audienceIndex % 2 ? "border-white/10 bg-white/[.05]" : "border-zinc-200 bg-zinc-50"}`}>
+                    <Link href={serviceSlug === "sell-cv-templates" ? "/earn-with-jobiverse" : serviceSlug === "talent-search-access" ? "/employers/talent-search" : `/marketplace/services/${serviceSlug}`} key={title} className={`group rounded-[1.75rem] border p-6 transition hover:-translate-y-1 hover:shadow-xl ${audienceIndex % 2 ? "border-white/10 bg-white/[.05]" : "border-zinc-200 bg-zinc-50"}`}>
                       <div className="flex items-center justify-between"><Icon size={21} /><span className={`text-xs font-bold ${audienceIndex % 2 ? "text-zinc-600" : "text-zinc-300"}`}>0{index + 1}</span></div>
                       <h3 className="mt-8 text-lg font-semibold">{title}</h3>
                       <p className={`mt-3 text-sm leading-6 ${audienceIndex % 2 ? "text-zinc-400" : "text-zinc-600"}`}>{description}</p>

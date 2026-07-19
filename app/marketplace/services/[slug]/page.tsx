@@ -28,7 +28,7 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
   const jobiVerseCategory = selectedType ?? includedCategories.find((category) => getJobiVerseOffer(category)) ?? null;
   const jobiVerseOffer = getJobiVerseOffer(jobiVerseCategory);
   if (!service) {
-    const { data: listing } = await supabase.from("marketplace_services").select("id,provider_id,title,slug,short_description,price,delivery_days,average_rating,review_count,total_orders,status,is_featured,featured_until").eq("slug", slug).eq("status", "published").or("is_editable.eq.false,template_review_status.eq.approved").maybeSingle();
+    const { data: listing } = await supabase.from("marketplace_services").select("id,provider_id,title,slug,short_description,creator_fit_reason,creator_relevant_experience,price,delivery_days,average_rating,review_count,total_orders,status,is_featured,featured_until").eq("slug", slug).eq("status", "published").or("is_editable.eq.false,template_review_status.eq.approved").maybeSingle();
     if (listing) {
       const [{ data: provider },{data:verification}] = await Promise.all([supabase.from("users").select("full_name").eq("id", listing.provider_id).maybeSingle(),supabase.from("creator_marketplace_profiles").select("verification_status").eq("creator_id",listing.provider_id).maybeSingle()]);
       service = {
@@ -40,7 +40,7 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
         expertCount: 1,
         startingPrice: Number(listing.price),
         aiStatus: "coming-soon",
-        providers: [{ name: provider?.full_name ?? "JobiVerse Creator", title: "Independent Service Provider", rating: Number(listing.average_rating),ratingCount:listing.review_count,reputation:reputationLevel(Number(listing.average_rating),listing.review_count,listing.total_orders,verification?.verification_status==="verified"), completedOrders: listing.total_orders, startingPrice: customerPrice(Number(listing.price)), delivery: `${listing.delivery_days} day${listing.delivery_days === 1 ? "" : "s"}`, verified: verification?.verification_status==="verified",isFeatured:listing.is_featured&&(!listing.featured_until||new Date(listing.featured_until)>new Date()),listingId:listing.id }],
+        providers: [{ name: provider?.full_name ?? "JobiVerse Creator", title: "Independent Service Provider", fitReason: listing.creator_fit_reason, relevantExperience: listing.creator_relevant_experience, rating: Number(listing.average_rating),ratingCount:listing.review_count,reputation:reputationLevel(Number(listing.average_rating),listing.review_count,listing.total_orders,verification?.verification_status==="verified"), completedOrders: listing.total_orders, startingPrice: customerPrice(Number(listing.price)), delivery: `${listing.delivery_days} day${listing.delivery_days === 1 ? "" : "s"}`, verified: verification?.verification_status==="verified",isFeatured:listing.is_featured&&(!listing.featured_until||new Date(listing.featured_until)>new Date()),listingId:listing.id }],
       };
     }
   }
@@ -48,7 +48,7 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
   const bookingRole = service.audiences.includes("employer") && !service.audiences.includes("professional") && !service.audiences.includes("student") ? "employer" : "candidate";
 
   if (catalogService) {
-    const { data: allListings } = await supabase.from("marketplace_services").select("id,provider_id,title,slug,category,audience,description,price,delivery_days,average_rating,review_count,total_orders,quality_score,is_featured,featured_until").eq("status", "published").or("is_editable.eq.false,template_review_status.eq.approved");
+    const { data: allListings } = await supabase.from("marketplace_services").select("id,provider_id,title,slug,category,audience,description,creator_fit_reason,creator_relevant_experience,price,delivery_days,average_rating,review_count,total_orders,quality_score,is_featured,featured_until").eq("status", "published").or("is_editable.eq.false,template_review_status.eq.approved");
     const relevantListings = (allListings ?? []).filter(listing => categoryBelongsToService(listing.category, slug) && catalogService.audiences.includes(listing.audience) && (!selectedType || listing.category === selectedType));
     if (relevantListings.length) {
       trackedSlugs = relevantListings.map(listing => listing.slug);
@@ -62,6 +62,8 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
       service.providers = rankedListings.map((listing, listingIndex) => ({
         name: profileNames.get(listing.provider_id) ?? `JobiVerse Creator ${listingIndex + 1}`,
         title: `${listing.title} - ${listing.description}`,
+        fitReason: listing.creator_fit_reason,
+        relevantExperience: listing.creator_relevant_experience,
         rating: Number(listing.average_rating),
         ratingCount:listing.review_count,
         reputation:reputationLevel(Number(listing.average_rating),listing.review_count,listing.total_orders,verificationMap.get(listing.provider_id)==="verified"),
@@ -97,6 +99,7 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
           {provider.isFeatured&&!provider.isJobiVerse&&<div className="absolute right-0 top-0 rounded-bl-2xl bg-violet-600 px-4 py-2 text-[10px] font-bold uppercase tracking-[.14em] text-white">Featured</div>}{provider.isJobiVerse && <div className="absolute right-0 top-0 rounded-bl-2xl bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.14em] text-black">Recommended | JobiVerse</div>}
           <div className="flex items-start justify-between"><div className={`grid h-14 w-14 place-items-center overflow-hidden rounded-2xl ${provider.logoUrl ? "bg-white" : "bg-zinc-950 text-xl font-semibold text-white"}`}>{provider.logoUrl ? <Image src={provider.logoUrl} alt={`${provider.name} logo`} width={48} height={48} className="h-12 w-12 object-contain"/> : provider.name.split(" ").map(word => word[0]).join("")}</div>{provider.verified && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700"><BadgeCheck size={14}/>Verified</span>}</div>
           <h3 className="mt-6 text-xl font-semibold">{provider.name}</h3><p className={`mt-1 text-sm leading-6 ${provider.isJobiVerse ? "text-zinc-400" : "text-zinc-500"}`}>{provider.title}</p>
+          {(provider.fitReason || provider.relevantExperience) && <div className="mt-5 grid gap-3"><TrustNote title="Why this expert fits" text={provider.fitReason}/><TrustNote title="Relevant experience" text={provider.relevantExperience}/></div>}
           <div className="mt-5 flex gap-4 text-sm"><span className="inline-flex items-center gap-1"><Star size={15}/>{provider.ratingCount?`${provider.rating.toFixed(1)} (${provider.ratingCount})`:"New"}</span><span>{provider.completedOrders} orders</span>{provider.reputation&&<span className="rounded-full bg-zinc-100 px-2 py-1 text-[10px] font-bold text-zinc-600">{provider.reputation}</span>}</div><div className="my-6 h-px bg-zinc-200"/>
           <div className="flex items-center justify-between gap-4"><div><p className="text-xs text-zinc-400">Service fee</p><p className="mt-1 font-semibold">{provider.priceLabel ?? `INR ${provider.startingPrice.toLocaleString("en-IN")}`}</p></div><span className={`inline-flex items-center gap-1 text-xs ${provider.isJobiVerse ? "text-zinc-400" : "text-zinc-500"}`}><Clock3 size={14}/>{provider.delivery}</span></div>
           <Link href={provider.isJobiVerse ? `/marketplace/services/${slug}/jobiverse?type=${encodeURIComponent(jobiVerseCategory ?? service.title)}` : user ? `/marketplace/services/${slug}/book?listing=${provider.listingId ?? ""}` : `/login/${bookingRole}?next=${encodeURIComponent(`/marketplace/services/${slug}/book?listing=${provider.listingId ?? ""}`)}`} className={`mt-6 flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 font-semibold ${provider.isJobiVerse ? "bg-white text-black" : "bg-black text-white"}`}>{provider.isJobiVerse ? "Get it personally from JobiVerse" : "Book service"}<ArrowRight size={17}/></Link>
@@ -111,6 +114,8 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
 }
 
 function ModeCard({icon:Icon,title,text,active=false}:{icon:React.ElementType;title:string;text:string;active?:boolean}){return <article className={`rounded-[2rem] border p-6 ${active?"border-zinc-950 bg-zinc-950 text-white":"border-zinc-200 bg-white"}`}><Icon size={23}/><h3 className="mt-8 font-semibold">{title}</h3><p className={`mt-2 text-sm leading-6 ${active?"text-zinc-400":"text-zinc-500"}`}>{text}</p>{!active&&<span className="mt-5 inline-flex rounded-full bg-zinc-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[.15em] text-zinc-500">Coming soon</span>}</article>}
+
+function TrustNote({title,text}:{title:string;text?:string|null}){if(!text)return null;return <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-zinc-400">{title}</p><p className="mt-2 line-clamp-4 text-xs leading-5 text-zinc-600">{text}</p></div>}
 
 
 

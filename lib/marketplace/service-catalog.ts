@@ -16,6 +16,8 @@ export type ServiceProvider = {
   ratingCount?: number;
   reputation?: string;
   isFeatured?: boolean;
+  fitReason?: string | null;
+  relevantExperience?: string | null;
 };
 
 export type MarketplaceService = {

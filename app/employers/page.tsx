@@ -12,6 +12,7 @@ import {
   Target,
   BriefcaseBusiness,
   Code2,
+  LockKeyhole,
   UserCheck,
 } from "lucide-react";
 
@@ -95,13 +96,40 @@ export default function EmployersPage() {
 
       />
 
-      <PageSectionIndex items={[{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
+      <PageSectionIndex items={[{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Talent Search",href:"#talent-search"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
 
       <section id="employer-recruitment-services" className="bg-[#f6f6f3] py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
           <div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Recruitment services</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-5xl">The right hiring support for every critical role.</h2><p className="mt-5 text-lg leading-8 text-zinc-600">Recruitment-only solutions now live here, together with the employer journey and hiring process.</p></div>
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{recruitmentServices.map(({title,description,icon:Icon},index)=><article key={title} className="rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex items-center justify-between"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-black text-white"><Icon size={22}/></span><span className="text-xs font-bold text-zinc-300">0{index+1}</span></div><h3 className="mt-7 text-xl font-semibold">{title}</h3><p className="mt-3 leading-7 text-zinc-600">{description}</p></article>)}</div>
+        </div>
+      </section>
+
+      <section id="talent-search" className="bg-white py-24">
+        <div className="mx-auto grid max-w-7xl gap-8 px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:px-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Paid talent discovery</p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">Search candidates like a premium talent database.</h2>
+            <p className="mt-5 text-lg leading-8 text-zinc-600">
+              Employers can discover JobiVerse candidates who have actively opted into visibility. Search by skills, location, role level, industry, work mode, salary range and notice period — while JobiVerse protects candidate privacy and coordinates the hiring flow.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/employers/talent-search" className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 font-semibold text-white">Preview Talent Search<Search size={17}/></Link>
+              <Link href="/plans" className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 px-6 py-4 font-semibold">Request paid access<LockKeyhole size={17}/></Link>
+            </div>
+          </div>
+          <div className="rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-6 text-white shadow-2xl sm:p-8">
+            <div className="rounded-[2rem] border border-white/10 bg-white/10 p-6">
+              <div className="flex items-center justify-between">
+                <div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Talent pool</p><h3 className="mt-2 text-3xl font-semibold">Consent-first candidate search</h3></div>
+                <Search className="text-zinc-500" size={42}/>
+              </div>
+              <div className="mt-7 grid gap-3">
+                {["Open-to-work profiles only","Skill, role and location filters","Salary and notice-period matching","Full contact flow protected by JobiVerse"].map((item)=><div key={item} className="flex items-center gap-3 rounded-2xl bg-white/10 p-4 text-sm"><ShieldCheck size={16}/>{item}</div>)}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

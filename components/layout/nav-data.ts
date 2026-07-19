@@ -98,6 +98,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
     { title: "Hiring", children: [
       { title: "Requirements", description: "Create and track hiring mandates.", href: "/employers/requirements", icon: Briefcase },
       { title: "Candidates", description: "Review submitted talent and offers.", href: "/employers/candidates", icon: Users },
+      { title: "Talent Search", description: "Search open-to-work JobiVerse profiles with filters.", href: "/employers/talent-search", icon: Search },
       { title: "Company Profile", description: "Manage your verified organization profile.", href: "/employers/company", icon: Building2 },
     ]},
     { title: "Business Services", children: [
@@ -113,6 +114,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
     { title: "Recruitment", children: [
       { title: "Requirements", description: "Work on assigned hiring roles.", href: "/recruiter/requirements", icon: Briefcase },
       { title: "Candidates", description: "Manage sourcing and delivery pipelines.", href: "/recruiter/candidates", icon: Users },
+      { title: "Talent Search", description: "Search open-to-work candidate profiles.", href: "/recruiter/talent-search", icon: Search },
     ]},
     { title: "Main Site", children: mainSiteMenu },
   ],
