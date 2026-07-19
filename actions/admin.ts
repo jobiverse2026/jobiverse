@@ -8,6 +8,7 @@ export async function getDashboardData() {
   const [
     requirements,
     openRequirements,
+    jobiverseRequirements,
     companies,
     verifiedCompanies,
     candidates,
@@ -21,7 +22,8 @@ export async function getDashboardData() {
     unreadSupport,
   ] = await Promise.all([
     supabase.from("requirements").select("id", { count: "exact", head: true }),
-    supabase.from("requirements").select("id", { count: "exact", head: true }).not("status", "in", '("Closed","Cancelled")'),
+    supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
+    supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true),
     supabase.from("companies").select("id", { count: "exact", head: true }),
     supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_verified", true),
     supabase.from("candidates").select("id", { count: "exact", head: true }),
@@ -47,6 +49,7 @@ export async function getDashboardData() {
         location
       )
     `)
+    .eq("hiring_team_requested", true)
     .order("created_at", {
       ascending: false,
     })
@@ -62,6 +65,7 @@ export async function getDashboardData() {
     stats: {
       requirements: requirements.count ?? 0,
       openRequirements: openRequirements.count ?? 0,
+      jobiverseRequirements: jobiverseRequirements.count ?? 0,
       companies: companies.count ?? 0,
       verifiedCompanies: verifiedCompanies.count ?? 0,
       candidates: candidates.count ?? 0,

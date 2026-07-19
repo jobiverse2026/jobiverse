@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requirementSchema } from "@/validation/requirement";
 import { requireRole } from "@/lib/auth/authorization";
@@ -354,20 +355,9 @@ export async function updateRequirementStatus(
   id: string,
   status: string
 ) {
-  const supabase = await createServerSupabaseClient();
-
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-
-  if (!user) {
-    return {
-      success: false,
-      error: "Unauthorized",
-    };
-  }
+  const allowedStatuses = ["Open", "Sourcing", "Interview", "Offer", "Joined", "Closed", "On Hold", "Cancelled"];
+  if (!allowedStatuses.includes(status)) return { success: false, error: "Invalid requirement status." };
+  const { supabase, user } = await requireRole(["employer"]);
 
 
   const {
@@ -380,8 +370,9 @@ export async function updateRequirementStatus(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("employer_id", user.id)
     .select()
-    .single();
+    .maybeSingle();
 
 
   if (error) {
@@ -390,8 +381,13 @@ export async function updateRequirementStatus(
       error: error.message,
     };
   }
+  if (!data) return { success: false, error: "Requirement not found or access denied." };
 
 
+  revalidatePath(`/employers/requirements/${id}`);
+  revalidatePath("/employers/requirements");
+  revalidatePath(`/admin/requirements/${id}`);
+  revalidatePath("/candidates/jobs");
   return {
     success: true,
     data,

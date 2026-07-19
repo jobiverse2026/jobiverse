@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-type Requirement = { id: string; job_title: string; status: string; assigned_recruiter: string | null; created_at: string; candidates: { count: number }[] };
+type Requirement = { id: string; job_title: string; status: string; assigned_recruiter: string | null; created_at: string; is_public?: boolean | null; hiring_team_requested?: boolean | null; candidates: { count: number }[] };
 
 export default function RecentRequirements({ requirements }: { requirements: Requirement[] }) {
   return (
@@ -32,7 +32,7 @@ export default function RecentRequirements({ requirements }: { requirements: Req
           <thead className="border-b">
             <tr className="text-left text-sm text-zinc-500">
               <th className="pb-4">Position</th>
-              <th className="pb-4">Recruiter</th>
+              <th className="pb-4">Hiring channel</th>
               <th className="pb-4">Candidates</th>
               <th className="pb-4">Status</th>
             </tr>
@@ -48,7 +48,16 @@ export default function RecentRequirements({ requirements }: { requirements: Req
                   <Link href={`/employers/requirements/${item.id}`} className="transition hover:text-zinc-500">{item.job_title}</Link>
                 </td>
 
-                <td>{item.assigned_recruiter ? "Assigned" : "Unassigned"}</td>
+                <td>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.hiring_team_requested ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-600"}`}>
+                      {item.hiring_team_requested ? "JobiVerse Team" : item.assigned_recruiter ? "Company recruiter" : "Self managed"}
+                    </span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.is_public ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-600"}`}>
+                      {item.is_public ? "Jobs portal live" : "Private"}
+                    </span>
+                  </div>
+                </td>
 
                 <td>{item.candidates?.[0]?.count ?? 0}</td>
 

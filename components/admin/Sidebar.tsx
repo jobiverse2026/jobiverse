@@ -42,7 +42,7 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Requirements",
+    title: "JobiVerse Queue",
     href: "/admin/requirements",
     icon: BriefcaseBusiness,
   },
@@ -52,7 +52,7 @@ const menuItems = [
     icon: Building2,
   },
   {
-    title: "Candidates",
+    title: "JobiVerse Candidates",
     href: "/admin/candidates",
     icon: Users,
   },
@@ -62,7 +62,7 @@ const menuItems = [
     icon: UserCog,
   },
   {
-    title: "Analytics",
+    title: "Company Reports",
     href: "/admin/analytics",
     icon: BarChart3,
   },

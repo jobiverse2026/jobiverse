@@ -42,7 +42,11 @@ export async function updateCandidateStatus(formData: FormData) {
   await requireRole(["admin"]);
   const id = z.string().uuid().parse(formData.get("candidateId"));
   const status = z.enum(candidateStatuses).parse(formData.get("status"));
-  const { error } = await adminSupabase.from("candidates").update({ status }).eq("id", id);
+  const { error } = await adminSupabase
+    .from("candidates")
+    .update({ status })
+    .eq("id", id)
+    .or("recruiter_name.eq.JobiVerse Hiring Team,recruiter_email.eq.jobiverse@outlook.com");
   if (error) throw new Error(error.message);
   revalidatePath("/admin/candidates");
 }

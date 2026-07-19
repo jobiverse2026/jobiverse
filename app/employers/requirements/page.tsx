@@ -4,6 +4,10 @@ import RequirementsTable from "@/components/employer/requirements/RequirementsTa
 
 export default async function RequirementsPage() {
   const requirements = await getRequirements();
+  const rows = requirements ?? [];
+  const active = rows.filter((item) => !["closed", "cancelled"].includes(String(item.status ?? "").toLowerCase())).length;
+  const published = rows.filter((item) => item.is_public).length;
+  const jobiverseAssigned = rows.filter((item) => item.hiring_team_requested).length;
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -29,10 +33,27 @@ export default async function RequirementsPage() {
 
       </div>
 
+      <section className="mb-8 grid gap-5 md:grid-cols-4">
+        <Metric label="Total requirements" value={rows.length} />
+        <Metric label="Active" value={active} />
+        <Metric label="Jobs portal live" value={published} />
+        <Metric label="Assigned to JobiVerse" value={jobiverseAssigned} />
+      </section>
+
+      <section className="mb-8 rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Employer-owned controls</p>
+        <h2 className="mt-2 text-2xl font-semibold">Requirement status and candidate marketplace visibility are controlled from each requirement detail page.</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-500">Open any requirement to publish it on the JobiVerse Jobs Portal, assign it to the JobiVerse Hiring Team, update status, review direct applicants and track submitted candidates.</p>
+      </section>
+
       <RequirementsTable
-        requirements={requirements ?? []}
+        requirements={rows}
       />
       </div>
     </main>
   );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"><p className="text-sm text-zinc-500">{label}</p><p className="mt-2 text-4xl font-bold">{value}</p></article>;
 }

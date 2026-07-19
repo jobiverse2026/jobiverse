@@ -7,18 +7,25 @@ import {
   CalendarClock,
   BadgeCheck,
   BadgeIndianRupee,
+  Globe2,
+  ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 
-export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number } }) {
+export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; seatLimit: number; seatsUsed: number; seatsLeft: number } }) {
   const stats = [
     { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness },
-    { title: "Candidates", value: liveStats.candidates, subtitle: "Shared with you", icon: Users },
+    { title: "JobiVerse Candidates", value: liveStats.candidates, subtitle: "Profiles shared with you", icon: Users },
+    { title: "Jobs Portal Live", value: liveStats.publishedJobs, subtitle: "Visible to candidates", icon: Globe2 },
+    { title: "JobiVerse Assigned", value: liveStats.jobiverseAssigned, subtitle: "Handled by our hiring team", icon: ShieldCheck },
+    { title: "External Applicants", value: liveStats.externalApplicants, subtitle: "Direct applications", icon: UserPlus },
     { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock },
     { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee },
     { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck },
+    { title: "Seats Used", value: liveStats.seatsUsed, subtitle: `${liveStats.seatsLeft} left of ${liveStats.seatLimit}`, icon: UserPlus },
   ];
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
       {stats.map((item, index) => {
         const Icon = item.icon;
 

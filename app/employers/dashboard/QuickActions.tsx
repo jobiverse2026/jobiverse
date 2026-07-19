@@ -10,6 +10,8 @@ import {
   Building2,
   ReceiptIndianRupee,
   Store,
+  FileText,
+  UserPlus,
 } from "lucide-react";
 
 const actions = [
@@ -24,9 +26,24 @@ const actions = [
     icon: Users,
   },
   {
+    title: "External Applicants",
+    href: "/employers/external-applicants",
+    icon: UserPlus,
+  },
+  {
     title: "Talent Search",
     href: "/employers/talent-search",
     icon: Search,
+  },
+  {
+    title: "Reports",
+    href: "/employers/reports",
+    icon: FileText,
+  },
+  {
+    title: "Team Seats",
+    href: "/employers/team",
+    icon: UserPlus,
   },
   {
     title: "My Requirements",

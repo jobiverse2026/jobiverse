@@ -14,6 +14,8 @@ type Requirement = {
   status: string;
   priority: string;
   created_at: string;
+  is_public?: boolean | null;
+  hiring_team_requested?: boolean | null;
 };
 
 export default function RequirementsTable({
@@ -91,6 +93,14 @@ export default function RequirementsTable({
                   <p className="text-sm text-zinc-500">
                     {item.department || "General"}
                   </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${item.is_public ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+                      {item.is_public ? "Jobs portal live" : "Private"}
+                    </span>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${item.hiring_team_requested ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"}`}>
+                      {item.hiring_team_requested ? "JobiVerse team" : "Self managed"}
+                    </span>
+                  </div>
                 </td>
 
                 <td className="px-6 py-5">

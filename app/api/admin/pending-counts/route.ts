@@ -30,9 +30,9 @@ export async function GET() {
       emailFailures,
     ] = await Promise.all([
       supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-      supabase.from("requirements").select("id", { count: "exact", head: true }).in("status", ["open", "active", "in_progress"]),
+      supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
       supabase.from("companies").select("id", { count: "exact", head: true }),
-      supabase.from("candidates").select("id", { count: "exact", head: true }).not("status", "in", "(selected,rejected,joined)"),
+      supabase.from("candidates").select("id", { count: "exact", head: true }).or("recruiter_name.eq.JobiVerse Hiring Team,recruiter_email.eq.jobiverse@outlook.com").not("status", "in", '("Joined","Rejected","Withdrawn")'),
       supabase.from("users").select("id", { count: "exact", head: true }).eq("role", "recruiter").eq("is_active", true),
       supabase.from("placements").select("id", { count: "exact", head: true }).in("payment_status", ["not_invoiced", "invoiced", "partially_paid", "overdue"]),
       supabase.from("marketplace_orders").select("id", { count: "exact", head: true }).eq("status", "completed").in("payout_status", ["eligible", "held"]),

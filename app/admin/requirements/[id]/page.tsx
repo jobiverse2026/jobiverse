@@ -10,9 +10,7 @@ import HiringCard from "@/components/admin/requirement/HiringCard";
 import SkillsCard from "@/components/admin/requirement/SkillsCard";
 import JobDescriptionCard from "@/components/admin/requirement/JobDescriptionCard";
 import AdditionalInfoCard from "@/components/admin/requirement/AdditionalInfoCard";
-import StatusCard from "@/components/admin/requirement/StatusCard";
 import CommercialTermsCard from "@/components/admin/requirement/CommercialTermsCard";
-import PublishJobCard from "@/components/admin/requirement/PublishJobCard";
 
 type Props = {
   params: Promise<{
@@ -31,6 +29,7 @@ export default async function RequirementDetailsPage({
     .from("requirements")
     .select("*")
     .eq("id", id)
+    .eq("hiring_team_requested", true)
     .maybeSingle();
 
   if (!requirement) {
@@ -96,10 +95,6 @@ export default async function RequirementDetailsPage({
       <AdditionalInfoCard requirement={requirement} />
 
       <CommercialTermsCard requirement={requirement} />
-
-      <PublishJobCard requirement={requirement} />
-
-      <StatusCard requirement={requirement} />
 
       <div className="flex flex-wrap gap-3">
         <Link href="/admin/requirements" className="rounded-xl border border-zinc-300 px-6 py-3 font-semibold hover:bg-zinc-100">

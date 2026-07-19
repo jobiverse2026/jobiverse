@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { getRequirement } from "@/actions/requirements";
+import RequirementControls from "@/components/employer/requirements/RequirementControls";
 
 export default async function EmployerRequirementDetailPage({
   params,
@@ -86,6 +87,21 @@ export default async function EmployerRequirementDetailPage({
               ))}
             </div>
           </aside>
+        </div>
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
+          <RequirementControls requirement={requirement} />
+          <section className="rounded-[2.25rem] border border-amber-200 bg-amber-50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-700">Hiring channel</p>
+            <h2 className="mt-2 text-xl font-semibold text-amber-950">
+              {requirement.hiring_team_requested ? "JobiVerse hiring support is requested" : "Self-managed requirement"}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-amber-900">
+              {requirement.hiring_team_requested
+                ? "JobiVerse team can submit screened candidates to this requirement, while you keep marketplace and status control."
+                : "You can publish this role to the candidate marketplace anytime or manage it privately with your team."}
+            </p>
+          </section>
         </div>
       </div>
     </main>

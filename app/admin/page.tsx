@@ -25,10 +25,10 @@ export default async function AdminDashboardPage() {
 
   const overview = [
     {
-      title: "Platform members",
+      title: "Company reports",
       value: stats.candidates + stats.employers + stats.recruiters + stats.creators,
-      note: `${stats.employers} employers | ${stats.recruiters} recruiters | ${stats.creators} creators`,
-      href: "/admin/users",
+      note: `${stats.companies} companies | ${stats.employers} employer accounts`,
+      href: "/admin/analytics",
       icon: Users,
     },
     {
@@ -39,9 +39,9 @@ export default async function AdminDashboardPage() {
       icon: Building2,
     },
     {
-      title: "Open requirements",
+      title: "JobiVerse queue",
       value: stats.openRequirements,
-      note: `${stats.requirements} total requirements`,
+      note: `${stats.jobiverseRequirements} assigned requirements`,
       href: "/admin/requirements",
       icon: BriefcaseBusiness,
     },
@@ -92,10 +92,10 @@ export default async function AdminDashboardPage() {
           JobiVerse admin
         </p>
         <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-.045em] sm:text-6xl">
-          Platform Command Centre
+          Company Reports Centre
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 sm:text-base">
-          Control hiring operations, marketplace quality, company access, payments, support and growth from one live workspace.
+          Monitor company reports, JobiVerse-assigned hiring queues, marketplace quality, payments, support and growth from one live workspace.
         </p>
       </section>
 
@@ -127,7 +127,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <Panel title="Latest employer requirements" subtitle="Newest hiring mandates across the platform.">
+        <Panel title="Latest JobiVerse assigned requirements" subtitle="Newest hiring mandates where the employer requested JobiVerse hiring support.">
           {latestRequirements.length ? (
             latestRequirements.map((item: any) => (
               <Row
@@ -139,7 +139,7 @@ export default async function AdminDashboardPage() {
               />
             ))
           ) : (
-            <Empty text="No hiring requirements yet." />
+            <Empty text="No JobiVerse assigned requirements yet." />
           )}
         </Panel>
 
