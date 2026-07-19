@@ -39,6 +39,8 @@ export default async function EmployerCandidateDetailPage({ params }: { params: 
     ["Expected CTC", candidate.expected_ctc],
   ];
   const placement = firstRelation(candidate.placements);
+  const requirement = firstRelation(candidate.requirements);
+  const displayName = candidate.full_name || "Candidate";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -47,7 +49,7 @@ export default async function EmployerCandidateDetailPage({ params }: { params: 
         <Link href="/employers/candidates" className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm backdrop-blur-xl transition hover:-translate-x-1"><ArrowLeft size={16} /> Submitted candidates</Link>
 
         <section className="mt-8 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-[0_35px_100px_-45px_rgba(0,0,0,.65)] sm:p-12">
-          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.16em] text-zinc-200">{candidate.status}</span><h1 className="mt-7 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">{candidate.full_name}</h1><p className="mt-4 flex items-center gap-2 text-zinc-300"><BriefcaseBusiness size={17} /> {candidate.requirements?.[0]?.job_title ?? "Hiring requirement"}</p></div>{signedResume?.signedUrl && <a href={signedResume.signedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black transition hover:bg-zinc-200"><Download size={18} /> Open Resume</a>}</div>
+          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.16em] text-zinc-200">{candidate.status}</span><h1 className="mt-7 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">{displayName}</h1><p className="mt-4 flex items-center gap-2 text-zinc-300"><BriefcaseBusiness size={17} /> {requirement?.job_title ?? "Hiring requirement"}</p></div>{signedResume?.signedUrl && <a href={signedResume.signedUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black transition hover:bg-zinc-200"><Download size={18} /> Open Resume</a>}</div>
         </section>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px]">
@@ -74,5 +76,4 @@ export default async function EmployerCandidateDetailPage({ params }: { params: 
     </main>
   );
 }
-
 
