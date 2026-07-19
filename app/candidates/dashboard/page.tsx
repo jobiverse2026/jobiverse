@@ -30,7 +30,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
         <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent visibility</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-[-.035em]">{isOpenToWork ? "Open to work is active" : "Open to work is off"}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-          Keep this on when you want verified employers and approved recruiters to discover your JobiVerse Card in paid Talent Search. Turn it off anytime to stay private except for roles you directly apply to.
+          Keep this on when you want verified employers and approved recruiters to discover your JobiVerse Card for relevant opportunities. Turn it off anytime to stay private except for roles you directly apply to.
         </p>
         {visibilityMessage && <p className="mt-3 text-sm font-semibold text-emerald-600">{visibilityMessage}</p>}
       </div>
