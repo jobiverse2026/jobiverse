@@ -1,273 +1,248 @@
+import Link from "next/link";
+import type { ElementType, ReactNode } from "react";
 import {
+  ArrowRight,
   BriefcaseBusiness,
   Building2,
+  Headphones,
+  PackageCheck,
+  ShieldCheck,
+  Sparkles,
   Users,
-  UserCog,
-  ArrowUpRight,
+  WalletCards,
 } from "lucide-react";
 
 import { getDashboardData } from "@/actions/admin";
 
-export default async function AdminDashboardPage() {
-  const { stats, latestRequirements } = await getDashboardData();
+const money = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
 
-  const dashboardStats = [
+export default async function AdminDashboardPage() {
+  const { stats, latestRequirements, latestOrders } = await getDashboardData();
+
+  const overview = [
     {
-      title: "Requirements",
-      value: stats.requirements,
-      icon: BriefcaseBusiness,
+      title: "Platform members",
+      value: stats.candidates + stats.employers + stats.recruiters + stats.creators,
+      note: `${stats.employers} employers | ${stats.recruiters} recruiters | ${stats.creators} creators`,
+      href: "/admin/users",
+      icon: Users,
     },
     {
       title: "Companies",
       value: stats.companies,
+      note: `${stats.verifiedCompanies} verified companies`,
+      href: "/admin/companies",
       icon: Building2,
     },
     {
-      title: "Candidates",
-      value: stats.candidates,
-      icon: Users,
+      title: "Open requirements",
+      value: stats.openRequirements,
+      note: `${stats.requirements} total requirements`,
+      href: "/admin/requirements",
+      icon: BriefcaseBusiness,
     },
     {
-      title: "Recruiters",
-      value: stats.recruiters,
-      icon: UserCog,
+      title: "Active orders",
+      value: stats.activeOrders,
+      note: "Marketplace work in motion",
+      href: "/admin/marketplace",
+      icon: PackageCheck,
+    },
+  ];
+
+  const queues = [
+    {
+      title: "Marketplace moderation",
+      value: stats.pendingServices,
+      text: "Creator services waiting for review.",
+      href: "/admin/marketplace",
+      icon: ShieldCheck,
+    },
+    {
+      title: "Refund centre",
+      value: stats.pendingRefunds,
+      text: "Refund requests needing admin action.",
+      href: "/admin/refunds",
+      icon: WalletCards,
+    },
+    {
+      title: "Payout accounts",
+      value: stats.pendingPayoutAccounts,
+      text: "Creator bank accounts pending verification.",
+      href: "/admin/finance",
+      icon: Sparkles,
+    },
+    {
+      title: "Support inbox",
+      value: stats.unreadSupport,
+      text: "Conversations with unread admin messages.",
+      href: "/messages",
+      icon: Headphones,
     },
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl">
+        <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">
+          JobiVerse admin
+        </p>
+        <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-.045em] sm:text-6xl">
+          Platform Command Centre
+        </h1>
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 sm:text-base">
+          Control hiring operations, marketplace quality, company access, payments, support and growth from one live workspace.
+        </p>
+      </section>
 
-      {/* Header */}
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {overview.map((item) => (
+          <AdminMetric key={item.title} {...item} />
+        ))}
+      </section>
 
       <section>
-
-        <p className="text-zinc-500">
-          Welcome back 👋
-        </p>
-
-        <h1 className="mt-2 text-4xl font-bold">
-          Recruitment Dashboard
-        </h1>
-
-        <p className="mt-3 text-zinc-600">
-          Monitor hiring activities across JobiVerse.
-        </p>
-
-      </section>
-
-      {/* Stats */}
-
-      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-
-        {dashboardStats.map((item) => {
-
-          const Icon = item.icon;
-
-          return (
-
-            <div
-              key={item.title}
-              className="
-              rounded-3xl
-              border
-              border-zinc-200
-              bg-white
-              p-7
-              shadow-sm
-              transition
-              hover:-translate-y-1
-              hover:shadow-xl
-              "
-            >
-
-              <div className="flex items-center justify-between">
-
-                <div
-                  className="
-                  flex
-                  h-14
-                  w-14
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-black
-                  text-white
-                  "
-                >
-                  <Icon className="h-7 w-7" />
-                </div>
-
-                <ArrowUpRight className="text-zinc-400" />
-
-              </div>
-
-              <h3 className="mt-8 text-4xl font-bold">
-                {item.value}
-              </h3>
-
-              <p className="mt-2 text-zinc-500">
-                {item.title}
-              </p>
-
-            </div>
-
-          );
-
-        })}
-
-      </section>
-
-      {/* Latest Requirements */}
-
-      <section
-        className="
-        rounded-3xl
-        border
-        border-zinc-200
-        bg-white
-        p-8
-        "
-      >
-
-        <div className="flex items-center justify-between">
-
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-
-            <h2 className="text-2xl font-bold">
-              Latest Hiring Requirements
-            </h2>
-
-            <p className="mt-2 text-zinc-500">
-              Live data from Supabase
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">
+              Priority queue
             </p>
-
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">
+              What needs admin attention.
+            </h2>
           </div>
-
+          <Link href="/admin/marketplace" className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold">
+            Open operations <ArrowRight size={15} />
+          </Link>
         </div>
-
-        <div className="mt-8 overflow-x-auto">
-
-          <table className="w-full">
-
-            <thead>
-
-              <tr className="border-b border-zinc-200">
-
-                <th className="py-4 text-left font-semibold">
-                  Company
-                </th>
-
-                <th className="py-4 text-left font-semibold">
-                  Position
-                </th>
-
-                <th className="py-4 text-left font-semibold">
-                  Location
-                </th>
-
-                <th className="py-4 text-left font-semibold">
-                  Status
-                </th>
-
-                <th className="py-4 text-left font-semibold">
-                  Created
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-                            {latestRequirements.length === 0 ? (
-
-                <tr>
-
-                  <td
-                    colSpan={5}
-                    className="
-                    py-12
-                    text-center
-                    text-zinc-500
-                    "
-                  >
-                    No hiring requirements found.
-                  </td>
-
-                </tr>
-
-              ) : (
-
-                latestRequirements.map((item: any) => (
-
-                  <tr
-                    key={item.id}
-                    className="
-                    border-b
-                    border-zinc-100
-                    transition
-                    hover:bg-zinc-50
-                    "
-                  >
-
-                    <td className="py-6 font-semibold">
-                      {item.companies?.company_name ?? "-"}
-                    </td>
-
-                    <td>
-                      {item.job_title}
-                    </td>
-
-                    <td>
-                      {item.companies?.location ?? "-"}
-                    </td>
-
-                    <td>
-
-                      <span
-                        className={`
-                          rounded-full
-                          px-3
-                          py-1
-                          text-sm
-                          font-medium
-
-                          ${
-                            item.status === "New"
-                              ? "bg-green-100 text-green-700"
-                              : item.status === "Assigned"
-                              ? "bg-blue-100 text-blue-700"
-                              : item.status === "Closed"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-zinc-100 text-zinc-700"
-                          }
-                        `}
-                      >
-                        {item.status}
-                      </span>
-
-                    </td>
-
-                    <td className="text-zinc-500">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </td>
-
-                  </tr>
-
-                ))
-
-              )}
-
-            </tbody>
-
-          </table>
-
+        <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          {queues.map((item) => (
+            <QueueCard key={item.title} {...item} />
+          ))}
         </div>
-
       </section>
 
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Panel title="Latest employer requirements" subtitle="Newest hiring mandates across the platform.">
+          {latestRequirements.length ? (
+            latestRequirements.map((item: any) => (
+              <Row
+                key={item.id}
+                title={item.job_title}
+                meta={`${item.companies?.company_name ?? "Company"} | ${item.companies?.location ?? "Location not added"}`}
+                status={item.status}
+                href="/admin/requirements"
+              />
+            ))
+          ) : (
+            <Empty text="No hiring requirements yet." />
+          )}
+        </Panel>
+
+        <Panel title="Latest marketplace orders" subtitle="Newest customer bookings and paid service activity.">
+          {latestOrders.length ? (
+            latestOrders.map((item: any) => (
+              <Row
+                key={item.id}
+                title={item.service_title ?? "Marketplace service"}
+                meta={`${money.format(Number(item.amount ?? 0))} | ${new Date(item.created_at).toLocaleDateString("en-IN")}`}
+                status={item.status?.replaceAll("_", " ") ?? "new"}
+                href={`/marketplace/orders/${item.id}`}
+              />
+            ))
+          ) : (
+            <Empty text="No marketplace orders yet." />
+          )}
+        </Panel>
+      </section>
     </div>
-
   );
+}
 
+function AdminMetric({
+  title,
+  value,
+  note,
+  href,
+  icon: Icon,
+}: {
+  title: string;
+  value: number;
+  note: string;
+  href: string;
+  icon: ElementType;
+}) {
+  return (
+    <Link href={href} className="group rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="flex items-center justify-between">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white">
+          <Icon size={22} />
+        </span>
+        <ArrowRight className="text-zinc-400 transition group-hover:translate-x-1" size={18} />
+      </div>
+      <p className="mt-6 text-4xl font-bold tracking-[-.04em]">{value}</p>
+      <h2 className="mt-2 font-semibold">{title}</h2>
+      <p className="mt-1 text-sm text-zinc-500">{note}</p>
+    </Link>
+  );
+}
+
+function QueueCard({
+  title,
+  value,
+  text,
+  href,
+  icon: Icon,
+}: {
+  title: string;
+  value: number;
+  text: string;
+  href: string;
+  icon: ElementType;
+}) {
+  const active = value > 0;
+  return (
+    <Link href={href} className={`rounded-3xl border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${active ? "border-amber-200 bg-amber-50" : "border-zinc-200 bg-white"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <Icon className={active ? "text-amber-700" : "text-zinc-400"} />
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${active ? "bg-amber-200 text-amber-900" : "bg-zinc-100 text-zinc-500"}`}>
+          {value}
+        </span>
+      </div>
+      <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-zinc-500">{text}</p>
+    </Link>
+  );
+}
+
+function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  return (
+    <section className="rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm">
+      <h2 className="text-2xl font-bold">{title}</h2>
+      <p className="mt-1 text-sm text-zinc-500">{subtitle}</p>
+      <div className="mt-6 space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function Row({ title, meta, status, href }: { title: string; meta: string; status: string; href: string }) {
+  return (
+    <Link href={href} className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 transition hover:bg-zinc-100">
+      <div className="min-w-0">
+        <p className="truncate font-semibold">{title}</p>
+        <p className="mt-1 truncate text-xs text-zinc-500">{meta}</p>
+      </div>
+      <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold capitalize text-zinc-600">
+        {status}
+      </span>
+    </Link>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return <p className="rounded-2xl border border-dashed border-zinc-200 p-8 text-center text-sm text-zinc-500">{text}</p>;
 }

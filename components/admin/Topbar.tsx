@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CalendarDays, Menu, Search } from "lucide-react";
+import { CalendarDays, Menu, Search } from "lucide-react";
 
 export default function Topbar({ onMenu }: { onMenu?: () => void }) {
   const today = new Date().toLocaleDateString("en-IN", {
@@ -31,14 +31,9 @@ export default function Topbar({ onMenu }: { onMenu?: () => void }) {
           <span className="text-sm font-medium text-zinc-700">{today}</span>
         </div>
 
-        <button type="button" aria-label="View notifications" className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-200 bg-white transition hover:bg-zinc-100 sm:h-12 sm:w-12">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-500" />
-        </button>
-
         <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-2 py-2 sm:px-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-bold text-white sm:h-11 sm:w-11">A</div>
-          <div className="hidden lg:block"><p className="text-sm font-semibold">Amir Ansari</p><p className="text-xs text-zinc-500">Founder</p></div>
+          <div className="hidden lg:block"><p className="text-sm font-semibold">Admin</p><p className="text-xs text-zinc-500">Platform control</p></div>
         </div>
       </div>
     </header>

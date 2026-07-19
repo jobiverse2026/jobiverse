@@ -63,6 +63,10 @@ function clearSupabaseBrowserSession() {
   }
 }
 
+const browserSessionKey = "jobiverse-browser-session";
+const lastBrowserExitKey = "jobiverse-last-browser-exit";
+const restoredSessionGraceMs = 5000;
+
 
 interface AuthContextType {
   user: User | null;
@@ -175,6 +179,16 @@ export function AuthProvider({
 
     window.addEventListener("unhandledrejection", handleRejectedAuthRefresh);
 
+    const rememberBrowserExit = () => {
+      try {
+        window.localStorage.setItem(lastBrowserExitKey, String(Date.now()));
+      } catch {
+        // Ignore storage errors.
+      }
+    };
+
+    window.addEventListener("pagehide", rememberBrowserExit);
+
 
 
     const initializeAuth = async () => {
@@ -196,12 +210,26 @@ export function AuthProvider({
 
 
 
-      const validSession = error ? null : session;
-      const browserSessionKey = "jobiverse-browser-session";
+      let validSession = error ? null : session;
       const hasActiveBrowserSession = sessionStorage.getItem(browserSessionKey) === "active";
       const isPasswordRecovery = window.location.pathname === "/reset-password";
+      const isAuthCallback = window.location.pathname.includes("/auth/callback") || window.location.search.includes("code=");
+      const lastBrowserExit = Number(window.localStorage.getItem(lastBrowserExitKey) ?? 0);
+      const looksLikeReopenedAfterClose =
+        Boolean(validSession) &&
+        lastBrowserExit > 0 &&
+        Date.now() - lastBrowserExit > restoredSessionGraceMs &&
+        !isPasswordRecovery &&
+        !isAuthCallback;
 
-      if (!hasActiveBrowserSession && !isPasswordRecovery) sessionStorage.setItem(browserSessionKey, "active");
+      if (validSession && (!hasActiveBrowserSession || looksLikeReopenedAfterClose) && !isPasswordRecovery && !isAuthCallback) {
+        clearSupabaseBrowserSession();
+        await supabase.auth.signOut({ scope: "local" });
+        validSession = null;
+      }
+
+      if (!isPasswordRecovery) sessionStorage.setItem(browserSessionKey, "active");
+      window.localStorage.removeItem(lastBrowserExitKey);
       setSession(validSession);
 
       const currentUser = validSession?.user ?? null;
@@ -270,6 +298,7 @@ export function AuthProvider({
       mounted = false;
 
       window.removeEventListener("unhandledrejection", handleRejectedAuthRefresh);
+      window.removeEventListener("pagehide", rememberBrowserExit);
 
       subscription.unsubscribe();
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/authorization";
@@ -15,6 +16,7 @@ export async function updateCompanyVerification(formData: FormData) {
   const { error } = await adminSupabase.from("companies").update({ is_verified: verified }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/companies");
+  redirect(`/admin/companies?verified=${verified ? "1" : "0"}`);
 }
 
 export async function updateCompanyRecruiterSeatLimit(formData: FormData) {
@@ -24,6 +26,7 @@ export async function updateCompanyRecruiterSeatLimit(formData: FormData) {
   const { error } = await adminSupabase.from("companies").update({ recruiter_seat_limit: recruiterSeatLimit }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/companies");
+  redirect("/admin/companies?seats=1");
 }
 
 export async function updateRecruiterAccess(formData: FormData) {

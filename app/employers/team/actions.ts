@@ -41,6 +41,7 @@ export async function cancelEmployerRecruiterInvite(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_invitations").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id).eq("status", "pending");
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  redirect("/employers/team?cancelled=1");
 }
 
 export async function updateEmployerTeamMemberStatus(formData: FormData) {
@@ -50,6 +51,20 @@ export async function updateEmployerTeamMemberStatus(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_members").update({ status, updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  redirect(`/employers/team?member=${status === "active" ? "restored" : "suspended"}`);
+}
+
+export async function removeEmployerTeamMemberAccess(formData: FormData) {
+  const { user } = await requireRole(["employer"]);
+  const id = z.string().uuid().parse(formData.get("memberId"));
+  const { error } = await adminSupabase
+    .from("employer_team_members")
+    .delete()
+    .eq("id", id)
+    .eq("employer_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/employers/team");
+  redirect("/employers/team?removed=1");
 }
 
 export async function acceptEmployerInvitation(formData: FormData) {
