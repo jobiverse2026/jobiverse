@@ -91,3 +91,40 @@ export function hiringHealthScore(input: {
   const activityBase = input.activeRequirements ? 5 : 0;
   return Math.min(100, requirementCoverage + interviewMovement + closureMovement + directDemand + activityBase);
 }
+
+export type JobMatchInput = {
+  job_title?: string | null;
+  primary_skills?: string | null;
+  location?: string | null;
+  work_mode?: string | null;
+  employment_type?: string | null;
+  experience?: string | null;
+  companies?: { is_verified?: boolean | null }[] | null;
+};
+
+function words(value?: string | number | null) {
+  return String(value ?? "")
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/i)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 1);
+}
+
+export function computeJobMatch(profile?: CandidateIntelligenceProfile | null, job?: JobMatchInput | null) {
+  const profileSkills = new Set(words(profile?.primary_skills));
+  const jobSkills = words(job?.primary_skills);
+  const matchedSkills = jobSkills.filter((skill) => profileSkills.has(skill)).slice(0, 6);
+  const missingSkills = jobSkills.filter((skill) => !profileSkills.has(skill)).slice(0, 4);
+  const roleFit = words(profile?.preferred_roles).some((item) => words(job?.job_title).includes(item));
+  const locationFit = Boolean(profile?.preferred_locations && job?.location && words(profile.preferred_locations).some((item) => words(job.location).includes(item)));
+  const workModeFit = Boolean(profile?.work_mode && job?.work_mode && words(profile.work_mode).some((item) => words(job.work_mode).includes(item)));
+  const skillsScore = jobSkills.length ? Math.min(45, Math.round((matchedSkills.length / Math.min(jobSkills.length, 8)) * 45)) : 18;
+  const score = Math.min(98, skillsScore + (roleFit ? 20 : 8) + (locationFit ? 12 : 4) + (workModeFit ? 12 : 4) + (profile?.resume_path ? 6 : 0) + (profile?.interview_availability ? 5 : 0));
+  const reasons = [
+    matchedSkills.length ? `${matchedSkills.length} skill match${matchedSkills.length > 1 ? "es" : ""}` : "Skills need review",
+    roleFit ? "Role preference aligned" : "Role fit needs confirmation",
+    locationFit ? "Location preference aligned" : "Check location fit",
+    workModeFit ? "Work mode aligned" : "Check work mode",
+  ];
+  return { score, matchedSkills, missingSkills, reasons, recommended: score >= 70 };
+}

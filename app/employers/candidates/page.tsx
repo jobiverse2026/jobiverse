@@ -84,6 +84,42 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
           </section>
         )}
 
+        {filteredCandidates.length > 1 && (
+          <section className="mt-8 rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Candidate comparison</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-tight">Compare top profiles quickly</h2>
+              </div>
+              <span className="rounded-full bg-zinc-100 px-4 py-2 text-xs font-bold uppercase text-zinc-600">First 5 shown</span>
+            </div>
+            <div className="mt-6 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="text-xs uppercase tracking-wider text-zinc-400">
+                  <tr>
+                    <th className="px-3 py-3">Talent</th>
+                    <th className="px-3 py-3">Requirement</th>
+                    <th className="px-3 py-3">Skills</th>
+                    <th className="px-3 py-3">Experience</th>
+                    <th className="px-3 py-3">Notice</th>
+                    <th className="px-3 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCandidates.slice(0,5).map((candidate:any)=>{const req=firstRelation(candidate.requirements);return <tr key={`compare-${candidate.id}`} className="border-t border-zinc-100">
+                    <td className="px-3 py-4 font-semibold"><Link href={`/employers/candidates/${candidate.id}`} className="underline-offset-4 hover:underline">{candidate.full_name||"Candidate"}</Link></td>
+                    <td className="px-3 py-4 text-zinc-600">{req?.job_title||"Requirement"}</td>
+                    <td className="max-w-[260px] px-3 py-4 text-zinc-600">{candidate.primary_skills||"Under review"}</td>
+                    <td className="px-3 py-4 text-zinc-600">{candidate.total_experience||"Not specified"}</td>
+                    <td className="px-3 py-4 text-zinc-600">{candidate.notice_period||"Not specified"}</td>
+                    <td className="px-3 py-4"><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold">{candidate.status}</span></td>
+                  </tr>})}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         {offeredCandidates.length > 0 && (
           <section className="mt-10">
             <div className="mb-5 flex items-end justify-between gap-4">

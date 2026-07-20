@@ -84,6 +84,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
     { title: "Explore Opportunities", href: "/candidates/jobs" },
     { title: "Career", children: [
       { title: "Jobs", description: "Discover verified opportunities.", href: "/candidates/jobs", icon: Briefcase },
+      { title: "Job Alerts", description: "Set role, location and work-mode alerts.", href: "/candidates/job-alerts", icon: Sparkles },
       { title: "Saved Jobs", description: "Return to opportunities saved for later.", href: "/candidates/saved-jobs", icon: Bookmark },
       { title: "Applications", description: "Track applications, interviews and offers.", href: "/candidates/applications", icon: Target },
       { title: "Resume Studio", description: "Manage resumes and premium templates.", href: "/candidates/resume", icon: FileText },

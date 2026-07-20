@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bookmark, BrainCircuit, BriefcaseBusiness, CalendarDays, CircleDollarSign, FileText, MapPin, Search, Sparkles, Target, UserRound } from "lucide-react";
+import { ArrowRight, BellRing, Bookmark, BrainCircuit, BriefcaseBusiness, CalendarDays, CircleDollarSign, FileText, Gift, MapPin, Search, Sparkles, Target, UserRound } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
 import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
 import { OpenToWorkToggle } from "@/components/candidate/OpenToWorkToggle";
@@ -74,11 +74,37 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     </section>
     <section className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">{stats.map(([label, value, Icon, href]) => <Link href={href} key={label} className="group rounded-3xl border border-white bg-white/90 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><Icon className="text-zinc-400" /><p className="mt-5 text-sm text-zinc-500">{label}</p><div className="mt-2 flex items-center justify-between"><p className="text-3xl font-bold">{value}</p><ArrowRight className="text-zinc-400 transition group-hover:translate-x-1" size={18}/></div></Link>)}</section>
     <CareerIntelligencePanel profile={professional} verifiedItems={(itemsResult.data ?? []).filter((item) => item.verification_status === "verified").length} applications={applicationsResult.count ?? 0} savedJobs={savedResult.count ?? 0} resumeVersions={resumeVersionsResult.count ?? 0} />
+    <section className="mt-8 grid gap-5 lg:grid-cols-[1fr_.9fr]">
+      <article className="rounded-[2rem] border border-white bg-white/90 p-7 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Candidate timeline</p>
+        <h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Your career movement.</h2>
+        <div className="mt-6 space-y-4">
+          <TimelineItem done title="Profile created" text="Your JobiVerse account is active."/>
+          <TimelineItem done={Boolean(professional?.resume_path)} title="CV uploaded" text={professional?.resume_path ? "Resume is ready for applications." : "Upload your latest resume to improve apply readiness."}/>
+          <TimelineItem done={(applicationsResult.count ?? 0) > 0} title="First application" text={(applicationsResult.count ?? 0) > 0 ? `${applicationsResult.count} application(s) submitted.` : "Explore opportunities and apply when ready."}/>
+          <TimelineItem done={(interviewsResult.count ?? 0) > 0} title="Interview movement" text={(interviewsResult.count ?? 0) > 0 ? `${interviewsResult.count} interview-stage application(s).` : "Interview progress will appear here."}/>
+        </div>
+      </article>
+      <article className="rounded-[2rem] bg-zinc-950 p-7 text-white shadow-2xl">
+        <Gift />
+        <p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Growth loop</p>
+        <h2 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Refer genuine talent and grow with JobiVerse.</h2>
+        <p className="mt-4 text-sm leading-6 text-zinc-400">Share relevant roles or invite professionals. Referral tracking helps JobiVerse build a trusted talent universe.</p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Link href="/referrals" className="rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-zinc-950">Open referrals</Link>
+          <Link href="/candidates/job-alerts" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-semibold"><BellRing size={15}/>Job alerts</Link>
+        </div>
+      </article>
+    </section>
     <section className="mt-8"><JobiVerseCard person={userProfile} profile={professional} passport={passportResult.data} items={itemsResult.data} editable /></section>
-    <section className="mt-8"><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent tools</p><h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Manage your career workspace.</h2><div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3"><Action href="/candidates/profile" title="Professional Profile" description="Skills, experience and career preferences" icon={UserRound} /><Action href="/candidates/resume" title="Resume Studio & Services" description="Upload, replace and view your CV | Premium templates coming soon" icon={FileText} /><Action href="/candidates/resume-analysis" title="AI Resume Analyzer | Coming Soon" description="ATS estimate and actionable CV intelligence" icon={BrainCircuit} /><Action href="/candidates/jobs" title="Explore Opportunities" description="Discover published roles matching your goals" icon={BriefcaseBusiness} /><Action href="/candidates/saved-jobs" title="Saved Jobs" description="Review saved opportunities and continue applications" icon={Bookmark}/><Action href="/candidates/applications" title="Application Health" description="Track submitted applications, interviews and offers" icon={CalendarDays}/><Action href="/earn-with-jobiverse/dashboard" title="Earn with JobiVerse" description="Create offerings and track sales, earnings and payouts" icon={CircleDollarSign} /></div></section>
+    <section className="mt-8"><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent tools</p><h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Manage your career workspace.</h2><div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3"><Action href="/candidates/profile" title="Professional Profile" description="Skills, experience and career preferences" icon={UserRound} /><Action href="/candidates/resume" title="Resume Studio & Services" description="Upload, replace and view your CV | Premium templates coming soon" icon={FileText} /><Action href="/candidates/resume-analysis" title="AI Resume Analyzer | Coming Soon" description="ATS estimate and actionable CV intelligence" icon={BrainCircuit} /><Action href="/candidates/jobs" title="Explore Opportunities" description="Discover published roles matching your goals" icon={BriefcaseBusiness} /><Action href="/candidates/job-alerts" title="Job Alerts" description="Save role, location and work-mode preferences" icon={BellRing} /><Action href="/candidates/saved-jobs" title="Saved Jobs" description="Review saved opportunities and continue applications" icon={Bookmark}/><Action href="/candidates/applications" title="Application Health" description="Track submitted applications, interviews and offers" icon={CalendarDays}/><Action href="/earn-with-jobiverse/dashboard" title="Earn with JobiVerse" description="Create offerings and track sales, earnings and payouts" icon={CircleDollarSign} /></div></section>
   </div></main>;
 }
 
 function Action({ href, title, description, icon: Icon }: { href: string; title: string; description: string; icon: typeof UserRound }) {
   return <Link href={href} className="group rounded-3xl border border-white bg-white/90 p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><Icon size={21} /></span><h2 className="mt-6 text-xl font-semibold">{title}</h2><p className="mt-2 text-sm leading-6 text-zinc-500">{description}</p><span className="mt-6 flex items-center gap-2 text-sm font-semibold">Open <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span></Link>;
+}
+
+function TimelineItem({done,title,text}:{done:boolean;title:string;text:string}) {
+  return <div className="flex gap-4"><span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${done?"bg-emerald-500":"bg-zinc-300"}`}/><div><p className="font-semibold">{title}</p><p className="mt-1 text-sm text-zinc-500">{text}</p></div></div>;
 }
