@@ -10,6 +10,21 @@ const roleRoutes: Record<string, string> = {
 };
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const maintenanceMode = process.env.MAINTENANCE_MODE === "true";
+
+  if (maintenanceMode && !pathname.startsWith("/maintenance")) {
+    return NextResponse.redirect(new URL("/maintenance", request.url));
+  }
+
+  const matchedRoute = Object.keys(roleRoutes).find((path) =>
+    pathname.startsWith(path)
+  );
+
+  if (!matchedRoute) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -33,30 +48,24 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const matchedRoute = Object.keys(roleRoutes).find((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const requiredRole = roleRoutes[matchedRoute];
 
-  if (matchedRoute) {
-    const requiredRole = roleRoutes[matchedRoute];
+  if (!user) {
+    const loginRole = requiredRole === "creator" ? "creator" : requiredRole;
+    const loginUrl = new URL(`/login/${loginRole}`, request.url);
+    loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
+  }
 
-    if (!user) {
-      const loginRole = requiredRole === "creator" ? "creator" : requiredRole;
-      const loginUrl = new URL(`/login/${loginRole}`, request.url);
-      loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
-      return NextResponse.redirect(loginUrl);
-    }
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .single();
 
-    const { data: userRow } = await supabase
-      .from("users")
-      .select("role, is_active")
-      .eq("id", user.id)
-      .single();
-
-    const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(userRow?.role ?? "");
-    if (userRow?.is_active === false || (!hasCreatorAccess && userRow?.role !== requiredRole)) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+  const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(userRow?.role ?? "");
+  if (userRow?.is_active === false || (!hasCreatorAccess && userRow?.role !== requiredRole)) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return response;
@@ -64,13 +73,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
-    "/recruiter/:path*",
-    "/candidates/dashboard/:path*",
-    "/employers/dashboard/:path*",
-    "/employers/company/:path*",
-    "/employers/requirements/:path*",
-    "/employers/billing/:path*",
-    "/earn-with-jobiverse/dashboard/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|sitemap.xml|robots.txt|images).*)",
   ],
 };
