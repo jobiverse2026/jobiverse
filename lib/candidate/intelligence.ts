@@ -25,32 +25,8 @@ export type CandidateIntelligenceProfile = {
 };
 
 export function computeConfidenceScore(profile?: CandidateIntelligenceProfile | null, verifiedItems = 0) {
-  const checks = [
-    Boolean(profile?.headline),
-    Boolean(profile?.phone),
-    Boolean(profile?.current_location),
-    Boolean(profile?.total_experience),
-    Boolean(profile?.primary_skills),
-    Boolean(profile?.preferred_roles),
-    Boolean(profile?.notice_period),
-    Boolean(profile?.resume_path),
-    Boolean(profile?.open_to_work),
-    Boolean(profile?.interview_availability),
-    Boolean(profile?.deal_breakers || profile?.expected_salary_min || profile?.expected_ctc || profile?.work_mode),
-    Boolean(profile?.linkedin || profile?.portfolio_url),
-    verifiedItems > 0,
-  ];
-  const score = Math.round((checks.filter(Boolean).length / checks.length) * 100);
-  const missing = [
-    !profile?.resume_path && "Upload your latest CV",
-    !profile?.primary_skills && "Add top skills",
-    !profile?.preferred_roles && "Add preferred roles",
-    !profile?.notice_period && "Add notice period",
-    !profile?.interview_availability && "Add interview availability",
-    !profile?.deal_breakers && "Add deal-breakers",
-    !profile?.open_to_work && "Switch on Open to Work when ready",
-  ].filter(Boolean) as string[];
-  return { score, missing: missing.slice(0, 4) };
+  const report = computeProfileCompleteness(profile, verifiedItems);
+  return { score: report.score, missing: report.missing.slice(0, 4) };
 }
 
 export function confidenceTone(score: number) {
@@ -90,6 +66,73 @@ export function hiringHealthScore(input: {
   const directDemand = input.externalApplicants ? 10 : 0;
   const activityBase = input.activeRequirements ? 5 : 0;
   return Math.min(100, requirementCoverage + interviewMovement + closureMovement + directDemand + activityBase);
+}
+
+export function computeProfileCompleteness(profile?: CandidateIntelligenceProfile | null, verifiedItems = 0) {
+  const items = [
+    { label: "Headline", done: Boolean(profile?.headline), fix: "Add a sharp professional headline" },
+    { label: "Phone", done: Boolean(profile?.phone), fix: "Add your phone number" },
+    { label: "Location", done: Boolean(profile?.current_location), fix: "Add current location" },
+    { label: "Experience", done: Boolean(profile?.total_experience), fix: "Add total years of experience" },
+    { label: "Top skills", done: Boolean(profile?.primary_skills), fix: "Add top skills" },
+    { label: "Target roles", done: Boolean(profile?.preferred_roles), fix: "Add preferred roles" },
+    { label: "Notice period", done: Boolean(profile?.notice_period), fix: "Add notice period" },
+    { label: "Resume", done: Boolean(profile?.resume_path), fix: "Upload your latest CV" },
+    { label: "Open to Work", done: Boolean(profile?.open_to_work), fix: "Switch on Open to Work when ready" },
+    { label: "Interview availability", done: Boolean(profile?.interview_availability), fix: "Add interview availability" },
+    { label: "Deal breakers", done: Boolean(profile?.deal_breakers || profile?.expected_salary_min || profile?.expected_ctc || profile?.work_mode), fix: "Add salary, work mode or location deal-breakers" },
+    { label: "Proof links", done: Boolean(profile?.linkedin || profile?.portfolio_url), fix: "Add LinkedIn or portfolio link" },
+    { label: "Verified assets", done: verifiedItems > 0, fix: "Add/verify career wallet proofs" },
+  ];
+  const completed = items.filter((item) => item.done);
+  const score = Math.round((completed.length / items.length) * 100);
+  return {
+    score,
+    completed: completed.map((item) => item.label),
+    missing: items.filter((item) => !item.done).map((item) => item.fix),
+    total: items.length,
+    done: completed.length,
+  };
+}
+
+export function computeCareerScore(input: {
+  profile?: CandidateIntelligenceProfile | null;
+  verifiedItems?: number;
+  applications?: number;
+  savedJobs?: number;
+  resumeVersions?: number;
+}) {
+  const completeness = computeProfileCompleteness(input.profile, input.verifiedItems ?? 0).score;
+  const activity = Math.min(15, ((input.applications ?? 0) * 4) + ((input.savedJobs ?? 0) * 2));
+  const wallet = Math.min(12, ((input.resumeVersions ?? 0) * 3) + ((input.verifiedItems ?? 0) * 4));
+  const readiness = (input.profile?.open_to_work ? 6 : 0) + (input.profile?.interview_availability ? 5 : 0);
+  const score = Math.min(100, Math.round((completeness * 0.62) + activity + wallet + readiness));
+  const level = score >= 82 ? "Career-ready" : score >= 60 ? "Growing strong" : "Needs more depth";
+  return {
+    score,
+    level,
+    summary: score >= 82
+      ? "Your career profile looks strong for active opportunities."
+      : score >= 60
+        ? "You have a good base. Add the missing trust signals to move faster."
+        : "Build profile depth first so employers can understand your fit quickly.",
+  };
+}
+
+export function computeRecruiterQualityScore(input: {
+  candidates: number;
+  l1: number;
+  l2: number;
+  fulfilled: number;
+  requirementsWorked: number;
+}) {
+  const submissionBase = Math.min(30, input.candidates * 4);
+  const interviewMovement = input.candidates ? Math.min(25, Math.round(((input.l1 + input.l2) / input.candidates) * 35)) : 0;
+  const closureMovement = input.candidates ? Math.min(30, Math.round((input.fulfilled / input.candidates) * 100)) : 0;
+  const coverage = Math.min(15, input.requirementsWorked * 5);
+  const score = Math.min(100, submissionBase + interviewMovement + closureMovement + coverage);
+  const label = score >= 80 ? "Excellent" : score >= 60 ? "Strong" : score >= 35 ? "Building" : "Needs activity";
+  return { score, label };
 }
 
 export type JobMatchInput = {

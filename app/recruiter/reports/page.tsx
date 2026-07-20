@@ -3,6 +3,7 @@ import { BarChart3, BriefcaseBusiness, CalendarDays, CheckCircle2, FileText, Fil
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
 import { TableCsvDownloadButton } from "@/components/reports/TableCsvDownloadButton";
+import { computeRecruiterQualityScore } from "@/lib/candidate/intelligence";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -139,6 +140,7 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
     fulfilled: rows.reduce((sum, row) => sum + row.fulfilled, 0),
     openings: rows.reduce((sum, row) => sum + row.openings, 0),
   };
+  const quality = computeRecruiterQualityScore({ candidates: totals.submitted, l1: totals.l1, l2: totals.l2, fulfilled: totals.fulfilled, requirementsWorked: totals.requirements });
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -170,7 +172,7 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
           <Metric icon={<Users size={18} />} label="Candidates submitted" value={totals.submitted} />
           <Metric icon={<CalendarDays size={18} />} label="L1 interviews" value={totals.l1} />
           <Metric icon={<BarChart3 size={18} />} label="L2 interviews" value={totals.l2} />
-          <Metric icon={<CheckCircle2 size={18} />} label="Overall sufficed" value={`${pct(totals.fulfilled, totals.openings)}%`} />
+          <Metric icon={<CheckCircle2 size={18} />} label="Quality score" value={`${quality.score} / ${quality.label}`} />
         </section>
 
         <section className="mt-7 overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">

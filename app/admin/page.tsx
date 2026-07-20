@@ -84,6 +84,12 @@ export default async function AdminDashboardPage() {
       icon: Headphones,
     },
   ];
+  const launchControl = [
+    { title: "JobiVerse hiring queue", value: stats.jobiverseRequirements, note: "Assigned requirements to work", href: "/admin/requirements", icon: BriefcaseBusiness },
+    { title: "Candidate intelligence", value: stats.candidates, note: "Profiles tracked inside hiring ops", href: "/admin/candidates", icon: Users },
+    { title: "External applicants", value: stats.externalApplicants, note: "Direct job portal applicants to monitor", href: "/admin/candidates?source=external", icon: Sparkles },
+    { title: "Revenue operations", value: stats.activeOrders + stats.pendingRefunds + stats.pendingPayoutAccounts, note: "Orders, refunds and payouts needing control", href: "/admin/finance", icon: WalletCards },
+  ];
 
   return (
     <div className="space-y-8">
@@ -123,6 +129,22 @@ export default async function AdminDashboardPage() {
           {queues.map((item) => (
             <QueueCard key={item.title} {...item} />
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-[2.5rem] border border-zinc-200 bg-white p-7 shadow-sm">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Launch control dashboard</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Daily operating cockpit.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">Use this as the founder/admin morning view before checking individual modules.</p>
+          </div>
+          <Link href="/admin/analytics" className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">
+            Company reports <ArrowRight size={15} />
+          </Link>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {launchControl.map((item) => <QueueCard key={item.title} title={item.title} value={item.value} text={item.note} href={item.href} icon={item.icon} />)}
         </div>
       </section>
 

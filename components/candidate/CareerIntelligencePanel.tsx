@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, CalendarClock, CheckCircle2, ShieldCheck, SlidersHorizontal, WalletCards } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, CalendarClock, CheckCircle2, Gauge, ShieldCheck, SlidersHorizontal, WalletCards } from "lucide-react";
 
-import { computeConfidenceScore, confidenceTone, type CandidateIntelligenceProfile } from "@/lib/candidate/intelligence";
+import { computeCareerScore, computeConfidenceScore, computeProfileCompleteness, confidenceTone, type CandidateIntelligenceProfile } from "@/lib/candidate/intelligence";
 
 export function CareerIntelligencePanel({
   profile,
@@ -17,6 +17,8 @@ export function CareerIntelligencePanel({
   resumeVersions?: number;
 }) {
   const confidence = computeConfidenceScore(profile, verifiedItems);
+  const completeness = computeProfileCompleteness(profile, verifiedItems);
+  const careerScore = computeCareerScore({ profile, verifiedItems, applications, savedJobs, resumeVersions });
   const tone = confidenceTone(confidence.score);
   const walletItems = [
     ["CV versions", resumeVersions],
@@ -26,7 +28,7 @@ export function CareerIntelligencePanel({
   ] as const;
 
   return (
-    <section className="mt-8 grid gap-5 xl:grid-cols-[1.1fr_.9fr]">
+    <section className="mt-8 grid gap-5 xl:grid-cols-3">
       <article className="overflow-hidden rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
@@ -59,6 +61,25 @@ export function CareerIntelligencePanel({
       </article>
 
       <article className="rounded-[2rem] bg-zinc-950 p-7 text-white shadow-2xl">
+        <Gauge />
+        <p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Career score report</p>
+        <div className="mt-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-[-.04em]">{careerScore.level}</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">{careerScore.summary}</p>
+          </div>
+          <p className="text-5xl font-black tracking-[-.06em]">{careerScore.score}</p>
+        </div>
+        <div className="mt-5 rounded-full bg-white/10 p-1">
+          <div className="rounded-full bg-white py-1 text-center text-[10px] font-black text-zinc-950" style={{ width: `${Math.max(careerScore.score, 8)}%` }}>{careerScore.score}%</div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
+          <div className="rounded-2xl border border-white/10 bg-white/[.06] p-4"><span className="text-zinc-500">Profile depth</span><p className="mt-1 text-lg font-bold">{completeness.done}/{completeness.total}</p></div>
+          <div className="rounded-2xl border border-white/10 bg-white/[.06] p-4"><span className="text-zinc-500">Career activity</span><p className="mt-1 text-lg font-bold">{applications + savedJobs}</p></div>
+        </div>
+      </article>
+
+      <article className="rounded-[2rem] bg-zinc-950 p-7 text-white shadow-2xl">
         <WalletCards />
         <p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Career wallet</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-[-.04em]">Your career assets in one place.</h2>
@@ -75,7 +96,7 @@ export function CareerIntelligencePanel({
         </Link>
       </article>
 
-      <article className="rounded-[2rem] border border-zinc-200 bg-white p-7 xl:col-span-2">
+      <article className="rounded-[2rem] border border-zinc-200 bg-white p-7 xl:col-span-3">
         <div className="grid gap-4 md:grid-cols-3">
           <Feature icon={CalendarClock} title="Interview availability" text={profile?.interview_availability || "Add preferred interview slots so employers can schedule faster."} />
           <Feature icon={SlidersHorizontal} title="Deal-breaker matching" text={profile?.deal_breakers || "Add minimum salary, work mode, location or shift non-negotiables."} />

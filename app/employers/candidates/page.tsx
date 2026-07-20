@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, MapPin, Users } from "lucide-react";
+import { ArrowLeft, BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, MapPin, ShieldCheck, Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
@@ -71,6 +71,22 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
           </Link>
           {requirement && <Link href="/employers/candidates" className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700">Clear requirement filter</Link>}
         </section>
+
+        {visibleCandidates.some((candidate:any) => isJobiverseCandidate(candidate)) && (
+          <section className="mt-6 rounded-[2rem] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-500 text-white"><ShieldCheck size={21} /></span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-700">Hire through JobiVerse protection</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-zinc-950">Introduced profiles are protected hiring records.</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600">If a JobiVerse-submitted candidate progresses, interviews, offers and joining must be updated here. Direct hiring after introduction is still a JobiVerse-assisted hire and success terms apply.</p>
+                </div>
+              </div>
+              <Link href="/terms" className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">View terms</Link>
+            </div>
+          </section>
+        )}
 
         {!!stageSummary.length && (
           <section className="mt-6 flex flex-wrap gap-3">
