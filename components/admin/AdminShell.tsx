@@ -9,7 +9,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-zinc-50 pt-24 sm:pt-28">
+    <div className="min-h-screen bg-zinc-50">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       {sidebarOpen && <button type="button" aria-label="Close admin navigation" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-[55] cursor-default bg-black/40 backdrop-blur-sm lg:hidden" />}
       <div className="min-h-screen lg:ml-[270px]">

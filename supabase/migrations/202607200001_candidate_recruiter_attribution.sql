@@ -4,7 +4,8 @@ begin;
 
 alter table public.candidates
   add column if not exists recruiter_name text,
-  add column if not exists recruiter_email text;
+  add column if not exists recruiter_email text,
+  add column if not exists source text not null default 'recruiter';
 
 update public.candidates c
 set
@@ -22,6 +23,9 @@ comment on column public.candidates.recruiter_name is
 
 comment on column public.candidates.recruiter_email is
   'Snapshot of the recruiter email at submission time for reports and attribution.';
+
+comment on column public.candidates.source is
+  'Candidate introduction source such as recruiter, jobiverse_hiring_team, or jobs_portal.';
 
 notify pgrst, 'reload schema';
 
