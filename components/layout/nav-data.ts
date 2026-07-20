@@ -90,6 +90,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
       { title: "Job Alerts", description: "Set role, location and work-mode alerts.", href: "/candidates/job-alerts", icon: Sparkles },
       { title: "Saved Jobs", description: "Return to opportunities saved for later.", href: "/candidates/saved-jobs", icon: Bookmark },
       { title: "Applications", description: "Track applications, interviews and offers.", href: "/candidates/applications", icon: Target },
+      { title: "Card Analytics", description: "Track public JobiVerse Card views.", href: "/candidates/card-analytics", icon: Search },
       { title: "Resume Studio", description: "Manage resumes and premium templates.", href: "/candidates/resume", icon: FileText },
       { title: "Consultations", description: "Book and track personal guidance.", href: "/consultations/my", icon: UserRound },
       { title: "Plans", description: "Optional career support memberships.", href: "/plans", icon: Sparkles },
@@ -134,6 +135,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
       { title: "JobiVerse Queue", description: "View only requirements assigned to JobiVerse Hiring Team.", href: "/admin/requirements", icon: Briefcase },
       { title: "Companies", description: "Review employer organizations.", href: "/admin/companies", icon: Building2 },
       { title: "JobiVerse Candidates", description: "Track candidates submitted by JobiVerse to employers.", href: "/admin/candidates", icon: Users },
+      { title: "Protection Audit", description: "Audit JobiVerse introductions, commercial terms and protection windows.", href: "/admin/protection-audit", icon: ShieldCheck },
       { title: "Company Reports", description: "Review company-level hiring and performance reports.", href: "/admin/analytics", icon: FileText },
     ]},
     { title: "Platform", children: [

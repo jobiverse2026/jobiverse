@@ -109,3 +109,47 @@ export async function scheduleExternalApplicantInterview(values: unknown) {
   revalidatePath(`/employers/external-applicants/${application.id}`);
   return { success: "Interview scheduled successfully." };
 }
+
+export async function updateExternalInterviewFeedback(values: unknown) {
+  const parsed = z.object({
+    interviewId: z.string().uuid(),
+    applicationId: z.string().uuid(),
+    status: z.enum(["completed", "cancelled", "rescheduled", "no_show"]),
+    feedback: z.string().trim().max(3000).optional(),
+    rating: z.coerce.number().int().min(1).max(5).optional(),
+  }).parse(values);
+
+  const { user, profile } = await requireRole(["employer"]);
+  const { application } = await ownedApplication(parsed.applicationId, user.id);
+
+  const { error } = await adminSupabase
+    .from("application_interviews")
+    .update({
+      status: parsed.status,
+      feedback: parsed.feedback || null,
+      rating: parsed.rating || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", parsed.interviewId)
+    .eq("application_id", parsed.applicationId);
+
+  if (error) throw new Error(error.message);
+
+  if (parsed.status === "completed") {
+    await adminSupabase
+      .from("candidate_applications")
+      .update({ status: "Interview", updated_at: new Date().toISOString() })
+      .eq("id", parsed.applicationId);
+  }
+
+  const requirement = Array.isArray((application as any).requirements) ? (application as any).requirements[0] : (application as any).requirements;
+  await notifyAdminsAboutExternalApplication(
+    application,
+    "External applicant interview feedback updated",
+    `${profile.full_name || profile.email || "Employer"} saved interview feedback for ${application.applicant_name || "an external applicant"} on ${requirement?.job_title || "a published role"}.`
+  );
+
+  revalidatePath("/admin/candidates");
+  revalidatePath(`/employers/external-applicants/${parsed.applicationId}`);
+  return { success: "Interview feedback saved successfully." };
+}

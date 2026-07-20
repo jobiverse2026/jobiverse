@@ -13,6 +13,12 @@ export default async function PublicPassport({ params }: { params: Promise<{ slu
     .maybeSingle();
   if (!passport) notFound();
 
+  await adminSupabase.from("candidate_card_views").insert({
+    candidate_user_id: passport.user_id,
+    public_slug: passport.public_slug,
+    source: "public_card",
+  });
+
   const [{ data: person }, { data: profile }, { data: items }] = await Promise.all([
     adminSupabase.from("users").select("full_name,avatar_url").eq("id", passport.user_id).single(),
     adminSupabase.from("candidate_profiles").select("headline,current_location,total_experience,primary_skills,preferred_roles,role_level,industry,functional_area,work_mode,open_to_work,profile_completion").eq("user_id", passport.user_id).maybeSingle(),
