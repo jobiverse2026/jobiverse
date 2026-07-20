@@ -6,8 +6,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/authorization";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { adminSupabase } from "@/lib/supabase/admin";
-
-const siteUrl = () => (process.env.NEXT_PUBLIC_SITE_URL || "https://www.jobiverse.in").replace(/\/$/, "");
+import { claimPendingEmployerTeamInvite } from "@/lib/employer-team/invitations";
 
 async function employerCompany(employerId: string) {
   const { data, error } = await adminSupabase.from("companies").select("id,owner_id,company_name,recruiter_seat_limit,employer_seat_limit").eq("owner_id", employerId).maybeSingle();
@@ -18,23 +17,38 @@ async function employerCompany(employerId: string) {
 
 export async function inviteEmployerRecruiter(formData: FormData) {
   const { user } = await requireRole(["employer"]);
-  const email = z.string().trim().email().parse(formData.get("email")).toLowerCase();
+  const rawEmails = [...formData.getAll("emails"), formData.get("email")]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase())
+    .filter(Boolean);
+  const emails = Array.from(new Set(rawEmails));
+  if (!emails.length) throw new Error("Add at least one email address.");
+  const emailSchema = z.string().trim().email();
+  const invalidEmail = emails.find((email) => !emailSchema.safeParse(email).success);
+  if (invalidEmail) throw new Error(`Invalid email address: ${invalidEmail}`);
   const inviteRole = z.enum(["employer", "recruiter"]).parse(formData.get("inviteRole") ?? "recruiter");
   const company = await employerCompany(user.id);
-  const [{ count: activeMembers }, { count: pendingInvites }] = await Promise.all([
+  const [{ count: activeMembers }, { count: pendingInvites }, { data: duplicateInvites }] = await Promise.all([
     adminSupabase.from("employer_team_members").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("status", "active"),
     adminSupabase.from("employer_team_invitations").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").gt("expires_at", new Date().toISOString()),
+    adminSupabase.from("employer_team_invitations").select("invited_email").eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").in("invited_email", emails),
   ]);
+  const duplicateEmails = (duplicateInvites ?? []).map((invite) => invite.invited_email);
+  if (duplicateEmails.length) throw new Error(`These emails already have pending ${inviteRole} access: ${duplicateEmails.join(", ")}`);
   const usedSeats = (activeMembers ?? 0) + (pendingInvites ?? 0);
   const seatLimit = inviteRole === "employer" ? company.employer_seat_limit : company.recruiter_seat_limit;
-  if (usedSeats >= seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Current limit: ${seatLimit}. Ask JobiVerse admin to increase seats.`);
-  const token = crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", "");
-  const inviteUrl = `${siteUrl()}/employer-invite/${token}`;
-  const { error } = await adminSupabase.from("employer_team_invitations").insert({ company_id: company.id, employer_id: user.id, invited_email: email, token, role: inviteRole });
+  if (usedSeats + emails.length > seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Seats left: ${Math.max(0, seatLimit - usedSeats)}. You tried to add ${emails.length}. Ask JobiVerse admin to increase seats.`);
+  const rows = emails.map((email) => ({
+    company_id: company.id,
+    employer_id: user.id,
+    invited_email: email,
+    token: crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", ""),
+    role: inviteRole,
+  }));
+  const { error } = await adminSupabase.from("employer_team_invitations").insert(rows);
   if (error) throw new Error(error.code === "23505" ? "This email already has a pending invite for your company." : error.message);
-  await adminSupabase.auth.admin.inviteUserByEmail(email, { redirectTo: inviteUrl }).catch(() => null);
   revalidatePath("/employers/team");
-  redirect(`/employers/team?invited=${encodeURIComponent(email)}&role=${inviteRole}`);
+  redirect(`/employers/team?invited_count=${emails.length}&role=${inviteRole}`);
 }
 
 export async function cancelEmployerRecruiterInvite(formData: FormData) {
@@ -78,16 +92,7 @@ export async function acceptEmployerInvitation(formData: FormData) {
   if (error) throw new Error(error.message);
   if (!invite || invite.status !== "pending" || new Date(invite.expires_at).getTime() < Date.now()) throw new Error("This invite is no longer valid.");
   if (invite.invited_email.toLowerCase() !== user.email.toLowerCase()) throw new Error("Please sign in using the invited email address.");
-  const now = new Date().toISOString();
   const invitedRole = invite.role === "employer" ? "employer" : "recruiter";
-  const { data: account } = await adminSupabase.from("users").select("role").eq("id", user.id).maybeSingle();
-  if (account?.role && !["candidate", invitedRole].includes(account.role)) {
-    throw new Error(`This invite is for a ${invitedRole} seat. Please use an account that is not already assigned to another portal.`);
-  }
-  const { error: roleError } = await adminSupabase.from("users").update({ role: invitedRole, updated_at: now }).eq("id", user.id);
-  if (roleError) throw new Error(roleError.message);
-  const { error: memberError } = await adminSupabase.from("employer_team_members").upsert({ company_id: invite.company_id, employer_id: invite.employer_id, user_id: user.id, email: user.email.toLowerCase(), role: invitedRole, status: "active", updated_at: now }, { onConflict: "company_id,user_id" });
-  if (memberError) throw new Error(memberError.message);
-  await adminSupabase.from("employer_team_invitations").update({ status: "accepted", invited_user_id: user.id, accepted_at: now, updated_at: now }).eq("id", invite.id);
+  await claimPendingEmployerTeamInvite({ userId: user.id, email: user.email, expectedRole: invitedRole });
   redirect(invitedRole === "employer" ? "/employers/dashboard?team=accepted" : "/recruiter?team=accepted");
 }

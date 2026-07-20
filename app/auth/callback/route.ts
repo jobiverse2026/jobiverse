@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { claimPendingEmployerTeamInvite } from "@/lib/employer-team/invitations";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 
@@ -63,6 +64,15 @@ export async function GET(request: Request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(`${origin}/login/${requestedRole}`);
+
+  if ((requestedRole === "employer" || requestedRole === "recruiter") && user.email) {
+    try {
+      await claimPendingEmployerTeamInvite({ userId: user.id, email: user.email, expectedRole: requestedRole });
+    } catch {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login/${requestedRole}?error=wrong_role`);
+    }
+  }
 
   const { data: profile, error: profileError } = await supabase.from("users").select("role").eq("id", user.id).single();
   if (profileError || !profile || !(profile.role in roleRedirect)) {

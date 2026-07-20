@@ -222,7 +222,7 @@ export default function LoginCard({ role = "candidate" }: Props) {
           </button>
         </div>
 
-        {(role === "candidate" || role === "employer" || role === "creator") && <p className="text-center text-sm text-zinc-500">
+        {(role === "candidate" || role === "employer" || role === "recruiter" || role === "creator") && <p className="text-center text-sm text-zinc-500">
           New to JobiVerse?{" "}
           <Link
             href={`/signup?role=${role}`}

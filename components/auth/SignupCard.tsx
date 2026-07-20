@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { hasPendingEmployerTeamInvite } from "@/app/signup/actions";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 
@@ -80,16 +81,34 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   const supabase = createBrowserSupabaseClient();
   const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
   const inviteSignup = Boolean(safeNext?.startsWith("/employer-invite/"));
-  const privilegedRole = role === "admin" || (role === "recruiter" && !inviteSignup);
+  const privilegedRole = role === "admin";
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (privilegedRole) {
-      setSuccess(`${role === "admin" ? "Admin" : "Recruiter"} self-signup is not open. You are not authorized for this portal unless JobiVerse or an employer has invited this email.`);
+    if (role === "admin") {
+      setSuccess("Admin self-signup is not open. You are not authorized for this portal unless JobiVerse has assigned admin access.");
       return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (role === "recruiter" && !inviteSignup) {
+      setLoading(true);
+      try {
+        const invited = await hasPendingEmployerTeamInvite(normalizedEmail, "recruiter");
+        if (!invited) {
+          setError("You are not authorized for the recruiter portal yet. Ask your employer to add this exact email in Team seats first.");
+          setLoading(false);
+          return;
+        }
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Unable to verify recruiter access. Please try again.");
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
     }
 
     if (password !== confirmPassword) {
@@ -107,7 +126,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
     let signupResult;
     try {
       signupResult = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         password,
         options: {
           data: {
@@ -141,9 +160,20 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
 
     // If Supabase has "Confirm email" enabled, there's no session yet
     if (data.user && !data.session) {
-      setSuccess("Check your email to confirm your account before logging in.");
+      setSuccess(role === "recruiter" ? "Account created. After confirmation, login from Recruiter portal with this invited email." : "Check your email to confirm your account before logging in.");
       setLoading(false);
       return;
+    }
+
+    if ((role === "employer" || role === "recruiter") && data.session?.access_token) {
+      await fetch("/api/team-invites/claim", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${data.session.access_token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ role }),
+      }).catch(() => null);
     }
 
     // Email confirmation disabled - user is signed in immediately
@@ -152,7 +182,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   };
 
   const handleGoogleAuth = async () => {
-    if (privilegedRole) {
+    if (role === "admin") {
       setError("You are not authorized for this portal unless JobiVerse or an employer has invited this email.");
       return;
     }
@@ -165,7 +195,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   };
 
   const handleLinkedInAuth = async () => {
-    if (privilegedRole) {
+    if (role === "admin") {
       setError("You are not authorized for this portal unless JobiVerse or an employer has invited this email.");
       return;
     }

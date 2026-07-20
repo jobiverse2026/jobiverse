@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { ArrowLeft, BriefcaseBusiness, Mail, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
+import { ArrowLeft, BriefcaseBusiness, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
-import { cancelEmployerRecruiterInvite, inviteEmployerRecruiter, removeEmployerTeamMemberAccess, updateEmployerTeamMemberStatus } from "./actions";
+import { TeamInviteForm } from "@/components/employer/team/TeamInviteForm";
+import { cancelEmployerRecruiterInvite, removeEmployerTeamMemberAccess, updateEmployerTeamMemberStatus } from "./actions";
 
 type TeamRole = "employer" | "recruiter";
 
 export default async function EmployerTeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ invited?: string; role?: string; cancelled?: string; member?: string; removed?: string }>;
+  searchParams: Promise<{ invited?: string; invited_count?: string; role?: string; cancelled?: string; member?: string; removed?: string }>;
 }) {
   const { user } = await requireRole(["employer"]);
   const params = await searchParams;
@@ -51,6 +52,8 @@ export default async function EmployerTeamPage({
   const invitedRole = params.role === "employer" ? "Employer" : "Recruiter";
   const successMessage = params.invited
     ? `${invitedRole} invitation created for ${params.invited}.`
+    : params.invited_count
+      ? `${params.invited_count} ${invitedRole.toLowerCase()} access ${params.invited_count === "1" ? "entry" : "entries"} created successfully.`
     : params.cancelled
       ? "Invitation cancelled successfully."
       : params.member === "restored"
@@ -89,7 +92,7 @@ export default async function EmployerTeamPage({
           <>
             {successMessage && (
               <p className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
-                {successMessage} If invite email is delayed, the invited person can sign up or log in with the same email and open the invite link.
+                {successMessage} The user can now sign up or log in with the exact same email. No invitation email is required.
               </p>
             )}
 
@@ -115,37 +118,7 @@ export default async function EmployerTeamPage({
             </section>
 
             <section className="mt-7 grid gap-7 lg:grid-cols-[.9fr_1.1fr]">
-              <form action={inviteEmployerRecruiter} className="rounded-[2rem] border bg-white p-7 shadow-sm">
-                <Mail className="text-zinc-400" />
-                <h2 className="mt-5 text-2xl font-semibold">Invite by email</h2>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Choose the access type carefully. Employer seats open employer workspace. Recruiter seats open recruiter desk.
-                </p>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
-                    <input type="radio" name="inviteRole" value="employer" className="mr-2" />
-                    Employer access
-                    <span className="mt-1 block text-xs font-normal text-zinc-500">{left.employer} seats left</span>
-                  </label>
-                  <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
-                    <input type="radio" name="inviteRole" value="recruiter" defaultChecked className="mr-2" />
-                    Recruiter access
-                    <span className="mt-1 block text-xs font-normal text-zinc-500">{left.recruiter} seats left</span>
-                  </label>
-                </div>
-
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="person@company.com"
-                  className="mt-5 h-13 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 outline-none focus:border-zinc-500"
-                />
-                <button className="mt-4 w-full cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 font-semibold text-white">
-                  Send role-based invite
-                </button>
-              </form>
+              <TeamInviteForm employerSeatsLeft={left.employer} recruiterSeatsLeft={left.recruiter} />
 
               <section className="rounded-[2rem] border bg-white p-7 shadow-sm">
                 <div className="flex items-center gap-3">
