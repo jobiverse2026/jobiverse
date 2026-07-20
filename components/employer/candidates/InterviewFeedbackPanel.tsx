@@ -20,6 +20,14 @@ export function InterviewFeedbackPanel({
   const [feedback, setFeedback] = useState(currentFeedback ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rescheduleDay, setRescheduleDay] = useState("");
+  const [rescheduleHour, setRescheduleHour] = useState("10");
+  const [rescheduleMinute, setRescheduleMinute] = useState("00");
+  const [rescheduleMeridiem, setRescheduleMeridiem] = useState("AM");
+
+  const rescheduledDate = rescheduleDay
+    ? `${rescheduleDay}T${String(rescheduleMeridiem === "PM" ? (Number(rescheduleHour) % 12) + 12 : Number(rescheduleHour) % 12).padStart(2, "0")}:${rescheduleMinute}`
+    : "";
 
   async function submit(formData: FormData) {
     setBusy(true);
@@ -32,7 +40,7 @@ export function InterviewFeedbackPanel({
         feedback,
         rating: formData.get("rating") || undefined,
         candidateStatus: formData.get("candidateStatus"),
-        rescheduledDate: formData.get("rescheduledDate") || undefined,
+        rescheduledDate: rescheduledDate || undefined,
       });
       setMessage("Interview feedback saved successfully.");
     } catch (error) {
@@ -96,7 +104,45 @@ export function InterviewFeedbackPanel({
           ))}
         </select>
       </div>
-      <input name="rescheduledDate" type="datetime-local" className="mt-3 h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm" />
+      <div className="mt-3 grid gap-3 sm:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <input
+          type="date"
+          value={rescheduleDay}
+          onChange={(event) => setRescheduleDay(event.target.value)}
+          className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm"
+          aria-label="Reschedule date"
+        />
+        <select
+          value={rescheduleHour}
+          onChange={(event) => setRescheduleHour(event.target.value)}
+          className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm"
+          aria-label="Reschedule hour"
+        >
+          {Array.from({ length: 12 }, (_, index) => String(index + 1)).map((hour) => (
+            <option key={hour} value={hour}>{hour.padStart(2, "0")}</option>
+          ))}
+        </select>
+        <select
+          value={rescheduleMinute}
+          onChange={(event) => setRescheduleMinute(event.target.value)}
+          className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm"
+          aria-label="Reschedule minute"
+        >
+          {["00", "15", "30", "45"].map((minute) => (
+            <option key={minute} value={minute}>{minute}</option>
+          ))}
+        </select>
+        <select
+          value={rescheduleMeridiem}
+          onChange={(event) => setRescheduleMeridiem(event.target.value)}
+          className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm"
+          aria-label="Reschedule AM or PM"
+        >
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+      <p className="mt-2 text-xs text-zinc-400">Use this only when the interview status is Rescheduled.</p>
       {message && <p className={`mt-3 text-sm font-semibold ${message.includes("successfully") ? "text-emerald-700" : "text-red-600"}`}>{message}</p>}
       <button disabled={busy} className="mt-4 w-full cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">
         {busy ? "Saving..." : "Save feedback"}
