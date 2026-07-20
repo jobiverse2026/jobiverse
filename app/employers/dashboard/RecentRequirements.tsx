@@ -2,9 +2,20 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 
-type Requirement = { id: string; job_title: string; status: string; assigned_recruiter: string | null; created_at: string; is_public?: boolean | null; hiring_team_requested?: boolean | null; candidates: { count: number }[] };
+type Requirement = {
+  id: string;
+  job_title: string;
+  status: string;
+  assigned_recruiter: string | null;
+  created_at: string;
+  is_public?: boolean | null;
+  hiring_team_requested?: boolean | null;
+  candidate_count?: number;
+  latest_candidate_status?: string | null;
+  candidate_status_counts?: { stage: string; count: number }[];
+};
 
 export default function RecentRequirements({ requirements }: { requirements: Requirement[] }) {
   return (
@@ -34,12 +45,13 @@ export default function RecentRequirements({ requirements }: { requirements: Req
               <th className="pb-4">Position</th>
               <th className="pb-4">Hiring channel</th>
               <th className="pb-4">Candidates</th>
-              <th className="pb-4">Status</th>
+              <th className="pb-4">Candidate status</th>
+              <th className="pb-4">Requirement status</th>
             </tr>
           </thead>
 
           <tbody>
-            {!requirements.length ? <tr><td colSpan={4} className="py-10 text-center text-zinc-500">No requirements created yet.</td></tr> : requirements.map((item) => (
+            {!requirements.length ? <tr><td colSpan={5} className="py-10 text-center text-zinc-500">No requirements created yet.</td></tr> : requirements.map((item) => (
               <tr
                 key={item.id}
                 className="border-b last:border-none"
@@ -59,12 +71,27 @@ export default function RecentRequirements({ requirements }: { requirements: Req
                   </div>
                 </td>
 
-                <td>{item.candidates?.[0]?.count ?? 0}</td>
+                <td>
+                  <Link href={`/employers/candidates?requirement=${item.id}`} className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-3 py-2 text-xs font-bold text-white transition hover:-translate-y-0.5">
+                    <Users size={14} />
+                    {item.candidate_count ?? 0} submitted
+                  </Link>
+                </td>
 
                 <td>
-                  <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
+                  <div className="flex flex-wrap gap-2">
+                    {item.candidate_status_counts?.length ? item.candidate_status_counts.map((status) => (
+                      <Link key={status.stage} href={`/employers/candidates?requirement=${item.id}&status=${encodeURIComponent(status.stage)}`} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
+                        {status.stage}: {status.count}
+                      </Link>
+                    )) : <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">No candidates</span>}
+                  </div>
+                </td>
+
+                <td>
+                  <Link href={`/employers/requirements/${item.id}`} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">
                     {item.status}
-                  </span>
+                  </Link>
                 </td>
               </tr>
             ))}

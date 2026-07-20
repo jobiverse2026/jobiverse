@@ -8,14 +8,14 @@ import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@
 const clientVisibleStatuses = ["Submitted", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
-export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string }> }) {
+export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string; requirement?: string }> }) {
   const { supabase, user } = await requireRole(["employer"]);
-  const { source = "all", status = "all" } = await searchParams;
+  const { source = "all", status = "all", requirement = "" } = await searchParams;
   const access = await getEmployerCompanyAccess(user.id);
 
   const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(supabase
     .from("candidates")
-    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
+    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(id,job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
     .in("status", clientVisibleStatuses)
     .order("created_at", { ascending: false });
 
@@ -25,13 +25,14 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
   const visibleCandidates = source === "jobiverse"
     ? allCandidates.filter((candidate:any) => candidate.recruiter_name === "JobiVerse Hiring Team")
     : allCandidates;
-  const filteredCandidates = status === "all" ? visibleCandidates : visibleCandidates.filter((candidate:any) => candidate.status === status);
+  const requirementCandidates = requirement ? visibleCandidates.filter((candidate:any) => firstRelation(candidate.requirements)?.id === requirement) : visibleCandidates;
+  const filteredCandidates = status === "all" ? requirementCandidates : requirementCandidates.filter((candidate:any) => candidate.status === status);
   const offeredCandidates = filteredCandidates.filter((candidate:any) => {
     const placement = firstRelation(candidate.placements);
     return placement ? ["offered", "accepted"].includes(String(placement.status ?? "").toLowerCase()) : false;
   });
   const stageSummary = clientVisibleStatuses
-    .map((status) => ({ status, count: visibleCandidates.filter((candidate:any) => candidate.status === status).length }))
+    .map((status) => ({ status, count: requirementCandidates.filter((candidate:any) => candidate.status === status).length }))
     .filter((item) => item.count > 0);
 
   return (
@@ -62,23 +63,24 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
         </div>
 
         <section className="mt-6 flex flex-wrap gap-3">
-          <Link href="/employers/candidates" className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "all" ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}>
+          <Link href={requirement ? `/employers/candidates?requirement=${requirement}` : "/employers/candidates"} className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "all" ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}>
             All submitted
           </Link>
-          <Link href="/employers/candidates?source=jobiverse" className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "jobiverse" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-zinc-200 bg-white text-zinc-700"}`}>
+          <Link href={`/employers/candidates?source=jobiverse${requirement ? `&requirement=${requirement}` : ""}`} className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "jobiverse" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-zinc-200 bg-white text-zinc-700"}`}>
             JobiVerse submitted
           </Link>
+          {requirement && <Link href="/employers/candidates" className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700">Clear requirement filter</Link>}
         </section>
 
         {!!stageSummary.length && (
           <section className="mt-6 flex flex-wrap gap-3">
             {stageSummary.map((item) => (
-              <Link href={`/employers/candidates?source=${source}&status=${encodeURIComponent(item.status)}`} key={item.status} className={`rounded-2xl border px-5 py-3 shadow-sm transition hover:-translate-y-0.5 ${status === item.status ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-950"}`}>
+              <Link href={`/employers/candidates?source=${source}&status=${encodeURIComponent(item.status)}${requirement ? `&requirement=${requirement}` : ""}`} key={item.status} className={`rounded-2xl border px-5 py-3 shadow-sm transition hover:-translate-y-0.5 ${status === item.status ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-950"}`}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{item.status}</p>
                 <p className="mt-1 text-xl font-bold">{item.count}</p>
               </Link>
             ))}
-            {status !== "all" && <Link href={`/employers/candidates?source=${source}`} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm">Clear filter</Link>}
+            {status !== "all" && <Link href={`/employers/candidates?source=${source}${requirement ? `&requirement=${requirement}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm">Clear status filter</Link>}
           </section>
         )}
 
