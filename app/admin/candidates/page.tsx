@@ -7,6 +7,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 
 const statuses = ["Submitted", "Screening", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
 const externalStatuses = ["Applied", "Under Review", "Shortlisted", "Interview", "Offered", "Hired", "Rejected", "Withdrawn"] as const;
+const statusFilterOptions = [...new Set([...statuses, ...externalStatuses])];
 
 export default async function AdminCandidatesPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; source?: string }> }) {
   await requireRole(["admin"]);
@@ -94,7 +95,7 @@ export default async function AdminCandidatesPage({ searchParams }: { searchPara
         </select>
         <select name="status" defaultValue={status} className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4">
           <option value="all">All statuses</option>
-          {[...statuses, ...externalStatuses].map((item) => <option key={item} value={item}>{item}</option>)}
+          {statusFilterOptions.map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
         <button className="cursor-pointer rounded-xl bg-zinc-950 px-6 font-semibold text-white">Apply filters</button>
       </form>
