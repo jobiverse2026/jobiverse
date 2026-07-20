@@ -11,7 +11,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import { getRequirement } from "@/actions/requirements";
+import { getAssignableRequirementRecruiters, getRequirement } from "@/actions/requirements";
 import RequirementControls from "@/components/employer/requirements/RequirementControls";
 
 export default async function EmployerRequirementDetailPage({
@@ -20,7 +20,10 @@ export default async function EmployerRequirementDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const requirement = await getRequirement(id);
+  const [requirement, recruiters] = await Promise.all([
+    getRequirement(id),
+    getAssignableRequirementRecruiters(),
+  ]);
 
   const details = [
     { label: "Department", value: requirement.department, icon: Building2 },
@@ -90,7 +93,7 @@ export default async function EmployerRequirementDetailPage({
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
-          <RequirementControls requirement={requirement} />
+          <RequirementControls requirement={requirement} recruiters={recruiters} />
           <section className="rounded-[2.25rem] border border-amber-200 bg-amber-50 p-6">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-700">Hiring channel</p>
             <h2 className="mt-2 text-xl font-semibold text-amber-950">

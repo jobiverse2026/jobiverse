@@ -2,44 +2,75 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createRequirement } from "@/actions/requirements";
+import { createRequirement, updateRequirement } from "@/actions/requirements";
 import { ArrowRight, BadgeCheck, FileText, Globe2, Target, UsersRound } from "lucide-react";
 
-export default function RequirementForm() {
+type RequirementFormProps = {
+  mode?: "create" | "edit";
+  requirementId?: string;
+  initialValues?: Partial<{
+    job_title: string;
+    department: string | null;
+    employment_type: string | null;
+    work_mode: string | null;
+    experience: string | null;
+    vacancies: number | null;
+    budget_ctc: string | null;
+    location: string | null;
+    notice_period: string | null;
+    primary_skills: string | null;
+    education: string | null;
+    job_description: string | null;
+    priority: string | null;
+    hiring_team_requested: boolean | null;
+    is_public: boolean | null;
+  }>;
+};
+
+function normalizePriority(value?: string | null) {
+  const lower = String(value ?? "Normal").toLowerCase();
+  if (lower === "low") return "Low";
+  if (lower === "high") return "High";
+  if (lower === "urgent") return "Urgent";
+  return "Normal";
+}
+
+export default function RequirementForm({ mode = "create", requirementId, initialValues }: RequirementFormProps) {
   const router = useRouter();
+  const editing = mode === "edit";
 
   const [loading, setLoading] = useState(false);
 
 const [form, setForm] = useState({
-  job_title: "",
+  job_title: initialValues?.job_title ?? "",
 
-  department: "",
+  department: initialValues?.department ?? "",
 
-  employment_type: "",
+  employment_type: initialValues?.employment_type ?? "",
 
-  work_mode: "",
+  work_mode: initialValues?.work_mode ?? "",
 
-  experience: "",
+  experience: initialValues?.experience ?? "",
 
-  vacancies: 1,
+  vacancies: initialValues?.vacancies ?? 1,
 
-  budget_ctc: "",
+  budget_ctc: initialValues?.budget_ctc ?? "",
 
-  location: "",
+  location: initialValues?.location ?? "",
 
-  notice_period: "",
+  notice_period: initialValues?.notice_period ?? "",
 
-  skills: "",
+  skills: initialValues?.primary_skills ?? "",
 
-  education: "",
+  education: initialValues?.education ?? "",
 
-  job_description: "",
+  job_description: initialValues?.job_description ?? "",
 
-  priority: "Normal",
+  priority: normalizePriority(initialValues?.priority),
 
-  assign_to_jobiverse: false,
+  assign_to_jobiverse: Boolean(initialValues?.hiring_team_requested),
 
-  publish_to_jobs: false,
+  publish_to_jobs: Boolean(initialValues?.is_public),
 });
 
   function updateField(
@@ -60,11 +91,16 @@ const [form, setForm] = useState({
     setLoading(true);
 
     try {
-      await createRequirement(form);
+      if (editing) {
+        if (!requirementId) throw new Error("Requirement ID missing.");
+        await updateRequirement(requirementId, form);
+      } else {
+        await createRequirement(form);
+      }
 
-      alert("Requirement created successfully.");
+      alert(editing ? "Requirement updated successfully." : "Requirement created successfully.");
 
-      router.push("/employers/dashboard");
+      router.push(editing && requirementId ? `/employers/requirements/${requirementId}` : "/employers/dashboard");
 
       router.refresh();
     } catch (err) {
@@ -354,7 +390,7 @@ const [form, setForm] = useState({
         >
           {loading
             ? "Creating..."
-            : "Create Requirement"}
+            : editing ? "Save Requirement" : "Create Requirement"}
           {!loading && <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />}
         </button>
       </div>

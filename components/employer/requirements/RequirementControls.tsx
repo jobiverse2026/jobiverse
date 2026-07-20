@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Globe2, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { requestJobiVerseHiringTeam, setRequirementPublished } from "@/actions/job-publishing";
-import { updateRequirementStatus } from "@/actions/requirements";
+import { assignRequirementRecruiter, updateRequirementStatus } from "@/actions/requirements";
 
 const statuses = ["Open", "Sourcing", "Interview", "Offer", "Joined", "Closed", "On Hold", "Cancelled"];
 
@@ -12,15 +12,18 @@ type Props = {
   requirement: {
     id: string;
     status: string | null;
+    assigned_recruiter?: string | null;
     is_public?: boolean | null;
     hiring_team_requested?: boolean | null;
   };
+  recruiters?: { id: string; name: string; email: string }[];
 };
 
-export default function RequirementControls({ requirement }: Props) {
+export default function RequirementControls({ requirement, recruiters = [] }: Props) {
   const [published, setPublished] = useState(Boolean(requirement.is_public));
   const [jobiVerseAssigned, setJobiVerseAssigned] = useState(Boolean(requirement.hiring_team_requested));
   const [status, setStatus] = useState(requirement.status || "Open");
+  const [assignedRecruiter, setAssignedRecruiter] = useState(requirement.assigned_recruiter || "unassigned");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -74,6 +77,27 @@ export default function RequirementControls({ requirement }: Props) {
         setJobiVerseAssigned(true);
         showSuccess("Requirement assigned to JobiVerse Hiring Team. Our team has been notified.");
       } catch (err) {
+        showError(err);
+      }
+    });
+  }
+
+  function changeRecruiter(nextRecruiterId: string) {
+    const previous = assignedRecruiter;
+    setAssignedRecruiter(nextRecruiterId);
+    startTransition(async () => {
+      try {
+        const result = await assignRequirementRecruiter(requirement.id, nextRecruiterId);
+        if (!result.success) {
+          setAssignedRecruiter(previous);
+          setMessage(null);
+          setError(result.error || "Unable to assign recruiter.");
+          return;
+        }
+        const recruiter = recruiters.find((item) => item.id === nextRecruiterId);
+        showSuccess(recruiter ? `Requirement assigned to ${recruiter.name}.` : "Recruiter assignment removed.");
+      } catch (err) {
+        setAssignedRecruiter(previous);
         showError(err);
       }
     });
@@ -164,6 +188,37 @@ export default function RequirementControls({ requirement }: Props) {
                   <option key={item} value={item}>{item}</option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+          <div className="flex gap-3">
+            <ShieldCheck size={19} className="text-zinc-600" />
+            <div className="w-full">
+              <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Company recruiter assignment</p>
+              <h3 className="mt-1 font-semibold">Assign this requirement to a recruiter</h3>
+              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                Master employers can assign to any active company recruiter. Invited employers can assign to recruiters allotted to their workspace.
+              </p>
+              <select
+                value={assignedRecruiter}
+                onChange={(event) => changeRecruiter(event.target.value)}
+                disabled={isPending}
+                className="mt-3 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold outline-none focus:border-zinc-950 disabled:opacity-50"
+              >
+                <option value="unassigned">Unassigned / self-managed</option>
+                {recruiters.map((recruiter) => (
+                  <option key={recruiter.id} value={recruiter.id}>
+                    {recruiter.name} ({recruiter.email})
+                  </option>
+                ))}
+              </select>
+              {!recruiters.length && (
+                <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-zinc-500">
+                  No active recruiters are available yet. Add recruiter access from Team Management first.
+                </p>
+              )}
             </div>
           </div>
         </div>
