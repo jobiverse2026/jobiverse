@@ -1,6 +1,6 @@
 import { BadgeCheck, Building2, MapPin, ShieldCheck, UsersRound } from "lucide-react";
 
-import { updateCompanyRecruiterSeatLimit, updateCompanyVerification } from "@/app/admin/directory-actions";
+import { updateCompanySeatLimits, updateCompanyVerification } from "@/app/admin/directory-actions";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
@@ -23,13 +23,13 @@ export default async function AdminCompaniesPage({
   ] = await Promise.all([
     adminSupabase
       .from("companies")
-      .select("id,owner_id,company_name,industry,company_size,location,city,state,is_verified,recruiter_seat_limit,created_at")
+      .select("id,owner_id,company_name,industry,company_size,location,city,state,is_verified,recruiter_seat_limit,employer_seat_limit,created_at")
       .order("created_at", { ascending: false })
       .limit(250),
     adminSupabase.from("users").select("id,full_name,email").eq("role", "employer"),
     adminSupabase.from("requirements").select("id,company_id,status"),
-    adminSupabase.from("employer_team_members").select("id,company_id,status").eq("status", "active"),
-    adminSupabase.from("employer_team_invitations").select("id,company_id,status,expires_at").eq("status", "pending").gt("expires_at", now),
+    adminSupabase.from("employer_team_members").select("id,company_id,status,role").eq("status", "active"),
+    adminSupabase.from("employer_team_invitations").select("id,company_id,status,expires_at,role").eq("status", "pending").gt("expires_at", now),
   ]);
 
   if (error) throw new Error(error.message);
@@ -45,7 +45,7 @@ export default async function AdminCompaniesPage({
   );
   const verifiedCount = (companies ?? []).filter((company) => company.is_verified).length;
   const successMessage = params.seats
-    ? "Recruiter seat limit updated successfully."
+    ? "Company seat limits updated successfully."
     : params.verified === "1"
       ? "Company verified successfully."
       : params.verified === "0"
@@ -91,11 +91,16 @@ export default async function AdminCompaniesPage({
             const owner = ownerMap.get(company.owner_id);
             const companyRequirements = (requirements ?? []).filter((item) => item.company_id === company.id);
             const active = companyRequirements.filter((item) => !["Closed", "Cancelled", "On Hold"].includes(item.status)).length;
-            const activeSeats = activeSeatMap.get(company.id) ?? 0;
-            const pendingSeats = pendingSeatMap.get(company.id) ?? 0;
-            const usedSeats = activeSeats + pendingSeats;
-            const seatLimit = company.recruiter_seat_limit ?? 0;
-            const seatsLeft = Math.max(0, seatLimit - usedSeats);
+            const activeRecruiterSeats = activeSeatMap.get(`${company.id}:recruiter`) ?? 0;
+            const pendingRecruiterSeats = pendingSeatMap.get(`${company.id}:recruiter`) ?? 0;
+            const usedRecruiterSeats = activeRecruiterSeats + pendingRecruiterSeats;
+            const recruiterSeatLimit = company.recruiter_seat_limit ?? 0;
+            const recruiterSeatsLeft = Math.max(0, recruiterSeatLimit - usedRecruiterSeats);
+            const activeEmployerSeats = activeSeatMap.get(`${company.id}:employer`) ?? 0;
+            const pendingEmployerSeats = pendingSeatMap.get(`${company.id}:employer`) ?? 0;
+            const usedEmployerSeats = activeEmployerSeats + pendingEmployerSeats;
+            const employerSeatLimit = company.employer_seat_limit ?? 0;
+            const employerSeatsLeft = Math.max(0, employerSeatLimit - usedEmployerSeats);
 
             return (
               <article key={company.id} className={`rounded-3xl border bg-white p-6 shadow-sm ${company.is_verified ? "border-emerald-200" : "border-zinc-200"}`}>
@@ -118,7 +123,8 @@ export default async function AdminCompaniesPage({
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   <Small label="Requirements" value={String(companyRequirements.length)} />
                   <Small label="Active roles" value={String(active)} />
-                  <Small label="Seats used / left" value={`${usedSeats} / ${seatsLeft}`} />
+                  <Small label="Recruiter seats" value={`${usedRecruiterSeats} used / ${recruiterSeatsLeft} left`} />
+                  <Small label="Employer seats" value={`${usedEmployerSeats} used / ${employerSeatsLeft} left`} />
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -126,21 +132,34 @@ export default async function AdminCompaniesPage({
                   <Info icon={<UsersRound size={15} />} label="Company size" value={company.company_size || "Not provided"} />
                 </div>
 
-                <form action={updateCompanyRecruiterSeatLimit} className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <form action={updateCompanySeatLimits} className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                   <input type="hidden" name="companyId" value={company.id} />
-                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
-                    Recruiter invite seats
-                    <input
-                      name="recruiterSeatLimit"
-                      type="number"
-                      min="0"
-                      max="500"
-                      defaultValue={seatLimit}
-                      className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium normal-case tracking-normal outline-none focus:border-zinc-500"
-                    />
-                  </label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Employer invite seats
+                      <input
+                        name="employerSeatLimit"
+                        type="number"
+                        min="0"
+                        max="500"
+                        defaultValue={employerSeatLimit}
+                        className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium normal-case tracking-normal outline-none focus:border-zinc-500"
+                      />
+                    </label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                      Recruiter invite seats
+                      <input
+                        name="recruiterSeatLimit"
+                        type="number"
+                        min="0"
+                        max="500"
+                        defaultValue={recruiterSeatLimit}
+                        className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-medium normal-case tracking-normal outline-none focus:border-zinc-500"
+                      />
+                    </label>
+                  </div>
                   <p className="mt-2 text-xs text-zinc-500">
-                    Current usage: {activeSeats} active + {pendingSeats} pending invites = {usedSeats} used seats.
+                    Employer usage: {activeEmployerSeats} active + {pendingEmployerSeats} pending. Recruiter usage: {activeRecruiterSeats} active + {pendingRecruiterSeats} pending.
                   </p>
                   <button className="mt-3 cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800">
                     Save seats
@@ -168,11 +187,13 @@ export default async function AdminCompaniesPage({
   );
 }
 
-function countByCompany(rows: { company_id: string | null }[]) {
+function countByCompany(rows: { company_id: string | null; role?: string | null }[]) {
   const map = new Map<string, number>();
   rows.forEach((row) => {
     if (!row.company_id) return;
-    map.set(row.company_id, (map.get(row.company_id) ?? 0) + 1);
+    const role = row.role === "employer" ? "employer" : "recruiter";
+    const key = `${row.company_id}:${role}`;
+    map.set(key, (map.get(key) ?? 0) + 1);
   });
   return map;
 }

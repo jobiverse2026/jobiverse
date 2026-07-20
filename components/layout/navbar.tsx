@@ -23,7 +23,6 @@ const CLOSE_DELAY = 200;
 export function Navbar() {
   const pathname = usePathname();
   const sidebarWorkspace = pathname.startsWith("/admin") || pathname.startsWith("/recruiter");
-  if (sidebarWorkspace) return null;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -113,6 +112,8 @@ export function Navbar() {
 
   // Cleanup any pending timer on unmount.
   useEffect(() => clearCloseTimer, []);
+
+  if (sidebarWorkspace) return null;
 
   return (
     <header data-site-navbar className="fixed left-0 right-0 top-4 z-50 px-4 transition-all duration-500">

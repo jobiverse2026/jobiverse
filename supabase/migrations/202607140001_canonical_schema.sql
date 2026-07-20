@@ -70,6 +70,8 @@ create table public.companies (
   linkedin_url text,
   description text,
   is_verified boolean not null default false,
+  recruiter_seat_limit integer not null default 0 check (recruiter_seat_limit >= 0 and recruiter_seat_limit <= 500),
+  employer_seat_limit integer not null default 0 check (employer_seat_limit >= 0 and employer_seat_limit <= 500),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique(owner_id)

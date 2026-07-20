@@ -20,6 +20,13 @@ const roleLabel: Record<Role, string> = {
   creator: "Creator studio",
 };
 
+const urlErrorMessage: Record<string, string> = {
+  wrong_role: "You are not authorized for this portal. Please use the correct JobiVerse login for your account.",
+  profile_missing: "Your account exists, but portal access is not assigned yet. Please contact JobiVerse support.",
+  oauth_failed: "Secure sign-in could not be completed. Please try again.",
+  creator_required: "Creator studio access is available only for creator-enabled candidate accounts.",
+};
+
 type Props = {
   role?: Role;
 };
@@ -33,6 +40,8 @@ export default function LoginCard({ role = "candidate" }: Props) {
   const [loading, setLoading] = useState(false);
 
   const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
+  const visibleError = error ?? (urlError ? urlErrorMessage[urlError] ?? "Access could not be completed. Please try again." : null);
 
   const oauthCallbackUrl = () => {
     const params = new URLSearchParams({ role });
@@ -162,9 +171,9 @@ export default function LoginCard({ role = "candidate" }: Props) {
             </button>
           </div>
 
-          {error && (
+          {visibleError && (
             <p className="text-sm text-red-600" role="alert">
-              {error}
+              {visibleError}
             </p>
           )}
 

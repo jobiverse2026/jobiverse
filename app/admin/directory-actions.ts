@@ -19,11 +19,12 @@ export async function updateCompanyVerification(formData: FormData) {
   redirect(`/admin/companies?verified=${verified ? "1" : "0"}`);
 }
 
-export async function updateCompanyRecruiterSeatLimit(formData: FormData) {
+export async function updateCompanySeatLimits(formData: FormData) {
   await requireRole(["admin"]);
   const id = z.string().uuid().parse(formData.get("companyId"));
   const recruiterSeatLimit = z.coerce.number().int().min(0).max(500).parse(formData.get("recruiterSeatLimit"));
-  const { error } = await adminSupabase.from("companies").update({ recruiter_seat_limit: recruiterSeatLimit }).eq("id", id);
+  const employerSeatLimit = z.coerce.number().int().min(0).max(500).parse(formData.get("employerSeatLimit"));
+  const { error } = await adminSupabase.from("companies").update({ recruiter_seat_limit: recruiterSeatLimit, employer_seat_limit: employerSeatLimit }).eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath("/admin/companies");
   redirect("/admin/companies?seats=1");
