@@ -46,12 +46,15 @@ export function CareerIntelligencePanel({
             <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ring-1 ${tone.className}`}>{tone.label}</span>
           </div>
         </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 rounded-[1.5rem] border border-zinc-100 bg-zinc-50/70 p-5">
+          <p className="text-sm font-bold text-zinc-900">To increase your confidence score, do the below:</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {(confidence.missing.length ? confidence.missing : ["Profile looks strong", "Keep availability updated"]).map((item) => (
-            <p key={item} className="flex items-center gap-2 rounded-2xl bg-zinc-50 p-4 text-sm font-semibold text-zinc-600">
+            <p key={item} className="flex items-center gap-2 rounded-2xl bg-white p-4 text-sm font-semibold text-zinc-600 shadow-sm">
               <CheckCircle2 className="text-emerald-600" size={17} /> {item}
             </p>
           ))}
+          </div>
         </div>
       </article>
 
