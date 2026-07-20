@@ -23,8 +23,8 @@ export default async function AdminCandidatesPage({ searchParams }: { searchPara
     adminSupabase.from("companies").select("id,company_name"),
     adminSupabase
       .from("candidate_applications")
-      .select("id,requirement_id,candidate_user_id,applicant_name,applicant_email,applicant_phone,current_location,total_experience,current_company,primary_skills,status,created_at,requirements(id,company_id,job_title,companies(company_name))")
-      .order("created_at", { ascending: false })
+      .select("id,requirement_id,candidate_user_id,applicant_name,applicant_email,applicant_phone,current_location,total_experience,current_company,primary_skills,status,applied_at,requirements(id,company_id,job_title,companies(company_name))")
+      .order("applied_at", { ascending: false })
       .limit(300),
   ]);
 
