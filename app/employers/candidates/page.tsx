@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BadgeIndianRupee, BookmarkCheck, BriefcaseBusiness, CalendarCheck, MapPin, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, BadgeIndianRupee, BookmarkCheck, BriefcaseBusiness, CalendarCheck, Filter, MapPin, ShieldCheck, UserRoundSearch, Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
@@ -14,12 +14,21 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
   const { source = "all", status = "all", requirement = "" } = await searchParams;
   const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(adminSupabase
+  const [{ data: candidates, error }, { data: externalApplications, error: externalError }] = await Promise.all([
+    scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidates")
     .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, source, recruiter_name, recruiter_email, created_at, requirements!inner(id,job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }),
+    scopeEmployerJoinedRequirementQuery(adminSupabase
+      .from("candidate_applications")
+      .select("id,candidate_user_id,status,applicant_name,current_location,total_experience,notice_period,primary_skills,why_fit,applied_at,requirements!inner(id,job_title,employer_id,company_id)"),
+      access,
+      user.id
+    ).order("applied_at", { ascending: false }),
+  ]);
 
   if (error) throw new Error(error.message);
+  if (externalError) throw new Error(externalError.message);
 
   const { data: shortlists } = await adminSupabase
     .from("employer_candidate_shortlists")
@@ -29,10 +38,35 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
     .order("created_at", { ascending: false });
   const shortlistIds = new Set((shortlists ?? []).map((item: any) => item.candidate_id));
 
-  const allCandidates = (candidates ?? []) as any[];
+  const recruiterCandidates = ((candidates ?? []) as any[]).map((candidate) => ({ ...candidate, profileSource: isJobiverseCandidate(candidate) ? "jobiverse" : "recruiter", href: `/employers/candidates/${candidate.id}`, displayName: candidate.full_name || "Candidate" }));
+  const portalCandidates = ((externalApplications ?? []) as any[]).map((application) => ({
+    id: `external-${application.id}`,
+    rawId: application.id,
+    full_name: application.applicant_name,
+    displayName: application.applicant_name || "Candidate",
+    total_experience: application.total_experience,
+    current_location: application.current_location,
+    primary_skills: application.primary_skills,
+    notice_period: application.notice_period,
+    status: application.status,
+    source: "jobs_portal",
+    profileSource: "external",
+    recruiter_name: "JobiVerse Jobs Portal",
+    recruiter_email: null,
+    created_at: application.applied_at,
+    requirements: application.requirements,
+    placements: [],
+    why_fit: application.why_fit,
+    href: `/employers/external-applicants/${application.id}`,
+  }));
+  const allCandidates = [...recruiterCandidates, ...portalCandidates].sort((a:any,b:any)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime());
   const visibleCandidates = source === "jobiverse"
-    ? allCandidates.filter((candidate:any) => isJobiverseCandidate(candidate))
-    : allCandidates;
+    ? allCandidates.filter((candidate:any) => candidate.profileSource === "jobiverse")
+    : source === "external"
+      ? allCandidates.filter((candidate:any) => candidate.profileSource === "external")
+      : source === "recruiter"
+        ? allCandidates.filter((candidate:any) => candidate.profileSource === "recruiter")
+        : allCandidates;
   const requirementCandidates = requirement ? visibleCandidates.filter((candidate:any) => firstRelation(candidate.requirements)?.id === requirement) : visibleCandidates;
   const filteredCandidates = status === "all" ? requirementCandidates : requirementCandidates.filter((candidate:any) => normalizeStatus(candidate.status) === normalizeStatus(status));
   const offeredCandidates = filteredCandidates.filter((candidate:any) => {
@@ -58,13 +92,9 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
         <div className="mt-8 flex flex-col justify-between gap-6 rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-[0_35px_100px_-45px_rgba(0,0,0,.65)] sm:p-12 md:flex-row md:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Talent workspace</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">
-              {source === "jobiverse" ? "JobiVerse submitted candidates." : "Submitted candidates."}
-            </h1>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">All candidate submissions.</h1>
             <p className="mt-5 max-w-2xl text-zinc-300">
-              {source === "jobiverse"
-                ? "Profiles sourced, screened and introduced by JobiVerse Hiring Team."
-                : "Review candidates shared by your JobiVerse recruitment team across active hiring mandates."}
+              Review recruiter submissions, JobiVerse Hiring Team profiles and direct Jobs Portal applicants in one place.
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
@@ -81,8 +111,25 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
           <Link href={`/employers/candidates?source=jobiverse${requirement ? `&requirement=${requirement}` : ""}`} className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "jobiverse" ? "border-amber-300 bg-amber-50 text-amber-800" : "border-zinc-200 bg-white text-zinc-700"}`}>
             JobiVerse submitted
           </Link>
+          <Link href={`/employers/candidates?source=recruiter${requirement ? `&requirement=${requirement}` : ""}`} className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "recruiter" ? "border-blue-300 bg-blue-50 text-blue-800" : "border-zinc-200 bg-white text-zinc-700"}`}>
+            Recruiter submitted
+          </Link>
+          <Link href={`/employers/candidates?source=external${requirement ? `&requirement=${requirement}` : ""}`} className={`rounded-2xl border px-5 py-3 text-sm font-semibold ${source === "external" ? "border-violet-300 bg-violet-50 text-violet-800" : "border-zinc-200 bg-white text-zinc-700"}`}>
+            External applicants
+          </Link>
           {requirement && <Link href="/employers/candidates" className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700">Clear requirement filter</Link>}
         </section>
+
+        <form className="mt-5 flex flex-wrap items-center gap-3 rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-sm">
+          <Filter size={18} className="text-zinc-400" />
+          <input type="hidden" name="source" value={source} />
+          {status !== "all" && <input type="hidden" name="status" value={status} />}
+          <select name="requirement" defaultValue={requirement} className="h-12 min-w-[260px] flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-500">
+            <option value="">All roles / requirements</option>
+            {requirementOptions.map((item:any) => <option key={item.id} value={item.id}>{item.job_title || "Untitled requirement"}</option>)}
+          </select>
+          <button className="cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Filter by role</button>
+        </form>
 
         {visibleCandidates.some((candidate:any) => isJobiverseCandidate(candidate)) && (
           <section className="mt-6 rounded-[2rem] border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-6 shadow-sm">
@@ -125,7 +172,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
               </div>
               <div className="flex flex-wrap gap-2">
                 {filteredCandidates.filter((candidate:any) => shortlistIds.has(candidate.id)).slice(0, 4).map((candidate:any) => (
-                  <Link key={`shortlist-${candidate.id}`} href={`/employers/candidates/${candidate.id}`} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm">{candidate.full_name || "Candidate"}</Link>
+                  <Link key={`shortlist-${candidate.id}`} href={candidate.href} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm">{candidate.displayName || "Candidate"}</Link>
                 ))}
               </div>
             </div>
@@ -164,7 +211,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
                 </thead>
                 <tbody>
                   {filteredCandidates.slice(0,5).map((candidate:any)=>{const req=firstRelation(candidate.requirements);return <tr key={`compare-${candidate.id}`} className="border-t border-zinc-100">
-                    <td className="px-3 py-4 font-semibold"><Link href={`/employers/candidates/${candidate.id}`} className="underline-offset-4 hover:underline">{candidate.full_name||"Candidate"}</Link></td>
+                    <td className="px-3 py-4 font-semibold"><Link href={candidate.href} className="underline-offset-4 hover:underline">{candidate.displayName||"Candidate"}</Link></td>
                     <td className="px-3 py-4 text-zinc-600">{req?.job_title||"Requirement"}</td>
                     <td className="max-w-[260px] px-3 py-4 text-zinc-600">{candidate.primary_skills||"Under review"}</td>
                     <td className="px-3 py-4 text-zinc-600">{candidate.total_experience||"Not specified"}</td>
@@ -191,12 +238,12 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
                 const offer = firstRelation(candidate.placements);
                 const requirement = firstRelation(candidate.requirements);
                 return (
-                  <Link href={`/employers/candidates/${candidate.id}`} key={`offer-${candidate.id}`} className="overflow-hidden rounded-[2rem] border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 text-white shadow-xl transition hover:-translate-y-1">
+                  <Link href={candidate.href} key={`offer-${candidate.id}`} className="overflow-hidden rounded-[2rem] border border-zinc-800 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 text-white shadow-xl transition hover:-translate-y-1">
                     <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
                       <div className="flex items-center gap-3">
                         <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/10"><BadgeIndianRupee size={19} /></span>
                         <div>
-                          <p className="font-semibold">{candidate.full_name || "Candidate"}</p>
+                          <p className="font-semibold">{candidate.displayName || "Candidate"}</p>
                           <p className="text-xs text-zinc-400">{requirement?.job_title ?? "Hiring requirement"}</p>
                         </div>
                       </div>
@@ -231,14 +278,15 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
                 const requirement = firstRelation(candidate.requirements);
                 const displayName = candidate.full_name || "Candidate";
                 return (
-                  <Link href={`/employers/candidates/${candidate.id}`} key={candidate.id} className="block rounded-[2rem] border border-white bg-white/90 p-7 shadow-[0_24px_70px_-48px_rgba(0,0,0,.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl">
+                  <Link href={candidate.href} key={candidate.id} className="block rounded-[2rem] border border-white bg-white/90 p-7 shadow-[0_24px_70px_-48px_rgba(0,0,0,.5)] backdrop-blur-xl transition hover:-translate-y-1 hover:shadow-xl">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 font-semibold text-white">{displayName.slice(0, 1).toUpperCase()}</div>
+                      <div className={`grid h-12 w-12 place-items-center rounded-2xl font-semibold text-white ${candidate.profileSource === "external" ? "bg-violet-700" : "bg-zinc-950"}`}>{candidate.profileSource === "external" ? <UserRoundSearch size={20} /> : displayName.slice(0, 1).toUpperCase()}</div>
                       <span className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-600">{candidate.status}</span>
                     </div>
                     <h2 className="mt-6 text-2xl font-semibold tracking-tight">{displayName}</h2>
                     <p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><BriefcaseBusiness size={15} /> {requirement?.job_title ?? "Hiring requirement"}</p>
                     {isJobiverseCandidate(candidate) && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Submitted by JobiVerse Hiring Team</p>}
+                    {candidate.profileSource === "external" && <p className="mt-3 inline-flex rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">Direct Jobs Portal applicant | 3% placement fee if joined</p>}
                     <div className="mt-6 space-y-3 border-t border-zinc-100 pt-5 text-sm text-zinc-600">
                       <p>{candidate.total_experience || "Experience not specified"}</p>
                       <p className="flex items-center gap-2"><MapPin size={15} /> {candidate.current_location || "Location not specified"}</p>

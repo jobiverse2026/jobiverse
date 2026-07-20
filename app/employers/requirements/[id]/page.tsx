@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  ArrowRight,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
 
 import { getAssignableRequirementRecruiters, getRequirement, getRequirementRecruiterAssignments } from "@/actions/requirements";
 import RequirementControls from "@/components/employer/requirements/RequirementControls";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 export default async function EmployerRequirementDetailPage({
   params,
@@ -25,6 +27,42 @@ export default async function EmployerRequirementDetailPage({
     getAssignableRequirementRecruiters(),
     getRequirementRecruiterAssignments(id),
   ]);
+  const [{ data: submittedCandidates }, { data: externalApplicants }] = await Promise.all([
+    adminSupabase
+      .from("candidates")
+      .select("id,full_name,status,total_experience,current_location,primary_skills,source,recruiter_name,recruiter_email,created_at")
+      .eq("requirement_id", requirement.id)
+      .order("created_at", { ascending: false }),
+    adminSupabase
+      .from("candidate_applications")
+      .select("id,applicant_name,status,total_experience,current_location,primary_skills,applied_at")
+      .eq("requirement_id", requirement.id)
+      .order("applied_at", { ascending: false }),
+  ]);
+  const candidateRows = [
+    ...((submittedCandidates ?? []) as any[]).map((candidate) => ({
+      id: candidate.id,
+      name: candidate.full_name || "Candidate",
+      status: candidate.status || "Submitted",
+      experience: candidate.total_experience,
+      location: candidate.current_location,
+      skills: candidate.primary_skills,
+      source: isJobiverseCandidate(candidate) ? "JobiVerse" : "Recruiter",
+      href: `/employers/candidates/${candidate.id}`,
+      date: candidate.created_at,
+    })),
+    ...((externalApplicants ?? []) as any[]).map((application) => ({
+      id: `external-${application.id}`,
+      name: application.applicant_name || "Candidate",
+      status: application.status || "Applied",
+      experience: application.total_experience,
+      location: application.current_location,
+      skills: application.primary_skills,
+      source: "External",
+      href: `/employers/external-applicants/${application.id}`,
+      date: application.applied_at,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const details = [
     { label: "Department", value: requirement.department, icon: Building2 },
@@ -107,7 +145,65 @@ export default async function EmployerRequirementDetailPage({
             </p>
           </section>
         </div>
+
+        <section className="mt-8 rounded-[2.25rem] border border-white bg-white/90 p-7 shadow-[0_30px_80px_-50px_rgba(0,0,0,.45)] backdrop-blur-xl sm:p-10">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Requirement candidates</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">{candidateRows.length} candidate{candidateRows.length === 1 ? "" : "s"} for this role</h2>
+              <p className="mt-2 text-sm text-zinc-500">Includes recruiter-submitted, JobiVerse-submitted and direct Jobs Portal applicants.</p>
+            </div>
+            <Link href={`/employers/candidates?requirement=${requirement.id}`} className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">
+              Explore candidates for this requirement <ArrowRight size={15} />
+            </Link>
+          </div>
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-100">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-400">
+                <tr>
+                  <th className="px-5 py-4">Candidate</th>
+                  <th className="px-5 py-4">Source</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Experience</th>
+                  <th className="px-5 py-4">Location</th>
+                  <th className="px-5 py-4">Skills</th>
+                  <th className="px-5 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {candidateRows.length ? candidateRows.map((candidate) => (
+                  <tr key={candidate.id} className="border-t border-zinc-100">
+                    <td className="px-5 py-4 font-semibold text-zinc-950">{candidate.name}</td>
+                    <td className="px-5 py-4"><SourceBadge source={candidate.source} /></td>
+                    <td className="px-5 py-4"><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">{candidate.status}</span></td>
+                    <td className="px-5 py-4 text-zinc-600">{candidate.experience || "Not specified"}</td>
+                    <td className="px-5 py-4 text-zinc-600">{candidate.location || "Not specified"}</td>
+                    <td className="max-w-[280px] px-5 py-4 text-zinc-600">{candidate.skills || "Under review"}</td>
+                    <td className="px-5 py-4 text-right"><Link href={candidate.href} className="font-semibold text-zinc-950 underline-offset-4 hover:underline">Open</Link></td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan={7} className="px-5 py-14 text-center text-zinc-500">No candidates submitted for this requirement yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </main>
   );
+}
+
+function isJobiverseCandidate(candidate: any) {
+  return candidate.source === "jobiverse_hiring_team"
+    || candidate.recruiter_name === "JobiVerse Hiring Team"
+    || String(candidate.recruiter_email ?? "").toLowerCase() === "jobiverse@outlook.com";
+}
+
+function SourceBadge({ source }: { source: string }) {
+  const tone = source === "JobiVerse"
+    ? "bg-amber-50 text-amber-700"
+    : source === "External"
+      ? "bg-violet-50 text-violet-700"
+      : "bg-blue-50 text-blue-700";
+  return <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone}`}>{source}</span>;
 }

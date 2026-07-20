@@ -1,19 +1,27 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, MapPin, UserRoundSearch } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Filter, MapPin, UserRoundSearch } from "lucide-react";
 import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
-export default async function ExternalApplicantsPage() {
+export default async function ExternalApplicantsPage({ searchParams }: { searchParams: Promise<{ requirement?: string }> }) {
+  const { requirement = "" } = await searchParams;
   const { user } = await requireRole(["employer"]);
   const access = await getEmployerCompanyAccess(user.id);
   const { data: applications, error } = await scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidate_applications")
-    .select("id,candidate_user_id,status,applicant_name,current_location,total_experience,relevant_experience_years,primary_skills,why_fit,applied_at,requirements!inner(job_title,employer_id,company_id)"), access, user.id)
+    .select("id,candidate_user_id,status,applicant_name,current_location,total_experience,relevant_experience_years,primary_skills,why_fit,applied_at,requirements!inner(id,job_title,employer_id,company_id)"), access, user.id)
     .order("applied_at", { ascending: false });
   if (error) throw new Error(error.message);
   const applicationRows = (applications ?? []) as any[];
+  const requirementOptions = [...new Map(applicationRows.map((application:any) => {
+    const req = application.requirements?.[0];
+    return req?.id ? [req.id, req] : null;
+  }).filter(Boolean) as [string, any][]).values()];
+  const filteredApplications = requirement
+    ? applicationRows.filter((application:any) => application.requirements?.[0]?.id === requirement)
+    : applicationRows;
   const candidateIds = [...new Set(applicationRows.map((application:any) => application.candidate_user_id).filter(Boolean))];
   const [{ data: people }, { data: profiles }, { data: passports }] = candidateIds.length ? await Promise.all([
     adminSupabase.from("users").select("id,full_name,avatar_url").in("id", candidateIds),
@@ -29,7 +37,16 @@ export default async function ExternalApplicantsPage() {
       <div className="mx-auto max-w-7xl">
         <Link href="/employers/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16} />Employer dashboard</Link>
         <section className="mt-7 rounded-[2.75rem] bg-gradient-to-br from-violet-950 via-zinc-950 to-zinc-800 p-9 text-white sm:p-12"><UserRoundSearch /><p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-violet-300">JobiVerse Jobs Portal</p><h1 className="mt-3 text-4xl font-semibold sm:text-6xl">External applicants.</h1><p className="mt-4 text-zinc-300">Review applications with each candidate&apos;s universal JobiVerse Card before moving them through your hiring workflow.</p></section>
-        {!applicationRows.length ? <section className="mt-7 rounded-[2rem] border border-dashed bg-white p-16 text-center"><UserRoundSearch className="mx-auto text-zinc-400" /><h2 className="mt-4 text-2xl font-semibold">No external applications yet</h2></section> : <section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{applicationRows.map((application:any) => { const requirement = application.requirements?.[0]; const candidateId = application.candidate_user_id; return <article key={application.id} className="group flex flex-col rounded-[2rem] border bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><UserRoundSearch size={20} /></span><span className="h-fit rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">{application.status}</span></div><h2 className="mt-6 text-2xl font-semibold">{application.applicant_name || "Candidate"}</h2><p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><BriefcaseBusiness size={14} />{requirement?.job_title}</p><p className="mt-3 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={14} />{application.current_location || "Location not provided"}</p>{candidateId && <div className="mt-5"><JobiVerseCard person={peopleMap.get(candidateId)} profile={profileMap.get(candidateId)} passport={passportMap.get(candidateId)} compact /></div>}<p className="mt-4 line-clamp-2 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600"><strong>Why fit:</strong> {application.why_fit || "Open the complete application to review the candidate response."}</p><Link href={`/employers/external-applicants/${application.id}`} className="mt-auto flex items-center justify-between border-t pt-5 text-sm font-semibold">View applicant workflow<ArrowRight size={15} className="transition group-hover:translate-x-1" /></Link></article>; })}</section>}
+        <form className="mt-5 flex flex-wrap items-center gap-3 rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-sm">
+          <Filter size={18} className="text-zinc-400" />
+          <select name="requirement" defaultValue={requirement} className="h-12 min-w-[260px] flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-500">
+            <option value="">All roles / requirements</option>
+            {requirementOptions.map((item:any) => <option key={item.id} value={item.id}>{item.job_title || "Untitled requirement"}</option>)}
+          </select>
+          <button className="cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Filter by role</button>
+          {requirement && <Link href="/employers/external-applicants" className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold text-zinc-700">Clear</Link>}
+        </form>
+        {!filteredApplications.length ? <section className="mt-7 rounded-[2rem] border border-dashed bg-white p-16 text-center"><UserRoundSearch className="mx-auto text-zinc-400" /><h2 className="mt-4 text-2xl font-semibold">No external applications found</h2></section> : <section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{filteredApplications.map((application:any) => { const requirement = application.requirements?.[0]; const candidateId = application.candidate_user_id; return <article key={application.id} className="group flex flex-col rounded-[2rem] border bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><UserRoundSearch size={20} /></span><span className="h-fit rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">{application.status}</span></div><h2 className="mt-6 text-2xl font-semibold">{application.applicant_name || "Candidate"}</h2><p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><BriefcaseBusiness size={14} />{requirement?.job_title}</p><p className="mt-3 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={14} />{application.current_location || "Location not provided"}</p>{candidateId && <div className="mt-5"><JobiVerseCard person={peopleMap.get(candidateId)} profile={profileMap.get(candidateId)} passport={passportMap.get(candidateId)} compact /></div>}<p className="mt-4 line-clamp-2 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600"><strong>Why fit:</strong> {application.why_fit || "Open the complete application to review the candidate response."}</p><Link href={`/employers/external-applicants/${application.id}`} className="mt-auto flex items-center justify-between border-t pt-5 text-sm font-semibold">View applicant workflow<ArrowRight size={15} className="transition group-hover:translate-x-1" /></Link></article>; })}</section>}
       </div>
     </main>
   );
