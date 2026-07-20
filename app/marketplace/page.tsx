@@ -15,6 +15,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { serviceSlugForCategory } from "@/lib/marketplace/category-map";
 import { customerPrice } from "@/lib/marketplace/pricing";
 import { creatorServiceGroups } from "@/lib/marketplace/creator-service-options";
+import { getJobiVerseOffer } from "@/lib/marketplace/jobiverse-offerings";
 import type { ServiceAudience } from "@/lib/marketplace/service-catalog";
 
 const groups: Array<{
@@ -189,5 +190,7 @@ function countExperts(listings: PublicListing[], category: string) {
 
 function publicStartingPrice(listings: PublicListing[], category: string) {
   const prices = matchingListings(listings, category).map(listing => customerPrice(Number(listing.price)));
+  const jobiVerseOffer = getJobiVerseOffer(category);
+  if (jobiVerseOffer?.price) prices.push(jobiVerseOffer.price);
   return prices.length ? Math.min(...prices) : null;
 }

@@ -50,3 +50,13 @@ export function customerOfferFromCreatorEarning(creatorEarning: number) {
 
   return Math.ceil((safeCreatorEarning / 0.9) * 100) / 100;
 }
+
+export function featuredListingPrice(creatorAmount: number) {
+  const safeCreatorAmount = validAmount(creatorAmount);
+  if (safeCreatorAmount <= 0) return 499;
+  if (safeCreatorAmount < 1_000) return Math.max(50, Math.ceil((safeCreatorAmount * 0.5) / 10) * 10);
+  if (safeCreatorAmount < 2_500) return 799;
+  if (safeCreatorAmount < 5_000) return 1_499;
+  if (safeCreatorAmount < 10_000) return 2_499;
+  return 4_999;
+}

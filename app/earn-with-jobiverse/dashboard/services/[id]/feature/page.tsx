@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BadgeCheck, Sparkles, Trophy } from "lucide-react";
 import { BillingProfileCard } from "@/components/payments/billing-profile-card";
 import { RazorpayPaymentButton } from "@/components/payments/razorpay-payment-button";
-import { customerPrice } from "@/lib/marketplace/pricing";
+import { customerPrice, featuredListingPrice } from "@/lib/marketplace/pricing";
 import { requireRole } from "@/lib/auth/authorization";
 
 export default async function FeatureServicePage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +14,7 @@ export default async function FeatureServicePage({ params }: { params: Promise<{
     supabase.from("buyer_billing_profiles").select("billing_name,address_line,city,state,pincode,gstin").eq("user_id", user.id).maybeSingle(),
   ]);
   if (!service) notFound();
-  const amount = Number(process.env.FEATURED_LISTING_PRICE_INR ?? 499);
+  const amount = featuredListingPrice(Number(service.price));
   const activeFeatured = service.is_featured && (!service.featured_until || new Date(service.featured_until) > new Date());
 
   return (
@@ -43,7 +43,8 @@ export default async function FeatureServicePage({ params }: { params: Promise<{
               <div><p className="text-sm text-zinc-500">Featured fee</p><p className="mt-1 text-4xl font-semibold">₹{amount.toLocaleString("en-IN")}</p></div>
               <p className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-600">30 days</p>
             </div>
-            <div className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">Current customer price: INR {customerPrice(Number(service.price)).toLocaleString("en-IN")}</div>
+            <div className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-600">Current customer price: ₹{customerPrice(Number(service.price)).toLocaleString("en-IN")}</div>
+            <p className="mt-3 text-xs leading-5 text-zinc-500">Rule: services below ₹1,000 pay 50% of creator price. Higher-value services use JobiVerse featured tiers.</p>
             {activeFeatured ? (
               <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800"><BadgeCheck className="mr-2 inline" size={17} />Already featured until {service.featured_until ? new Date(service.featured_until).toLocaleDateString("en-IN") : "active period"}.</div>
             ) : billingProfile ? (

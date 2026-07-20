@@ -144,7 +144,7 @@ export async function TalentSearchExperience({ role, userId, userEmail, searchPa
               <div>
                 <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-500">Upgrade</p>
                 <h3 className="mt-2 text-2xl font-semibold">Request Talent Search Access</h3>
-                <p className="mt-2 text-sm text-zinc-400">Paid monthly plan. Admin approval required.</p>
+                <p className="mt-2 text-sm text-zinc-400">₹1,999/month. Admin approval required.</p>
               </div>
               <ArrowRight className="transition group-hover:translate-x-1" />
             </Link>

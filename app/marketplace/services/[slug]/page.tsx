@@ -80,7 +80,11 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
       service.providers = [];
     }
   }
-  if (jobiVerseOffer) service.providers = [{ name: "JobiVerse Personal", title: jobiVerseOffer.description, rating: 5, completedOrders: 0, startingPrice: jobiVerseOffer.price, priceLabel: jobiVerseOffer.priceLabel, delivery: jobiVerseOffer.delivery, verified: true, isJobiVerse: true, logoUrl: "/images/branding/jobiverse-logo.svg" }, ...service.providers];
+  if (jobiVerseOffer) {
+    service.providers = [{ name: "JobiVerse Personal", title: jobiVerseOffer.description, rating: 5, completedOrders: 0, startingPrice: jobiVerseOffer.price, priceLabel: jobiVerseOffer.priceLabel, delivery: jobiVerseOffer.delivery, verified: true, isJobiVerse: true, logoUrl: "/images/branding/jobiverse-logo.svg" }, ...service.providers];
+    service.expertCount += 1;
+    if (jobiVerseOffer.price > 0) service.startingPrice = service.startingPrice > 0 ? Math.min(service.startingPrice, jobiVerseOffer.price) : jobiVerseOffer.price;
+  }
   const listingIds=service.providers.map(provider=>provider.listingId).filter((id):id is string=>Boolean(id));
   const {data:reviews}=listingIds.length?await supabase.from("marketplace_reviews").select("id,service_id,reviewer_id,rating,review,helpful_count,created_at").in("service_id",listingIds).eq("is_hidden",false).order("created_at",{ascending:false}).limit(24):{data:[]};
   const reviewerIds=[...new Set((reviews??[]).map(review=>review.reviewer_id))];const{data:reviewers}=reviewerIds.length?await supabase.from("users").select("id,full_name").in("id",reviewerIds):{data:[]};const reviewerNames=new Map((reviewers??[]).map(person=>[person.id,privateReviewerName(person.full_name)]));

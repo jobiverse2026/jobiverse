@@ -26,10 +26,10 @@ const employerPlans = [
   },
   {
     name: "Growth Hiring",
-    price: "From ₹2,999/mo",
+    price: "Seats from ₹1,000/year",
     note: "For teams needing seats, reports and structured hiring access.",
     featured: true,
-    features: ["Employer + recruiter seats", "Reports and export access", "Talent Search unlock request", "Candidate pipeline tracking"],
+    features: ["Employer seats: ₹2,000/year/seat", "Recruiter seats: ₹1,000/year/seat", "Reports and export access", "Candidate pipeline tracking"],
     cta: "Request plan",
     href: "/plans",
   },
@@ -45,15 +45,15 @@ const employerPlans = [
 
 const candidateRevenue = [
   ["Premium CV templates", "Editable designs, owned CV library and paid downloads.", "From ₹50"],
-  ["Resume & profile services", "Expert resume writing, review, LinkedIn and portfolio help.", "From ₹399"],
-  ["Interview & career guidance", "Mock interviews, career roadmaps and salary prep.", "From ₹499"],
+  ["Resume & profile services", "Expert resume writing, review, LinkedIn and portfolio help.", "From ₹149"],
+  ["Interview & career guidance", "Mock interviews, career roadmaps and salary prep.", "From ₹299"],
   ["JobiVerse Card upgrades", "Verification and featured profile options for better trust.", "Coming soon"],
 ];
 
 const creatorRevenue = [
   ["Service sales", "Creators set their base earning; JobiVerse adds platform margin for customers."],
   ["CV template downloads", "Creators can upload original editable templates and earn on every sale."],
-  ["Featured placement", "Paid boost to appear in featured marketplace sections after review."],
+  ["Featured placement", "Below ₹1,000 service price: 50% featured fee. Higher services use tiered featured pricing."],
   ["Verified creator badge", "Optional trust layer for expert profiles and services."],
 ];
 
@@ -193,17 +193,17 @@ export default function PricingPage() {
           <article className="rounded-[2.5rem] border border-zinc-200 bg-white p-8">
             <BadgeCheck />
             <h2 className="mt-5 text-2xl font-bold">Success fees</h2>
-            <p className="mt-3 leading-7 text-zinc-600">Direct Jobs Portal joining can be tracked at 3% one-time placement fee. JobiVerse-managed hiring remains negotiable or as per commercial agreement.</p>
+            <p className="mt-3 leading-7 text-zinc-600">Direct Jobs Portal joining can be tracked at 3% one-time placement fee. Candidate referral fee is 1% of annual salary only if the referred candidate joins. JobiVerse-managed hiring remains negotiable or as per commercial agreement.</p>
           </article>
           <article className="rounded-[2.5rem] border border-zinc-200 bg-white p-8">
             <UsersRound />
             <h2 className="mt-5 text-2xl font-bold">Seat-based access</h2>
-            <p className="mt-3 leading-7 text-zinc-600">Admin can assign employer and recruiter seats. Master employers can control team access within the seats purchased.</p>
+            <p className="mt-3 leading-7 text-zinc-600">Employer seats are ₹2,000/year/seat and recruiter seats are ₹1,000/year/seat. Admin assigns master employer access and seat limits.</p>
           </article>
           <article className="rounded-[2.5rem] border border-zinc-200 bg-white p-8">
             <BriefcaseBusiness />
             <h2 className="mt-5 text-2xl font-bold">Premium unlocks</h2>
-            <p className="mt-3 leading-7 text-zinc-600">Talent Search, featured jobs, featured creator services and verification badges can become separate paid upgrades.</p>
+            <p className="mt-3 leading-7 text-zinc-600">Talent Search Access is ₹1,999/month. Featured creator services are charged separately for 30-day premium placement.</p>
           </article>
         </div>
       </section>
