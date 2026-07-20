@@ -13,6 +13,7 @@ import {
   WandSparkles,
   Bookmark,
   LockKeyhole,
+  ShieldCheck,
 } from "lucide-react";
 
 
@@ -32,6 +33,7 @@ export type NavItem = {
 };
 
 const exploreNavigation: NavChild[] = [
+  { title: "Why JobiVerse", description: "Trust, protection and intelligence behind the platform.", href: "/why-jobiverse", icon: ShieldCheck },
   { title: "Consultations", description: "Book focused guidance with a JobiVerse expert.", href: "/consultations", icon: UserRound },
   { title: "Events & Workshops", description: "Join career clinics, webinars and hiring drives.", href: "/events", icon: Sparkles },
   { title: "Campus Partnerships", description: "Career and placement programmes for institutions.", href: "/campus-partnerships", icon: GraduationCap },
@@ -68,6 +70,7 @@ const mainSiteMenu: NavChild[] = [
   { title: "Employers", description: "Recruitment and employer hiring solutions.", href: "/employers", icon: Building2 },
   { title: "Earn", description: "Create, contribute and earn with JobiVerse.", href: "/earn-with-jobiverse", icon: WandSparkles },
   { title: "About Us", description: "Our universe, mission, vision and contact details.", href: "/about", icon: UserRound },
+  { title: "Why JobiVerse", description: "Trust, protection and intelligence behind the platform.", href: "/why-jobiverse", icon: ShieldCheck },
   { title: "Responsible AI", description: "Understand JobiVerse AI features, safeguards and launch status.", href: "/ai", icon: Sparkles },
 ];
 

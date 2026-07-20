@@ -1,19 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BriefcaseBusiness, CalendarDays, Download, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BriefcaseBusiness, CalendarDays, Download, LockKeyhole, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 import InterviewScheduler from "@/components/employer/candidates/InterviewScheduler";
 import { firstRelation } from "@/lib/relations";
 import { adminSupabase } from "@/lib/supabase/admin";
-import { manageEmployerCandidateOffer, updateEmployerCandidateStatus } from "../actions";
+import { jobiverseCandidateFitFeedback } from "@/lib/candidate/intelligence";
+import { addEmployerCandidateNote, manageEmployerCandidateOffer, toggleEmployerCandidateShortlist, updateEmployerCandidateStatus } from "../actions";
 
 const employerCandidateStatuses = ["Submitted", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
 
-export default async function EmployerCandidateDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ status_updated?: string; offer_updated?: string }> }) {
+export default async function EmployerCandidateDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ status_updated?: string; offer_updated?: string; shortlist?: string; note_added?: string }> }) {
   const { id } = await params;
-  const { status_updated, offer_updated } = await searchParams;
+  const { status_updated, offer_updated, shortlist, note_added } = await searchParams;
   const { user } = await requireRole(["employer"]);
   const access = await getEmployerCompanyAccess(user.id);
 
@@ -32,6 +33,22 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
 
   if (!candidate) notFound();
 
+  const [{ data: shortlistItem }, { data: hiringNotes }] = await Promise.all([
+    adminSupabase
+      .from("employer_candidate_shortlists")
+      .select("id, note, created_at")
+      .eq("candidate_id", candidate.id)
+      .eq("employer_id", user.id)
+      .maybeSingle(),
+    adminSupabase
+      .from("employer_candidate_notes")
+      .select("id, note, is_jobiverse_protected, created_at")
+      .eq("candidate_id", candidate.id)
+      .eq("company_id", access.company.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
+
   const { data: signedResume } = candidate.resume_path
     ? await adminSupabase.storage.from("candidate-resumes").createSignedUrl(candidate.resume_path, 3600)
     : { data: null };
@@ -46,6 +63,16 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
   ];
   const placement = firstRelation(candidate.placements);
   const requirement = firstRelation(candidate.requirements);
+  const fitFeedback = jobiverseCandidateFitFeedback({
+    candidateName: candidate.full_name,
+    jobTitle: requirement?.job_title,
+    candidateSkills: `${candidate.primary_skills ?? ""} ${candidate.secondary_skills ?? ""}`,
+    requiredSkills: (requirement as any)?.skills ?? "",
+    experience: candidate.total_experience,
+    noticePeriod: candidate.notice_period,
+    location: candidate.current_location,
+    status: candidate.status,
+  });
   const displayName = candidate.full_name || "Candidate";
   const isJobiVerseCandidate =
     candidate.source === "jobiverse_hiring_team" ||
@@ -65,6 +92,20 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_420px]">
           <div className="space-y-8">
             {isJobiVerseCandidate && <section className="rounded-[2rem] border border-amber-200 bg-amber-50 p-7"><div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 shrink-0 text-amber-700"/><div><p className="text-xs font-bold uppercase tracking-[.16em] text-amber-700">JobiVerse introduction protection</p><h2 className="mt-2 text-xl font-semibold text-amber-950">Hiring activity must remain declared.</h2><p className="mt-2 text-sm leading-6 text-amber-900">This candidate was introduced through the JobiVerse Hiring Team. Standard success fee is fixed at 5% of annual CTC after successful joining. A different negotiated rate applies only when a separate formal partnership agreement has been accepted. Interviews, offers and joining—whether coordinated inside or outside the platform—must be updated in JobiVerse.</p></div></div></section>}
+            <section className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-sm">
+              <div className="flex items-start gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-white"><Sparkles size={20} /></span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">{fitFeedback.title}</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em]">{fitFeedback.summary}</h2>
+                  <div className="mt-5 grid gap-3 md:grid-cols-2">
+                    {fitFeedback.feedback.map((item) => (
+                      <p key={item} className="rounded-2xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{item}</p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
             {placement && <section className="rounded-[2rem] border border-white bg-white/90 p-8 shadow-[0_30px_80px_-50px_rgba(0,0,0,.5)] backdrop-blur-xl"><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Offer & joining</p><div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl bg-zinc-50 p-5"><p className="text-xs uppercase tracking-wide text-zinc-400">Status</p><p className="mt-2 font-semibold capitalize">{placement.status}</p></div><div className="rounded-2xl bg-zinc-50 p-5"><p className="text-xs uppercase tracking-wide text-zinc-400">Offered CTC</p><p className="mt-2 font-semibold">{placement.offered_ctc ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(placement.offered_ctc) : "Not specified"}</p></div><div className="rounded-2xl bg-zinc-50 p-5"><p className="text-xs uppercase tracking-wide text-zinc-400">Joining date</p><p className="mt-2 font-semibold">{placement.joining_date ? new Date(placement.joining_date).toLocaleDateString("en-IN") : "Not confirmed"}</p></div><div className="rounded-2xl bg-zinc-50 p-5"><p className="text-xs uppercase tracking-wide text-zinc-400">Replacement until</p><p className="mt-2 font-semibold">{placement.replacement_end_date ? new Date(placement.replacement_end_date).toLocaleDateString("en-IN") : "After joining"}</p></div></div></section>}
 
             <section className="rounded-[2rem] border border-white bg-white/90 p-8 shadow-[0_30px_80px_-50px_rgba(0,0,0,.5)] backdrop-blur-xl">
@@ -83,6 +124,48 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
           <div className="space-y-6">
             {status_updated === "1" && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Candidate status updated and JobiVerse has been notified.</p>}
             {offer_updated === "1" && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Offer or joining details saved successfully.</p>}
+            {shortlist === "added" && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Candidate saved to your shortlist.</p>}
+            {shortlist === "removed" && <p className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm font-semibold text-zinc-700">Candidate removed from shortlist.</p>}
+            {note_added === "1" && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Hiring note added to the protected trail.</p>}
+            <form action={toggleEmployerCandidateShortlist} className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <BookmarkCheck className={shortlistItem ? "text-emerald-600" : "text-zinc-500"} />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Employer shortlist</p>
+                  <h2 className="mt-2 text-2xl font-semibold">{shortlistItem ? "Saved candidate" : "Save for later review"}</h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-500">Build your private hiring shortlist without changing the candidate stage.</p>
+                </div>
+              </div>
+              <input type="hidden" name="candidateId" value={candidate.id} />
+              {!shortlistItem && <textarea name="note" rows={3} placeholder="Optional note for your team" className="mt-5 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-500" />}
+              <button className={`mt-4 w-full cursor-pointer rounded-xl px-5 py-3 font-semibold transition ${shortlistItem ? "border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50" : "bg-zinc-950 text-white hover:bg-zinc-800"}`}>{shortlistItem ? "Remove from shortlist" : "Save to shortlist"}</button>
+            </form>
+            <section className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start gap-3">
+                <LockKeyhole className="text-zinc-500" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Client hiring notes lock</p>
+                  <h2 className="mt-2 text-2xl font-semibold">Protected decision trail</h2>
+                  <p className="mt-2 text-sm leading-6 text-zinc-500">Record interview concerns, fitment decisions and follow-up notes. JobiVerse-submitted candidates are marked in the audit trail for introduction protection.</p>
+                </div>
+              </div>
+              <form action={addEmployerCandidateNote} className="mt-5 space-y-3">
+                <input type="hidden" name="candidateId" value={candidate.id} />
+                <textarea name="note" required minLength={3} rows={4} placeholder="Add hiring note..." className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none focus:border-zinc-500" />
+                <button className="w-full cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 font-semibold text-white transition hover:bg-zinc-800">Add protected note</button>
+              </form>
+              <div className="mt-5 space-y-3">
+                {hiringNotes?.length ? hiringNotes.map((note: any) => (
+                  <article key={note.id} className="rounded-2xl bg-zinc-50 p-4 text-sm text-zinc-700">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                      <span>{note.is_jobiverse_protected ? "JobiVerse protected" : "Employer note"}</span>
+                      <span>{new Date(note.created_at).toLocaleDateString("en-IN")}</span>
+                    </div>
+                    {note.note}
+                  </article>
+                )) : <p className="rounded-2xl border border-dashed border-zinc-200 p-5 text-center text-sm text-zinc-500">No notes yet.</p>}
+              </div>
+            </section>
             <form action={updateEmployerCandidateStatus} className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Employer status control</p>
               <h2 className="mt-2 text-2xl font-semibold">Update candidate stage</h2>

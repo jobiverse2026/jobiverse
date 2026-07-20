@@ -152,6 +152,74 @@ export function recruiterQualitySuggestions(input: {
   return suggestions.length ? suggestions.slice(0, 3) : ["Maintain submission quality, fast follow-ups and accurate candidate status updates."];
 }
 
+export function jobiverseCandidateFitFeedback(input: {
+  candidateName?: string | null;
+  jobTitle?: string | null;
+  candidateSkills?: string | null;
+  requiredSkills?: string | null;
+  experience?: string | number | null;
+  noticePeriod?: string | null;
+  location?: string | null;
+  status?: string | null;
+}) {
+  const candidateWords = new Set(words(input.candidateSkills));
+  const requiredWords = words(input.requiredSkills);
+  const matched = requiredWords.filter((skill) => candidateWords.has(skill)).slice(0, 5);
+  const name = input.candidateName || "This candidate";
+  const role = input.jobTitle || "this requirement";
+  const feedback = [
+    matched.length
+      ? `${name} shows overlap with ${matched.join(", ")} for ${role}.`
+      : `${name} needs a deeper skill review against ${role}.`,
+    input.experience ? `Experience signal: ${input.experience}.` : "Experience details should be confirmed during screening.",
+    input.noticePeriod ? `Joining readiness: notice period is ${input.noticePeriod}.` : "Notice period is not captured yet.",
+    input.location ? `Location signal: ${input.location}.` : "Location fit should be verified before interview scheduling.",
+    input.status ? `Current hiring stage: ${input.status}.` : "Stage is still open for employer review.",
+  ];
+  return {
+    title: "JobiVerse fit explanation",
+    summary: matched.length >= 2
+      ? "JobiVerse view: profile has visible alignment, proceed with structured screening."
+      : "JobiVerse view: profile should be screened carefully before moving ahead.",
+    feedback,
+  };
+}
+
+export function jobiverseApplicationFeedback(status?: string | null, jobTitle?: string | null) {
+  const value = String(status ?? "Applied").toLowerCase();
+  const role = jobTitle || "this role";
+  if (value.includes("reject")) return {
+    tone: "red",
+    title: "JobiVerse feedback",
+    message: `This application for ${role} is closed. Improve role-fit keywords, resume clarity and interview readiness before applying to similar roles.`,
+    action: "Use JobiVerse resume and career guidance to strengthen the next application.",
+  };
+  if (value.includes("interview")) return {
+    tone: "violet",
+    title: "JobiVerse feedback",
+    message: `You are in interview movement for ${role}. Prepare role stories, projects, notice period answer and salary expectation clearly.`,
+    action: "Book JobiVerse interview tips if you want guided preparation.",
+  };
+  if (value.includes("offer") || value.includes("selected")) return {
+    tone: "emerald",
+    title: "JobiVerse feedback",
+    message: `Good movement on ${role}. Keep documents, joining date and negotiation points ready.`,
+    action: "Use JobiVerse offer guidance if you need support before acceptance.",
+  };
+  if (value.includes("short") || value.includes("screen") || value.includes("review")) return {
+    tone: "amber",
+    title: "JobiVerse feedback",
+    message: `Your application for ${role} is being evaluated. Strong profile completeness and clear proof links improve confidence.`,
+    action: "Update your JobiVerse Card and resume if anything important is missing.",
+  };
+  return {
+    tone: "blue",
+    title: "JobiVerse feedback",
+    message: `Application sent for ${role}. Keep your JobiVerse Card updated so employers can assess your fit faster.`,
+    action: "Track status here and continue applying to relevant roles.",
+  };
+}
+
 export type JobMatchInput = {
   job_title?: string | null;
   primary_skills?: string | null;

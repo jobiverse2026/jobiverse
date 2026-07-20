@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Siren,
   WalletCards,
 } from "lucide-react";
 
@@ -21,7 +22,7 @@ const money = new Intl.NumberFormat("en-IN", {
 });
 
 export default async function AdminDashboardPage() {
-  const { stats, latestRequirements, latestOrders } = await getDashboardData();
+  const { stats, latestRequirements, latestOrders, leakageWatchlist } = await getDashboardData();
 
   const overview = [
     {
@@ -162,6 +163,29 @@ export default async function AdminDashboardPage() {
             ))
           ) : (
             <Empty text="No JobiVerse assigned requirements yet." />
+          )}
+        </Panel>
+
+        <Panel title="Revenue leakage watchlist" subtitle="JobiVerse-introduced candidates where status movement needs commercial tracking.">
+          {leakageWatchlist.length ? (
+            leakageWatchlist.map((item: any) => {
+              const requirement = Array.isArray(item.requirements) ? item.requirements[0] : item.requirements;
+              const company = Array.isArray(requirement?.companies) ? requirement.companies[0] : requirement?.companies;
+              return (
+                <Row
+                  key={item.id}
+                  title={item.full_name ?? "JobiVerse candidate"}
+                  meta={`${requirement?.job_title ?? "Requirement"} | ${company?.company_name ?? "Company"} | Introduced ${new Date(item.created_at).toLocaleDateString("en-IN")}`}
+                  status={item.status ?? "active"}
+                  href={`/admin/candidates?q=${encodeURIComponent(item.full_name ?? "")}`}
+                />
+              );
+            })
+          ) : (
+            <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50 p-8 text-center text-sm text-emerald-700">
+              <Siren className="mx-auto mb-3" size={20} />
+              No active leakage signals right now.
+            </div>
           )}
         </Panel>
 

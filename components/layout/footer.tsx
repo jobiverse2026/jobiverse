@@ -26,6 +26,10 @@ const companyLinks = [
     href: "/pricing",
   },
   {
+    name: "Why JobiVerse",
+    href: "/why-jobiverse",
+  },
+  {
     name: "Industries",
     href: "/industries",
   },

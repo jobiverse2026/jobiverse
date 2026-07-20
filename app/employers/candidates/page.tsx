@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, MapPin, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, BadgeIndianRupee, BookmarkCheck, BriefcaseBusiness, CalendarCheck, MapPin, ShieldCheck, Users } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
@@ -20,6 +20,14 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
+
+  const { data: shortlists } = await adminSupabase
+    .from("employer_candidate_shortlists")
+    .select("candidate_id, created_at")
+    .eq("company_id", access.company.id)
+    .eq("employer_id", user.id)
+    .order("created_at", { ascending: false });
+  const shortlistIds = new Set((shortlists ?? []).map((item: any) => item.candidate_id));
 
   const allCandidates = (candidates ?? []) as any[];
   const visibleCandidates = source === "jobiverse"
@@ -101,6 +109,26 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
               </Link>
             ))}
             {status !== "all" && <Link href={`/employers/candidates?source=${source}${requirement ? `&requirement=${requirement}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm">Clear status filter</Link>}
+          </section>
+        )}
+
+        {!!shortlistIds.size && (
+          <section className="mt-8 rounded-[2rem] border border-emerald-200 bg-emerald-50 p-7 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-600 text-white"><BookmarkCheck size={21} /></span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Employer saved shortlist</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-emerald-950">{shortlistIds.size} saved candidate{shortlistIds.size > 1 ? "s" : ""}</h2>
+                  <p className="mt-1 text-sm text-emerald-800">Open a saved profile and remove it from shortlist when it is no longer a priority.</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {filteredCandidates.filter((candidate:any) => shortlistIds.has(candidate.id)).slice(0, 4).map((candidate:any) => (
+                  <Link key={`shortlist-${candidate.id}`} href={`/employers/candidates/${candidate.id}`} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-emerald-900 shadow-sm">{candidate.full_name || "Candidate"}</Link>
+                ))}
+              </div>
+            </div>
           </section>
         )}
 

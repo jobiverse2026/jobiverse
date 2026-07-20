@@ -20,6 +20,7 @@ export async function getDashboardData() {
     pendingRefunds,
     pendingPayoutAccounts,
     unreadSupport,
+    leakageWatchlist,
   ] = await Promise.all([
     supabase.from("requirements").select("id", { count: "exact", head: true }),
     supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
@@ -35,6 +36,13 @@ export async function getDashboardData() {
     supabase.from("marketplace_refund_requests").select("id", { count: "exact", head: true }).in("status", ["requested", "gateway_pending"]),
     supabase.from("creator_payout_profiles").select("id", { count: "exact", head: true }).eq("verification_status", "pending"),
     supabase.from("support_conversations").select("id", { count: "exact", head: true }).gt("unread_for_admin", 0),
+    supabase
+      .from("candidates")
+      .select("id, full_name, status, created_at, recruiter_name, recruiter_email, source, requirements(job_title, companies(company_name))")
+      .or("source.eq.jobiverse_hiring_team,recruiter_email.eq.jobiverse@outlook.com,recruiter_name.eq.JobiVerse Hiring Team")
+      .in("status", ["Client Submitted", "Interview", "Selected", "Offered"])
+      .order("created_at", { ascending: true })
+      .limit(6),
   ]);
 
   const { data: latestRequirements } = await supabase
@@ -81,5 +89,6 @@ export async function getDashboardData() {
 
     latestRequirements: latestRequirements ?? [],
     latestOrders: latestOrders ?? [],
+    leakageWatchlist: leakageWatchlist.data ?? [],
   };
 }

@@ -200,3 +200,86 @@ export async function manageEmployerCandidateOffer(formData: FormData) {
   revalidatePath("/admin/candidates");
   redirect(`/employers/candidates/${candidateId}?offer_updated=1`);
 }
+
+export async function toggleEmployerCandidateShortlist(formData: FormData) {
+  const candidateId = z.string().uuid().parse(formData.get("candidateId"));
+  const note = z.string().trim().max(700).optional().parse(String(formData.get("note") ?? "") || undefined);
+  const { user } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id);
+
+  const { data: candidate, error } = await scopeEmployerJoinedRequirementQuery(adminSupabase
+    .from("candidates")
+    .select("id, full_name, requirements!inner(id, employer_id, company_id)")
+    .eq("id", candidateId),
+    access,
+    user.id
+  ).maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!candidate) throw new Error("Candidate not found or access denied.");
+
+  const { data: existing } = await adminSupabase
+    .from("employer_candidate_shortlists")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .eq("employer_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { error: deleteError } = await adminSupabase
+      .from("employer_candidate_shortlists")
+      .delete()
+      .eq("id", existing.id);
+    if (deleteError) throw new Error(deleteError.message);
+    revalidatePath("/employers/candidates");
+    revalidatePath(`/employers/candidates/${candidateId}`);
+    redirect(`/employers/candidates/${candidateId}?shortlist=removed`);
+  }
+
+  const { error: insertError } = await adminSupabase.from("employer_candidate_shortlists").insert({
+    company_id: access.company.id,
+    employer_id: user.id,
+    candidate_id: candidateId,
+    note: note ?? null,
+  });
+  if (insertError) throw new Error(insertError.message);
+
+  revalidatePath("/employers/candidates");
+  revalidatePath(`/employers/candidates/${candidateId}`);
+  redirect(`/employers/candidates/${candidateId}?shortlist=added`);
+}
+
+export async function addEmployerCandidateNote(formData: FormData) {
+  const candidateId = z.string().uuid().parse(formData.get("candidateId"));
+  const note = z.string().trim().min(3).max(1500).parse(formData.get("note"));
+  const { user } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id);
+
+  const { data: candidate, error } = await scopeEmployerJoinedRequirementQuery(adminSupabase
+    .from("candidates")
+    .select("id, full_name, source, recruiter_name, recruiter_email, requirements!inner(id, employer_id, company_id)")
+    .eq("id", candidateId),
+    access,
+    user.id
+  ).maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!candidate) throw new Error("Candidate not found or access denied.");
+
+  const isJobiVerseProtected =
+    candidate.source === "jobiverse_hiring_team" ||
+    candidate.recruiter_name === "JobiVerse Hiring Team" ||
+    candidate.recruiter_email === "jobiverse@outlook.com";
+
+  const { error: noteError } = await adminSupabase.from("employer_candidate_notes").insert({
+    company_id: access.company.id,
+    employer_id: user.id,
+    candidate_id: candidateId,
+    note,
+    is_jobiverse_protected: isJobiVerseProtected,
+  });
+  if (noteError) throw new Error(noteError.message);
+
+  revalidatePath(`/employers/candidates/${candidateId}`);
+  redirect(`/employers/candidates/${candidateId}?note_added=1`);
+}

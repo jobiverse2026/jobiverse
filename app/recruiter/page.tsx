@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CircleCheckBig,
   Clock3,
+  TimerReset,
   UserRoundCheck,
   UsersRound,
   XCircle,
@@ -35,7 +36,7 @@ export default async function RecruiterDashboard() {
       .order("created_at", { ascending: false }),
     supabase
       .from("candidates")
-      .select("id,full_name,primary_skills,status,requirement_id,created_at")
+      .select("id,full_name,primary_skills,status,requirement_id,created_at,updated_at")
       .eq("recruiter_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
@@ -67,6 +68,16 @@ export default async function RecruiterDashboard() {
   ] as const;
   const requirementTitles = new Map((requirements ?? []).map((item) => [item.id, item.job_title]));
   const stages = ["Submitted", "Screening", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected"];
+  const now = Date.now();
+  const followUpDue = rows
+    .filter((item) => ["submitted", "screening", "client submitted", "interview"].includes(normalize(item.status)))
+    .map((item) => ({
+      ...item,
+      idleDays: Math.floor((now - new Date(item.updated_at ?? item.created_at).getTime()) / 86400000),
+    }))
+    .filter((item) => item.idleDays >= 2)
+    .sort((a, b) => b.idleDays - a.idleDays)
+    .slice(0, 6);
 
   return (
     <div className="space-y-8">
@@ -159,6 +170,27 @@ export default async function RecruiterDashboard() {
             </Link>
           ))}
           {!requirements?.length && <Empty text="No roles assigned yet." />}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-amber-200 bg-amber-50 p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-amber-700"><TimerReset size={15} /> Follow-up SLA</p>
+            <h2 className="mt-2 text-2xl font-bold text-amber-950">Profiles needing movement.</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-amber-900">JobiVerse recommends updating candidate stage or adding interview feedback within 48 hours, so employers do not see silent pipelines.</p>
+          </div>
+          <Link href="/recruiter/reports" className="rounded-xl bg-amber-900 px-5 py-3 text-sm font-bold text-white">Open report</Link>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {followUpDue.length ? followUpDue.map((candidate) => (
+            <Link key={candidate.id} href={`/recruiter/candidates/${candidate.id}`} className="rounded-2xl bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">{candidate.idleDays} days without update</p>
+              <h3 className="mt-2 font-bold text-zinc-950">{candidate.full_name}</h3>
+              <p className="mt-1 text-xs text-zinc-500">{requirementTitles.get(candidate.requirement_id) ?? "Assigned requirement"}</p>
+              <p className="mt-3 text-xs font-semibold capitalize text-zinc-700">{candidate.status}</p>
+            </Link>
+          )) : <p className="rounded-2xl border border-dashed border-amber-200 bg-white/70 p-8 text-center text-sm text-amber-800 md:col-span-2 xl:col-span-3">All active candidates are inside SLA. Nice clean pipeline.</p>}
         </div>
       </section>
     </div>
