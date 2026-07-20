@@ -7,13 +7,7 @@ import { requireRole } from "@/lib/auth/authorization";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { claimPendingEmployerTeamInvite } from "@/lib/employer-team/invitations";
-
-async function employerCompany(employerId: string) {
-  const { data, error } = await adminSupabase.from("companies").select("id,owner_id,company_name,recruiter_seat_limit,employer_seat_limit").eq("owner_id", employerId).maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Complete your company profile before inviting team members.");
-  return data;
-}
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
 
 export async function inviteEmployerRecruiter(formData: FormData) {
   const { user } = await requireRole(["employer"]);
@@ -27,16 +21,21 @@ export async function inviteEmployerRecruiter(formData: FormData) {
   const invalidEmail = emails.find((email) => !emailSchema.safeParse(email).success);
   if (invalidEmail) throw new Error(`Invalid email address: ${invalidEmail}`);
   const inviteRole = z.enum(["employer", "recruiter"]).parse(formData.get("inviteRole") ?? "recruiter");
-  const company = await employerCompany(user.id);
+  const access = await getEmployerCompanyAccess(user.id);
+  const company = access.company;
+  if (!access.isMasterEmployer && inviteRole === "employer") {
+    throw new Error("Only the master employer can add employer access. Invited employers can add recruiters only.");
+  }
+  const managerId = access.isMasterEmployer ? company.owner_id : user.id;
   const [{ count: activeMembers }, { count: pendingInvites }, { data: duplicateInvites }] = await Promise.all([
-    adminSupabase.from("employer_team_members").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("status", "active"),
-    adminSupabase.from("employer_team_invitations").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").gt("expires_at", new Date().toISOString()),
-    adminSupabase.from("employer_team_invitations").select("invited_email").eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").in("invited_email", emails),
+    adminSupabase.from("employer_team_members").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("employer_id", managerId).eq("status", "active"),
+    adminSupabase.from("employer_team_invitations").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("employer_id", managerId).eq("status", "pending").gt("expires_at", new Date().toISOString()),
+    adminSupabase.from("employer_team_invitations").select("invited_email").eq("company_id", company.id).eq("role", inviteRole).eq("employer_id", managerId).eq("status", "pending").in("invited_email", emails),
   ]);
   const duplicateEmails = new Set((duplicateInvites ?? []).map((invite) => String(invite.invited_email).toLowerCase()));
   const newEmails = emails.filter((email) => !duplicateEmails.has(email));
   const usedSeats = (activeMembers ?? 0) + (pendingInvites ?? 0);
-  const seatLimit = inviteRole === "employer" ? company.employer_seat_limit : company.recruiter_seat_limit;
+  const seatLimit = inviteRole === "employer" ? company.employer_seat_limit : (access.isMasterEmployer ? company.recruiter_seat_limit : (company.recruiter_seat_allowance ?? 0));
   if (!newEmails.length) {
     revalidatePath("/employers/team");
     revalidatePath("/employers/dashboard");
@@ -45,7 +44,7 @@ export async function inviteEmployerRecruiter(formData: FormData) {
   if (usedSeats + newEmails.length > seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Seats left: ${Math.max(0, seatLimit - usedSeats)}. You tried to add ${newEmails.length}. Ask JobiVerse admin to increase seats.`);
   const rows = newEmails.map((email) => ({
     company_id: company.id,
-    employer_id: user.id,
+    employer_id: managerId,
     invited_email: email,
     token: crypto.randomUUID().replaceAll("-", "") + crypto.randomUUID().replaceAll("-", ""),
     role: inviteRole,
@@ -66,7 +65,10 @@ export async function inviteEmployerRecruiter(formData: FormData) {
 export async function cancelEmployerRecruiterInvite(formData: FormData) {
   const { user } = await requireRole(["employer"]);
   const id = z.string().uuid().parse(formData.get("inviteId"));
-  const { error } = await adminSupabase.from("employer_team_invitations").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id).eq("status", "pending");
+  const access = await getEmployerCompanyAccess(user.id);
+  let query = adminSupabase.from("employer_team_invitations").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", id).eq("company_id", access.company.id).eq("status", "pending");
+  if (!access.isMasterEmployer) query = query.eq("role", "recruiter").eq("employer_id", user.id);
+  const { error } = await query;
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
   revalidatePath("/employers/dashboard");
@@ -77,7 +79,10 @@ export async function updateEmployerTeamMemberStatus(formData: FormData) {
   const { user } = await requireRole(["employer"]);
   const id = z.string().uuid().parse(formData.get("memberId"));
   const status = z.enum(["active", "disabled"]).parse(formData.get("status"));
-  const { error } = await adminSupabase.from("employer_team_members").update({ status, updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id);
+  const access = await getEmployerCompanyAccess(user.id);
+  let query = adminSupabase.from("employer_team_members").update({ status, updated_at: new Date().toISOString() }).eq("id", id).eq("company_id", access.company.id);
+  if (!access.isMasterEmployer) query = query.eq("role", "recruiter").eq("employer_id", user.id);
+  const { error } = await query;
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
   revalidatePath("/employers/dashboard");
@@ -87,15 +92,36 @@ export async function updateEmployerTeamMemberStatus(formData: FormData) {
 export async function removeEmployerTeamMemberAccess(formData: FormData) {
   const { user } = await requireRole(["employer"]);
   const id = z.string().uuid().parse(formData.get("memberId"));
-  const { error } = await adminSupabase
+  const access = await getEmployerCompanyAccess(user.id);
+  let query = adminSupabase
     .from("employer_team_members")
     .delete()
     .eq("id", id)
-    .eq("employer_id", user.id);
+    .eq("company_id", access.company.id);
+  if (!access.isMasterEmployer) query = query.eq("role", "recruiter").eq("employer_id", user.id);
+  const { error } = await query;
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
   revalidatePath("/employers/dashboard");
   redirect("/employers/team?removed=1");
+}
+
+export async function updateInvitedEmployerRecruiterSeatLimit(formData: FormData) {
+  const { user } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id);
+  if (!access.isMasterEmployer) throw new Error("Only the master employer can assign recruiter seat allowances.");
+  const id = z.string().uuid().parse(formData.get("memberId"));
+  const recruiterSeatLimit = z.coerce.number().int().min(0).max(500).parse(formData.get("recruiterSeatLimit"));
+  const { error } = await adminSupabase
+    .from("employer_team_members")
+    .update({ recruiter_seat_limit: recruiterSeatLimit, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("company_id", access.company.id)
+    .eq("role", "employer");
+  if (error) throw new Error(error.message);
+  revalidatePath("/employers/team");
+  revalidatePath("/employers/dashboard");
+  redirect("/employers/team?allowance=1");
 }
 
 export async function acceptEmployerInvitation(formData: FormData) {

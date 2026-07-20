@@ -2,14 +2,15 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
 
 export async function setRequirementPublished(requirementId: string, published: boolean) {
   const { supabase, user } = await requireRole(["employer"]);
-  const { error } = await supabase
+  const access = await getEmployerCompanyAccess(user.id);
+  const { error } = await scopeEmployerRequirementQuery(supabase
     .from("requirements")
     .update({ is_public: published, published_at: published ? new Date().toISOString() : null })
-    .eq("id", requirementId)
-    .eq("employer_id", user.id);
+    .eq("id", requirementId), access, user.id);
 
   if (error) throw new Error(error.message);
 
@@ -21,13 +22,13 @@ export async function setRequirementPublished(requirementId: string, published: 
 
 export async function requestJobiVerseHiringTeam(requirementId: string) {
   const { supabase, user, profile } = await requireRole(["employer"]);
-  const { data: requirement, error } = await supabase
+  const access = await getEmployerCompanyAccess(user.id);
+  const { data: requirement, error } = await scopeEmployerRequirementQuery(supabase
     .from("requirements")
     .update({ hiring_team_requested: true, updated_at: new Date().toISOString() })
     .eq("id", requirementId)
-    .eq("employer_id", user.id)
     .select("id,job_title,hiring_team_requested")
-    .maybeSingle();
+    , access, user.id).maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!requirement) throw new Error("Requirement not found or access denied.");

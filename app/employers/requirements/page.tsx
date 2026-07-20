@@ -4,10 +4,10 @@ import RequirementsTable from "@/components/employer/requirements/RequirementsTa
 
 export default async function RequirementsPage() {
   const requirements = await getRequirements();
-  const rows = requirements ?? [];
-  const active = rows.filter((item) => !["closed", "cancelled"].includes(String(item.status ?? "").toLowerCase())).length;
-  const published = rows.filter((item) => item.is_public).length;
-  const jobiverseAssigned = rows.filter((item) => item.hiring_team_requested).length;
+  const rows = (requirements ?? []) as any[];
+  const active = rows.filter((item:any) => !["closed", "cancelled"].includes(String(item.status ?? "").toLowerCase())).length;
+  const published = rows.filter((item:any) => item.is_public).length;
+  const jobiverseAssigned = rows.filter((item:any) => item.hiring_team_requested).length;
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">

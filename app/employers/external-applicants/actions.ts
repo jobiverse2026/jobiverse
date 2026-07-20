@@ -1,5 +1,83 @@
 "use server";
-import {revalidatePath}from"next/cache";import{z}from"zod";import{requireRole}from"@/lib/auth/authorization";import{adminSupabase}from"@/lib/supabase/admin";
-async function ownedApplication(id:string,employerId:string){const{data}=await adminSupabase.from("candidate_applications").select("id,requirement_id,requirements!inner(employer_id)").eq("id",id).eq("requirements.employer_id",employerId).maybeSingle();if(!data)throw new Error("Application not found or access denied.");return data}
-export async function updateExternalApplicationStatus(applicationId:string,status:string){const parsed=z.enum(["Applied","Under Review","Shortlisted","Interview","Offered","Hired","Rejected","Withdrawn"]).parse(status);const{user}=await requireRole(["employer"]);await ownedApplication(applicationId,user.id);const{error}=await adminSupabase.from("candidate_applications").update({status:parsed,updated_at:new Date().toISOString()}).eq("id",applicationId);if(error)throw new Error(error.message);await adminSupabase.from("talent_introductions").update({hiring_status:parsed==="Hired"?"joined":parsed==="Offered"?"offered":["Rejected","Withdrawn"].includes(parsed)?parsed.toLowerCase():"in_process"}).eq("application_id",applicationId);revalidatePath(`/employers/external-applicants/${applicationId}`);revalidatePath("/employers/external-applicants");return{success:`Application moved to ${parsed}.`}}
-export async function scheduleExternalApplicantInterview(values:unknown){const parsed=z.object({applicationId:z.string().uuid(),round:z.string().trim().min(2).max(100),date:z.string().min(1),mode:z.string().trim().min(2).max(50),meetingLink:z.string().trim().max(500).optional(),interviewer:z.string().trim().max(120).optional()}).parse(values);const interviewDate=new Date(parsed.date);if(Number.isNaN(interviewDate.getTime())||interviewDate.getTime()<=Date.now())throw new Error("Select a future interview date and time.");let meetingLink=parsed.meetingLink||null;if(meetingLink&&!/^https?:\/\//i.test(meetingLink))meetingLink=`https://${meetingLink}`;if(meetingLink){try{new URL(meetingLink)}catch{throw new Error("Enter a valid meeting link.")}}const{user}=await requireRole(["employer"]);const application=await ownedApplication(parsed.applicationId,user.id);const{error}=await adminSupabase.from("application_interviews").insert({application_id:application.id,requirement_id:application.requirement_id,employer_id:user.id,interview_round:parsed.round,interview_date:interviewDate.toISOString(),interview_mode:parsed.mode,meeting_link:meetingLink,interviewer_name:parsed.interviewer||null});if(error)throw new Error(error.message);await adminSupabase.from("candidate_applications").update({status:"Interview",updated_at:new Date().toISOString()}).eq("id",application.id);revalidatePath(`/employers/external-applicants/${application.id}`);return{success:"Interview scheduled successfully."}}
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import { requireRole } from "@/lib/auth/authorization";
+import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
+import { adminSupabase } from "@/lib/supabase/admin";
+
+async function ownedApplication(id: string, userId: string) {
+  const access = await getEmployerCompanyAccess(userId);
+  const { data } = await scopeEmployerJoinedRequirementQuery(
+    adminSupabase
+      .from("candidate_applications")
+      .select("id,requirement_id,requirements!inner(employer_id,company_id)")
+      .eq("id", id),
+    access,
+    userId
+  ).maybeSingle();
+
+  if (!data) throw new Error("Application not found or access denied.");
+  return { application: data, access };
+}
+
+export async function updateExternalApplicationStatus(applicationId: string, status: string) {
+  const parsed = z.enum(["Applied", "Under Review", "Shortlisted", "Interview", "Offered", "Hired", "Rejected", "Withdrawn"]).parse(status);
+  const { user } = await requireRole(["employer"]);
+  await ownedApplication(applicationId, user.id);
+
+  const { error } = await adminSupabase
+    .from("candidate_applications")
+    .update({ status: parsed, updated_at: new Date().toISOString() })
+    .eq("id", applicationId);
+
+  if (error) throw new Error(error.message);
+
+  await adminSupabase
+    .from("talent_introductions")
+    .update({ hiring_status: parsed === "Hired" ? "joined" : parsed === "Offered" ? "offered" : ["Rejected", "Withdrawn"].includes(parsed) ? parsed.toLowerCase() : "in_process" })
+    .eq("application_id", applicationId);
+
+  revalidatePath(`/employers/external-applicants/${applicationId}`);
+  revalidatePath("/employers/external-applicants");
+  return { success: `Application moved to ${parsed}.` };
+}
+
+export async function scheduleExternalApplicantInterview(values: unknown) {
+  const parsed = z.object({
+    applicationId: z.string().uuid(),
+    round: z.string().trim().min(2).max(100),
+    date: z.string().min(1),
+    mode: z.string().trim().min(2).max(50),
+    meetingLink: z.string().trim().max(500).optional(),
+    interviewer: z.string().trim().max(120).optional(),
+  }).parse(values);
+  const interviewDate = new Date(parsed.date);
+  if (Number.isNaN(interviewDate.getTime()) || interviewDate.getTime() <= Date.now()) throw new Error("Select a future interview date and time.");
+  let meetingLink = parsed.meetingLink || null;
+  if (meetingLink && !/^https?:\/\//i.test(meetingLink)) meetingLink = `https://${meetingLink}`;
+  if (meetingLink) {
+    try {
+      new URL(meetingLink);
+    } catch {
+      throw new Error("Enter a valid meeting link.");
+    }
+  }
+  const { user } = await requireRole(["employer"]);
+  const { application } = await ownedApplication(parsed.applicationId, user.id);
+  const { error } = await adminSupabase.from("application_interviews").insert({
+    application_id: application.id,
+    requirement_id: application.requirement_id,
+    employer_id: user.id,
+    interview_round: parsed.round,
+    interview_date: interviewDate.toISOString(),
+    interview_mode: parsed.mode,
+    meeting_link: meetingLink,
+    interviewer_name: parsed.interviewer || null,
+  });
+  if (error) throw new Error(error.message);
+  await adminSupabase.from("candidate_applications").update({ status: "Interview", updated_at: new Date().toISOString() }).eq("id", application.id);
+  revalidatePath(`/employers/external-applicants/${application.id}`);
+  return { success: "Interview scheduled successfully." };
+}

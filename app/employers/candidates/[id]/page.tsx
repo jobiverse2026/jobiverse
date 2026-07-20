@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, Download, MapPin, ShieldCheck } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
+import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 import InterviewScheduler from "@/components/employer/candidates/InterviewScheduler";
 import { firstRelation } from "@/lib/relations";
 import { updateEmployerCandidateStatus } from "../actions";
@@ -13,19 +14,19 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
   const { id } = await params;
   const { status_updated } = await searchParams;
   const { supabase, user } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: candidate } = await supabase
+  const { data: candidate } = await scopeEmployerJoinedRequirementQuery(supabase
     .from("candidates")
     .select(`
       id, full_name, email, phone, current_location, total_experience,
       current_company, current_ctc, expected_ctc, notice_period,
       primary_skills, secondary_skills, resume_path, linkedin, status, created_at,
-      requirements!inner(id, job_title, employer_id),
+      requirements!inner(id, job_title, employer_id, company_id),
       interviews(id, interview_round, interview_date, interview_mode, meeting_link, interviewer_name, status, feedback, rating),
       placements(id, status, offered_ctc, joining_date, replacement_end_date)
     `)
-    .eq("id", id)
-    .eq("requirements.employer_id", user.id)
+    .eq("id", id), access, user.id)
     .maybeSingle();
 
   if (!candidate) notFound();
@@ -70,7 +71,7 @@ export default async function EmployerCandidateDetailPage({ params, searchParams
 
             <section className="rounded-[2rem] border border-white bg-white/90 p-8 shadow-[0_30px_80px_-50px_rgba(0,0,0,.5)] backdrop-blur-xl">
               <h2 className="text-2xl font-semibold">Interview timeline</h2>
-              {!candidate.interviews?.length ? <p className="mt-5 text-zinc-500">No interviews scheduled yet.</p> : <div className="mt-6 space-y-4">{candidate.interviews.map((interview) => <div key={interview.id} className="rounded-2xl border border-zinc-100 p-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">{interview.interview_round}</p><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold capitalize">{interview.status}</span></div><p className="mt-3 flex items-center gap-2 text-sm text-zinc-600"><CalendarDays size={15} /> {new Date(interview.interview_date).toLocaleString("en-IN")}</p><p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} /> {interview.interview_mode || "Mode not specified"}</p>{interview.meeting_link && <a href={interview.meeting_link} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-zinc-950 underline">Open meeting link</a>}{interview.feedback && <div className="mt-4 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-700"><span className="font-semibold">Interview feedback:</span> {interview.feedback}{interview.rating && <span className="ml-2 font-semibold">| {interview.rating}/5</span>}</div>}</div>)}</div>}
+              {!candidate.interviews?.length ? <p className="mt-5 text-zinc-500">No interviews scheduled yet.</p> : <div className="mt-6 space-y-4">{(candidate.interviews as any[]).map((interview:any) => <div key={interview.id} className="rounded-2xl border border-zinc-100 p-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">{interview.interview_round}</p><span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold capitalize">{interview.status}</span></div><p className="mt-3 flex items-center gap-2 text-sm text-zinc-600"><CalendarDays size={15} /> {new Date(interview.interview_date).toLocaleString("en-IN")}</p><p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} /> {interview.interview_mode || "Mode not specified"}</p>{interview.meeting_link && <a href={interview.meeting_link} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-zinc-950 underline">Open meeting link</a>}{interview.feedback && <div className="mt-4 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-700"><span className="font-semibold">Interview feedback:</span> {interview.feedback}{interview.rating && <span className="ml-2 font-semibold">| {interview.rating}/5</span>}</div>}</div>)}</div>}
             </section>
           </div>
 

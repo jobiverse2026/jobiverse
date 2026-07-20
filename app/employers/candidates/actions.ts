@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
 const employerCandidateStatuses = ["Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
 
@@ -13,12 +14,13 @@ export async function updateEmployerCandidateStatus(formData: FormData) {
   const candidateId = z.string().uuid().parse(formData.get("candidateId"));
   const status = z.enum(employerCandidateStatuses).parse(formData.get("status"));
   const { user, profile } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: candidate, error: candidateError } = await adminSupabase
+  const { data: candidate, error: candidateError } = await scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidates")
-    .select("id, full_name, status, recruiter_name, recruiter_email, source, requirements!inner(id, job_title, employer_id)")
+    .select("id, full_name, status, recruiter_name, recruiter_email, source, requirements!inner(id, job_title, employer_id, company_id)")
     .eq("id", candidateId)
-    .eq("requirements.employer_id", user.id)
+    , access, user.id)
     .maybeSingle();
 
   if (candidateError) throw new Error(candidateError.message);

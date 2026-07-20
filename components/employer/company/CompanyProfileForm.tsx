@@ -6,8 +6,10 @@ import type { Company } from "@/types/company";
 
 export default function CompanyProfileForm({
   company,
+  canEdit = true,
 }: {
   company: Company | null;
+  canEdit?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +50,7 @@ export default function CompanyProfileForm({
     e: React.FormEvent
   ) {
     e.preventDefault();
+    if (!canEdit) return;
 
     setLoading(true);
 
@@ -67,7 +70,13 @@ export default function CompanyProfileForm({
     <form
       onSubmit={handleSubmit}
       className="relative space-y-8 overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_30px_100px_-40px_rgba(15,23,42,0.35)] backdrop-blur-xl md:p-10"
-    >      <div className="grid gap-6 md:grid-cols-2">
+    >
+      {!canEdit && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+          This company profile is managed by the Master Employer. You can use the same company workspace and invite recruiters within your allowance.
+        </p>
+      )}
+      <fieldset disabled={!canEdit} className="grid gap-6 md:grid-cols-2 disabled:opacity-75">
         <div>
           <label className="mb-2 block text-sm font-medium">
             Company Name
@@ -256,9 +265,9 @@ export default function CompanyProfileForm({
             className="w-full rounded-xl border px-4 py-3"
           />
         </div>
-      </div>
+      </fieldset>
 
-      <div className="flex justify-end">
+      {canEdit && <div className="flex justify-end">
         <button
           type="submit"
           disabled={loading}
@@ -266,7 +275,7 @@ export default function CompanyProfileForm({
         >
           {loading ? "Saving..." : "Save Changes"}
         </button>
-      </div>
+      </div>}
     </form>
   );
 }

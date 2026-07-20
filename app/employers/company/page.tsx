@@ -1,9 +1,14 @@
 import CompanyProfileForm from "@/components/employer/company/CompanyProfileForm";
 import { getCompany } from "@/actions/company";
 import { Building2, ShieldCheck, Sparkles } from "lucide-react";
+import { requireRole } from "@/lib/auth/authorization";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
 
 export default async function CompanyPage() {
+  const { user } = await requireRole(["employer"]);
+  const access = await getEmployerCompanyAccess(user.id).catch(() => null);
   const company = await getCompany();
+  const canEdit = access?.isMasterEmployer ?? !company;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(124,58,237,0.12),_transparent_32%),linear-gradient(to_bottom_right,#fafafa,#f4f4f5)] px-6 py-12 lg:px-10">
@@ -32,7 +37,7 @@ export default async function CompanyPage() {
         </div>
       </div>
 
-      <CompanyProfileForm company={company} />
+      <CompanyProfileForm company={company} canEdit={canEdit} />
       </div>
     </main>
   );

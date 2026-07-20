@@ -3,8 +3,9 @@ import { ArrowLeft, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
 import { TeamInviteForm } from "@/components/employer/team/TeamInviteForm";
-import { cancelEmployerRecruiterInvite, removeEmployerTeamMemberAccess, updateEmployerTeamMemberStatus } from "./actions";
+import { cancelEmployerRecruiterInvite, removeEmployerTeamMemberAccess, updateEmployerTeamMemberStatus, updateInvitedEmployerRecruiterSeatLimit } from "./actions";
 
 type TeamRole = "employer" | "recruiter";
 
@@ -17,40 +18,50 @@ export default async function EmployerTeamPage({
 }) {
   const { user } = await requireRole(["employer"]);
   const params = await searchParams;
-  const { data: company } = await adminSupabase
-    .from("companies")
-    .select("id,company_name,recruiter_seat_limit,employer_seat_limit")
-    .eq("owner_id", user.id)
-    .maybeSingle();
+  let access = null as Awaited<ReturnType<typeof getEmployerCompanyAccess>> | null;
+  try {
+    access = await getEmployerCompanyAccess(user.id);
+  } catch {
+    access = null;
+  }
+  const company = access?.company ?? null;
+  const isMasterEmployer = access?.isMasterEmployer ?? false;
 
   const [{ data: members }, { data: invites }] = company
     ? await Promise.all([
         adminSupabase
           .from("employer_team_members")
-          .select("id,email,status,role,user_id,created_at")
+          .select("id,email,status,role,user_id,employer_id,recruiter_seat_limit,created_at")
           .eq("company_id", company.id)
           .order("created_at", { ascending: false }),
         adminSupabase
           .from("employer_team_invitations")
-          .select("id,invited_email,status,role,expires_at,created_at")
+          .select("id,invited_email,status,role,employer_id,expires_at,created_at")
           .eq("company_id", company.id)
           .order("created_at", { ascending: false }),
       ])
     : [{ data: [] }, { data: [] }];
 
-  const memberUserIds = [...new Set((members ?? []).map((member: any) => member.user_id).filter(Boolean))];
+  const scopedMembers = isMasterEmployer
+    ? (members ?? [])
+    : (members ?? []).filter((member: any) => member.role === "recruiter" && member.employer_id === user.id);
+  const scopedInvites = isMasterEmployer
+    ? (invites ?? [])
+    : (invites ?? []).filter((invite: any) => invite.role === "recruiter" && invite.employer_id === user.id);
+
+  const memberUserIds = [...new Set(scopedMembers.map((member: any) => member.user_id).filter(Boolean))];
   const { data: memberUsers } = memberUserIds.length
     ? await adminSupabase.from("users").select("id,full_name,email,avatar_url").in("id", memberUserIds)
     : { data: [] };
   const memberUserMap = new Map((memberUsers ?? []).map((person: any) => [person.id, person]));
 
   const usage = {
-    employer: seatUsage(members ?? [], invites ?? [], "employer"),
-    recruiter: seatUsage(members ?? [], invites ?? [], "recruiter"),
+    employer: seatUsage(scopedMembers, scopedInvites, "employer"),
+    recruiter: seatUsage(scopedMembers, scopedInvites, "recruiter"),
   };
   const limits = {
-    employer: company?.employer_seat_limit ?? 0,
-    recruiter: company?.recruiter_seat_limit ?? 0,
+    employer: isMasterEmployer ? company?.employer_seat_limit ?? 0 : 0,
+    recruiter: isMasterEmployer ? company?.recruiter_seat_limit ?? 0 : company?.recruiter_seat_allowance ?? 0,
   };
   const left = {
     employer: Math.max(0, limits.employer - usage.employer.used),
@@ -70,8 +81,10 @@ export default async function EmployerTeamPage({
         ? "Team member access restored successfully."
         : params.member === "suspended"
           ? "Team member suspended successfully. One seat is now available again."
-          : params.removed
+            : params.removed
             ? "Team member access removed successfully. One seat is now available again."
+            : (params as any).allowance
+              ? "Recruiter seat allowance updated successfully."
             : null;
 
   return (
@@ -114,7 +127,7 @@ export default async function EmployerTeamPage({
             </section>
 
             <section className="mt-7 grid gap-7 lg:grid-cols-[.9fr_1.1fr]">
-              <TeamInviteForm employerSeatsLeft={left.employer} recruiterSeatsLeft={left.recruiter} />
+              <TeamInviteForm employerSeatsLeft={left.employer} recruiterSeatsLeft={left.recruiter} canInviteEmployers={isMasterEmployer} />
 
               <section className="rounded-[2rem] border bg-white p-7 shadow-sm">
                 <div className="flex items-center gap-3">
@@ -125,8 +138,8 @@ export default async function EmployerTeamPage({
                   </div>
                 </div>
                 <div className="mt-5 space-y-3">
-                  {members?.length ? (
-                    members.map((member: any) => {
+                  {scopedMembers.length ? (
+                    scopedMembers.map((member: any) => {
                       const person = memberUserMap.get(member.user_id);
                       const active = member.status === "active";
                       const role = member.role === "employer" ? "Employer" : "Recruiter";
@@ -141,9 +154,27 @@ export default async function EmployerTeamPage({
                                   {active ? "Assigned" : "Suspended"}
                                 </span>
                               </div>
-                              <p className="mt-1 text-xs text-zinc-500">{member.email} | {active ? "Using 1 seat" : "Seat released"}</p>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
+                                <p className="mt-1 text-xs text-zinc-500">{member.email} | {active ? "Using 1 seat" : "Seat released"}</p>
+                                {isMasterEmployer && member.role === "employer" && (
+                                  <p className="mt-1 text-xs font-semibold text-zinc-700">Recruiter allowance: {member.recruiter_seat_limit ?? 0} seats</p>
+                                )}
+                              </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {isMasterEmployer && member.role === "employer" && (
+                                <form action={updateInvitedEmployerRecruiterSeatLimit} className="flex items-center gap-2 rounded-xl bg-white p-1">
+                                  <input type="hidden" name="memberId" value={member.id} />
+                                  <input
+                                    name="recruiterSeatLimit"
+                                    type="number"
+                                    min="0"
+                                    max="500"
+                                    defaultValue={member.recruiter_seat_limit ?? 0}
+                                    className="h-9 w-20 rounded-lg border border-zinc-200 px-2 text-xs font-semibold"
+                                    aria-label="Recruiter seat allowance"
+                                  />
+                                  <button className="cursor-pointer rounded-lg bg-zinc-950 px-3 py-2 text-xs font-semibold text-white">Save seats</button>
+                                </form>
+                              )}
                               <form action={updateEmployerTeamMemberStatus}>
                                 <input type="hidden" name="memberId" value={member.id} />
                                 <button
@@ -181,8 +212,8 @@ export default async function EmployerTeamPage({
                 </div>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-2">
-                {invites?.length ? (
-                  invites.map((invite: any) => (
+                {scopedInvites.length ? (
+                  scopedInvites.map((invite: any) => (
                     <article key={invite.id} className="rounded-2xl border border-zinc-200 p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div>

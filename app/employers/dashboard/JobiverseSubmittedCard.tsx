@@ -3,13 +3,14 @@ import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
 export default async function JobiverseSubmittedCard() {
   const { user } = await requireRole(["employer"]);
-  const { count } = await adminSupabase
+  const access = await getEmployerCompanyAccess(user.id);
+  const { count } = await scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidates")
-    .select("id,requirements!inner(employer_id)", { count: "exact", head: true })
-    .eq("requirements.employer_id", user.id)
+    .select("id,requirements!inner(employer_id,company_id)", { count: "exact", head: true }), access, user.id)
     .eq("recruiter_name", "JobiVerse Hiring Team");
 
   return (

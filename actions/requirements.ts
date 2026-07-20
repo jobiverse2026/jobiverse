@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { requirementSchema } from "@/validation/requirement";
 import { requireRole } from "@/lib/auth/authorization";
+import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
 
 
 export async function getRequirements() {
@@ -18,13 +19,13 @@ export async function getRequirements() {
   }
 
 
-  const { data, error } = await supabase
+  const access = await getEmployerCompanyAccess(user.id);
+  const { data, error } = await scopeEmployerRequirementQuery(supabase
     .from("requirements")
     .select("*")
-    .eq("employer_id", user.id)
     .order("created_at", {
       ascending: false,
-    });
+    }), access, user.id);
 
 
   if (error) {
@@ -51,12 +52,11 @@ export async function getRequirement(id: string) {
   }
 
 
-  const { data, error } = await supabase
+  const access = await getEmployerCompanyAccess(user.id);
+  const { data, error } = await scopeEmployerRequirementQuery(supabase
     .from("requirements")
     .select("*")
-    .eq("id", id)
-    .eq("employer_id", user.id)
-    .single();
+    .eq("id", id), access, user.id).single();
 
 
   if (error) {
@@ -98,46 +98,8 @@ export async function createRequirement(values: unknown) {
 
 
 
-    const {
-      data: company,
-      error: companyError,
-    } =
-      await supabase
-        .from("companies")
-        .select("id, company_name, owner_id")
-        .eq("owner_id", user.id)
-        .maybeSingle();
-
-
-
-    if (companyError) {
-
-      console.log(
-        "COMPANY ERROR:",
-        companyError
-      );
-
-      throw new Error(
-        companyError.message
-      );
-    }
-
-
-
-    console.log(
-      "COMPANY FOUND:",
-      company
-    );
-
-
-
-    if (!company) {
-
-      throw new Error(
-        "Please complete your Company Profile before creating a requirement."
-      );
-
-    }
+    const access = await getEmployerCompanyAccess(user.id);
+    const company = access.company;
 
 
 
@@ -258,11 +220,12 @@ export async function updateRequirement(
 
 
 
+  const access = await getEmployerCompanyAccess(user.id);
   const {
     data,
     error,
   } =
-    await supabase
+    await scopeEmployerRequirementQuery(supabase
       .from("requirements")
       .update({
         job_title: parsed.job_title,
@@ -284,9 +247,7 @@ export async function updateRequirement(
 
       })
 
-      .eq("id", id)
-
-      .eq("employer_id", user.id)
+      .eq("id", id), access, user.id)
 
       .select()
 
@@ -330,14 +291,14 @@ export async function deleteRequirement(
 
 
 
+  const access = await getEmployerCompanyAccess(user.id);
   const {
     error,
   } =
-    await supabase
+    await scopeEmployerRequirementQuery(supabase
       .from("requirements")
       .delete()
-      .eq("id", id)
-      .eq("employer_id", user.id);
+      .eq("id", id), access, user.id);
 
 
 
@@ -360,17 +321,17 @@ export async function updateRequirementStatus(
   const { supabase, user } = await requireRole(["employer"]);
 
 
+  const access = await getEmployerCompanyAccess(user.id);
   const {
     data,
     error,
-  } = await supabase
+  } = await scopeEmployerRequirementQuery(supabase
     .from("requirements")
     .update({
       status,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .eq("employer_id", user.id)
+    .eq("id", id), access, user.id)
     .select()
     .maybeSingle();
 

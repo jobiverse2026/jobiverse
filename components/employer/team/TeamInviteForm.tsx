@@ -7,9 +7,11 @@ import { inviteEmployerRecruiter } from "@/app/employers/team/actions";
 export function TeamInviteForm({
   employerSeatsLeft,
   recruiterSeatsLeft,
+  canInviteEmployers = true,
 }: {
   employerSeatsLeft: number;
   recruiterSeatsLeft: number;
+  canInviteEmployers?: boolean;
 }) {
   const [emails, setEmails] = useState([""]);
 
@@ -27,11 +29,15 @@ export function TeamInviteForm({
       </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
-          <input type="radio" name="inviteRole" value="employer" className="mr-2" />
-          Employer access
-          <span className="mt-1 block text-xs font-normal text-zinc-500">{employerSeatsLeft} seats left</span>
-        </label>
+        {canInviteEmployers ? (
+          <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
+            <input type="radio" name="inviteRole" value="employer" className="mr-2" />
+            Employer access
+            <span className="mt-1 block text-xs font-normal text-zinc-500">{employerSeatsLeft} seats left</span>
+          </label>
+        ) : (
+          <input type="hidden" name="inviteRole" value="recruiter" />
+        )}
         <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
           <input type="radio" name="inviteRole" value="recruiter" defaultChecked className="mr-2" />
           Recruiter access

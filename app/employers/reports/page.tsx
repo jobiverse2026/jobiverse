@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart3, BriefcaseBusiness, CalendarDays, CheckCircle2, FileText, Filter, Trophy, Users } from "lucide-react";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
+import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -58,12 +59,12 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
   const params = await searchParams;
   const from = asDateStart(params.from);
   const to = asDateEnd(params.to);
+  const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: requirements, error: requirementError } = await adminSupabase
+  const { data: requirements, error: requirementError } = await scopeEmployerRequirementQuery(adminSupabase
     .from("requirements")
     .select("id, job_title, department, vacancies, status, priority, created_at, assigned_recruiter")
-    .eq("employer_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }), access, user.id);
 
   if (requirementError) throw new Error(requirementError.message);
 
@@ -146,8 +147,8 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
     performanceMap.set(key, existing);
   }
 
-  const performanceRows = [...performanceMap.values()].map((row) => {
-    row.openingsTouched = [...row.requirementIds].reduce((sum, requirementId) => {
+  const performanceRows = [...performanceMap.values()].map((row:any) => {
+    row.openingsTouched = [...row.requirementIds].reduce((sum:number, requirementId:any) => {
       const requirement: any = (requirements ?? []).find((item: any) => item.id === requirementId);
       return sum + Number(requirement?.vacancies ?? 0);
     }, 0);
@@ -156,11 +157,11 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
 
   const totals = {
     requirements: requirementRows.length,
-    submitted: requirementRows.reduce((sum, row) => sum + row.candidates.length, 0),
-    l1: requirementRows.reduce((sum, row) => sum + row.l1, 0),
-    l2: requirementRows.reduce((sum, row) => sum + row.l2, 0),
-    fulfilled: requirementRows.reduce((sum, row) => sum + row.fulfilled, 0),
-    openings: requirementRows.reduce((sum, row) => sum + row.openings, 0),
+    submitted: requirementRows.reduce((sum:number, row:any) => sum + row.candidates.length, 0),
+    l1: requirementRows.reduce((sum:number, row:any) => sum + row.l1, 0),
+    l2: requirementRows.reduce((sum:number, row:any) => sum + row.l2, 0),
+    fulfilled: requirementRows.reduce((sum:number, row:any) => sum + row.fulfilled, 0),
+    openings: requirementRows.reduce((sum:number, row:any) => sum + row.openings, 0),
   };
 
   return (
@@ -263,7 +264,7 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {requirementRows.length ? requirementRows.map((row) => (
+                {requirementRows.length ? requirementRows.map((row:any) => (
                   <tr key={row.id} className="align-top hover:bg-zinc-50/70">
                     <td className="px-5 py-5 font-semibold text-zinc-500">{row.sr}</td>
                     <td className="px-5 py-5">

@@ -1,6 +1,8 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { adminSupabase } from "@/lib/supabase/admin";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
 import { companySchema } from "@/validation/company";
 
 export async function getCompany() {
@@ -15,10 +17,17 @@ export async function getCompany() {
     return null;
   }
 
-  const { data, error } = await supabase
+  let access;
+  try {
+    access = await getEmployerCompanyAccess(user.id);
+  } catch {
+    return null;
+  }
+
+  const { data, error } = await adminSupabase
     .from("companies")
     .select("*")
-    .eq("owner_id", user.id)
+    .eq("id", access.company.id)
     .maybeSingle();
 
   if (error) {
@@ -40,6 +49,8 @@ export async function createCompany(values: unknown) {
   }
 
   const parsed = companySchema.parse(values);
+  const access = await getEmployerCompanyAccess(user.id).catch(() => null);
+  if (access && !access.isMasterEmployer) throw new Error("Only the master employer can edit the company profile.");
 
   const { data, error } = await supabase
     .from("companies")
@@ -69,6 +80,8 @@ export async function updateCompany(values: unknown) {
   }
 
   const parsed = companySchema.parse(values);
+  const access = await getEmployerCompanyAccess(user.id).catch(() => null);
+  if (access && !access.isMasterEmployer) throw new Error("Only the master employer can edit the company profile.");
 
   // Check if company already exists
   const { data: existingCompany } = await supabase

@@ -3,6 +3,7 @@ import { ArrowLeft, BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, MapPin, 
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
+import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
 const clientVisibleStatuses = ["Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -10,27 +11,27 @@ const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR
 export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string }> }) {
   const { supabase, user } = await requireRole(["employer"]);
   const { source = "all", status = "all" } = await searchParams;
+  const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: candidates, error } = await supabase
+  const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(supabase
     .from("candidates")
-    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(job_title,employer_id), placements(status, offered_ctc, joining_date, replacement_end_date)")
-    .eq("requirements.employer_id", user.id)
+    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
     .in("status", clientVisibleStatuses)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
-  const allCandidates = candidates ?? [];
+  const allCandidates = (candidates ?? []) as any[];
   const visibleCandidates = source === "jobiverse"
-    ? allCandidates.filter((candidate) => candidate.recruiter_name === "JobiVerse Hiring Team")
+    ? allCandidates.filter((candidate:any) => candidate.recruiter_name === "JobiVerse Hiring Team")
     : allCandidates;
-  const filteredCandidates = status === "all" ? visibleCandidates : visibleCandidates.filter((candidate) => candidate.status === status);
-  const offeredCandidates = filteredCandidates.filter((candidate) => {
+  const filteredCandidates = status === "all" ? visibleCandidates : visibleCandidates.filter((candidate:any) => candidate.status === status);
+  const offeredCandidates = filteredCandidates.filter((candidate:any) => {
     const placement = firstRelation(candidate.placements);
     return placement ? ["offered", "accepted"].includes(String(placement.status ?? "").toLowerCase()) : false;
   });
   const stageSummary = clientVisibleStatuses
-    .map((status) => ({ status, count: visibleCandidates.filter((candidate) => candidate.status === status).length }))
+    .map((status) => ({ status, count: visibleCandidates.filter((candidate:any) => candidate.status === status).length }))
     .filter((item) => item.count > 0);
 
   return (
@@ -91,7 +92,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
               <span className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold">{offeredCandidates.length} active</span>
             </div>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {offeredCandidates.map((candidate) => {
+              {offeredCandidates.map((candidate:any) => {
                 const offer = firstRelation(candidate.placements);
                 const requirement = firstRelation(candidate.requirements);
                 return (
@@ -130,7 +131,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
               <h2 className="mt-2 text-3xl font-semibold tracking-tight">All candidates</h2>
             </div>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {filteredCandidates.map((candidate) => {
+              {filteredCandidates.map((candidate:any) => {
                 const placement = firstRelation(candidate.placements);
                 const requirement = firstRelation(candidate.requirements);
                 const displayName = candidate.full_name || "Candidate";

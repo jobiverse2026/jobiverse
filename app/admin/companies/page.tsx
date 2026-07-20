@@ -1,6 +1,6 @@
 import { BadgeCheck, Building2, MapPin, ShieldCheck, UsersRound } from "lucide-react";
 
-import { updateCompanySeatLimits, updateCompanyVerification } from "@/app/admin/directory-actions";
+import { createAdminCompany, updateCompanyMasterEmployer, updateCompanySeatLimits, updateCompanyVerification } from "@/app/admin/directory-actions";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
@@ -46,11 +46,15 @@ export default async function AdminCompaniesPage({
   const verifiedCount = (companies ?? []).filter((company) => company.is_verified).length;
   const successMessage = params.seats
     ? "Company seat limits updated successfully."
-    : params.verified === "1"
-      ? "Company verified successfully."
-      : params.verified === "0"
-        ? "Company verification removed successfully."
-        : null;
+    : (params as any).company === "created"
+      ? "Company created and Master Employer linked successfully."
+      : (params as any).master
+        ? "Master Employer updated successfully."
+        : params.verified === "1"
+          ? "Company verified successfully."
+          : params.verified === "0"
+            ? "Company verification removed successfully."
+            : null;
 
   return (
     <div className="space-y-8">
@@ -85,6 +89,21 @@ export default async function AdminCompaniesPage({
         </label>
       </form>
 
+      <form action={createAdminCompany} className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Create company</p>
+        <h2 className="mt-2 text-2xl font-semibold">Add company and assign Master Employer</h2>
+        <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_.8fr_.8fr_auto]">
+          <input name="companyName" required minLength={2} placeholder="Company name" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <select name="ownerId" required className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-3">
+            <option value="">Select Master Employer</option>
+            {(owners ?? []).map((owner) => <option key={owner.id} value={owner.id}>{owner.full_name || owner.email}</option>)}
+          </select>
+          <input name="industry" placeholder="Industry" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="city" placeholder="City" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <button className="cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 font-semibold text-white">Add company</button>
+        </div>
+      </form>
+
       <section className="grid gap-5 xl:grid-cols-2">
         {rows.length ? (
           rows.map((company) => {
@@ -111,7 +130,7 @@ export default async function AdminCompaniesPage({
                     </p>
                     <h2 className="mt-2 text-2xl font-bold">{company.company_name}</h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                      Employer: {owner?.full_name || owner?.email || "Owner not linked"}
+                      Master Employer: {owner?.full_name || owner?.email || "Owner not linked"}
                     </p>
                   </div>
                   <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold ${company.is_verified ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
@@ -163,6 +182,19 @@ export default async function AdminCompaniesPage({
                   </p>
                   <button className="mt-3 cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800">
                     Save seats
+                  </button>
+                </form>
+
+                <form action={updateCompanyMasterEmployer} className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4">
+                  <input type="hidden" name="companyId" value={company.id} />
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                    Master Employer
+                    <select name="ownerId" defaultValue={company.owner_id ?? ""} className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium normal-case tracking-normal outline-none focus:border-zinc-500">
+                      {(owners ?? []).map((person) => <option key={person.id} value={person.id}>{person.full_name || person.email}</option>)}
+                    </select>
+                  </label>
+                  <button className="mt-3 cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50">
+                    Update master employer
                   </button>
                 </form>
 
