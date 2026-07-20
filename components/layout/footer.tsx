@@ -22,6 +22,10 @@ const companyLinks = [
     href: "/services",
   },
   {
+    name: "Pricing",
+    href: "/pricing",
+  },
+  {
     name: "Industries",
     href: "/industries",
   },

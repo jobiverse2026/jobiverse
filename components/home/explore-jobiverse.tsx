@@ -5,7 +5,7 @@ const experiences=[
   {title:"Events & Workshops",text:"Discover webinars, career clinics, hiring drives and practical sessions.",href:"/events",icon:CalendarDays,label:"See upcoming events"},
   {title:"Campus Connect",text:"Structured employability and placement partnerships for institutions.",href:"/campus-partnerships",icon:GraduationCap,label:"Partner with JobiVerse"},
   {title:"JobiVerse Card",text:"Create one shareable identity for skills, work and credentials.",href:"/login/candidate?next=%2Fcareer-passport",icon:IdCard,label:"Build your card"},
-  {title:"Plans",text:"Choose optional career acceleration or employer hiring support.",href:"/plans",icon:Sparkles,label:"Explore plans"},
+  {title:"Pricing",text:"See optional plans, premium unlocks and marketplace earning models.",href:"/pricing",icon:Sparkles,label:"Explore pricing"},
   {title:"Referrals",text:"Invite genuine professionals and track eligible referral activity.",href:"/referrals",icon:UsersRound,label:"Open referrals"},
   {title:"Responsible AI",text:"Understand upcoming AI tools, safeguards and human-review boundaries.",href:"/ai",icon:Bot,label:"Explore AI"},
 ];

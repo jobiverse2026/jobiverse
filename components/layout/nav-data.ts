@@ -36,7 +36,7 @@ const exploreNavigation: NavChild[] = [
   { title: "Events & Workshops", description: "Join career clinics, webinars and hiring drives.", href: "/events", icon: Sparkles },
   { title: "Campus Partnerships", description: "Career and placement programmes for institutions.", href: "/campus-partnerships", icon: GraduationCap },
   { title: "JobiVerse Card", description: "Build a shareable professional identity.", href: "/login/candidate?next=%2Fcareer-passport", icon: Briefcase },
-  { title: "Plans", description: "Optional support plans for candidates and employers.", href: "/plans", icon: Target },
+  { title: "Pricing", description: "See JobiVerse paid plans and revenue streams.", href: "/pricing", icon: Target },
   { title: "Referrals", description: "Invite genuine professionals to JobiVerse.", href: "/referrals", icon: Users },
   { title: "Responsible AI", description: "See AI safeguards and feature status.", href: "/ai", icon: WandSparkles },
 ];
@@ -60,6 +60,7 @@ export const publicNavigation: NavItem[] = [
 const mainSiteMenu: NavChild[] = [
   { title: "Home", description: "Return to the JobiVerse homepage.", href: "/", icon: Sparkles },
   { title: "Services", description: "Explore services for every JobiVerse audience.", href: "/services", icon: Compass },
+  { title: "Pricing", description: "Paid plans, marketplace earnings and premium unlocks.", href: "/pricing", icon: Target },
   { title: "Professionals", description: "Career opportunities and professional support.", href: "/candidates", icon: Briefcase },
   { title: "Students", description: "Career tools for students and recent graduates.", href: "/students", icon: GraduationCap },
   { title: "Campus Partnerships", description: "Institution programmes, placement support and campus collaboration.", href: "/campus-partnerships", icon: GraduationCap },
