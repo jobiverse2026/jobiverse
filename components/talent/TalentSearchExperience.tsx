@@ -200,7 +200,7 @@ function TalentCard({ candidate, locked, index }: { candidate: any; locked: bool
   );
 }
 
-async function getEmployerTalentSearchAccess(userId: string, _email: string) {
+export async function getEmployerTalentSearchAccess(userId: string, _email: string) {
   const { data: company } = await adminSupabase
     .from("companies")
     .select("id,is_verified,company_email,owner_id")

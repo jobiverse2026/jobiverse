@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
-const clientVisibleStatuses = ["Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
+const clientVisibleStatuses = ["Submitted", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string }> }) {

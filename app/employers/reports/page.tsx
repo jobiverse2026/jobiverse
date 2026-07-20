@@ -3,6 +3,7 @@ import { BarChart3, BriefcaseBusiness, CalendarDays, CheckCircle2, FileText, Fil
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
+import { TableCsvDownloadButton } from "@/components/reports/TableCsvDownloadButton";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -245,10 +246,13 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
               <h2 className="text-2xl font-bold">Requirement fulfilment report</h2>
               <p className="mt-1 text-sm text-zinc-500">Requirement-wise hiring sufficiency and candidate pipeline view.</p>
             </div>
-            <Link href="/employers/requirements" className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold">Open requirements</Link>
+            <div className="flex flex-wrap gap-2">
+              <TableCsvDownloadButton tableId="employer-requirement-report-table" filename="jobiverse-employer-requirement-report.csv" />
+              <Link href="/employers/requirements" className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold">Open requirements</Link>
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[1180px] w-full text-left text-sm">
+            <table id="employer-requirement-report-table" className="min-w-[1180px] w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
                 <tr>
                   <th className="px-5 py-4">Sr No</th>

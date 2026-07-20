@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart3, BriefcaseBusiness, CalendarDays, CheckCircle2, FileText, Filter, Users } from "lucide-react";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
+import { TableCsvDownloadButton } from "@/components/reports/TableCsvDownloadButton";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -178,10 +179,13 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
               <h2 className="text-2xl font-bold">Requirement-wise report</h2>
               <p className="mt-1 text-sm text-zinc-500">Export-friendly view for daily, weekly or monthly recruiter reporting.</p>
             </div>
-            <Link href="/recruiter/requirements" className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold">Open requirements</Link>
+            <div className="flex flex-wrap gap-2">
+              <TableCsvDownloadButton tableId="recruiter-report-table" filename="jobiverse-recruiter-report.csv" />
+              <Link href="/recruiter/requirements" className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold">Open requirements</Link>
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[1180px] w-full text-left text-sm">
+            <table id="recruiter-report-table" className="min-w-[1180px] w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
                 <tr>
                   <th className="px-5 py-4">Sr No</th>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   LayoutDashboard,
@@ -41,6 +42,26 @@ const menu = [
 
 export default function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const [showTalentSearch, setShowTalentSearch] = useState(false);
+  const visibleMenu = useMemo(
+    () => menu.filter((item) => item.href !== "/recruiter/talent-search" || showTalentSearch || pathname.startsWith("/recruiter/talent-search")),
+    [pathname, showTalentSearch]
+  );
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/recruiter/talent-search-access", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : { allowed: false })
+      .then((data) => {
+        if (active) setShowTalentSearch(Boolean(data?.allowed));
+      })
+      .catch(() => {
+        if (active) setShowTalentSearch(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <aside
@@ -67,7 +88,7 @@ export default function Sidebar({ open = false, onClose }: { open?: boolean; onC
       </p>
 
       <nav className="mt-10 space-y-2">
-        {menu.map((item) => {
+        {visibleMenu.map((item) => {
           const Icon = item.icon;
 
           const active = pathname === item.href || (item.href !== "/recruiter" && pathname.startsWith(`${item.href}/`));
