@@ -9,6 +9,59 @@ import { adminSupabase } from "@/lib/supabase/admin";
 
 const candidateStatuses = ["Submitted", "Screening", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
 
+async function findAuthUserByEmail(email: string) {
+  const normalizedEmail = email.toLowerCase();
+  let page = 1;
+  while (page <= 20) {
+    const { data, error } = await adminSupabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    const match = data.users.find((user) => user.email?.toLowerCase() === normalizedEmail);
+    if (match) return match;
+    if (data.users.length < 1000) break;
+    page += 1;
+  }
+  return null;
+}
+
+async function createOrUpdateMasterEmployerAccount({ email, password, fullName }: { email: string; password: string; fullName: string }) {
+  const normalizedEmail = email.toLowerCase();
+  const existing = await findAuthUserByEmail(normalizedEmail);
+  const userId = existing?.id;
+
+  if (userId) {
+    const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
+      password,
+      email_confirm: true,
+      user_metadata: { role: "employer", full_name: fullName },
+    });
+    if (updateError) throw new Error(updateError.message);
+  } else {
+    const { data, error } = await adminSupabase.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: { role: "employer", full_name: fullName },
+    });
+    if (error) throw new Error(error.message);
+    if (!data.user?.id) throw new Error("Master Employer account could not be created.");
+  }
+
+  const authUserId = userId ?? (await findAuthUserByEmail(normalizedEmail))?.id;
+  if (!authUserId) throw new Error("Master Employer account could not be linked.");
+
+  const { error: profileError } = await adminSupabase.from("users").upsert({
+    id: authUserId,
+    email: normalizedEmail,
+    full_name: fullName,
+    role: "employer",
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  });
+  if (profileError) throw new Error(profileError.message);
+
+  return { id: authUserId, email: normalizedEmail, full_name: fullName };
+}
+
 export async function updateCompanyVerification(formData: FormData) {
   await requireRole(["admin"]);
   const id = z.string().uuid().parse(formData.get("companyId"));
@@ -34,26 +87,59 @@ export async function createAdminCompany(formData: FormData) {
   await requireRole(["admin"]);
   const parsed = z.object({
     companyName: z.string().trim().min(2).max(160),
-    ownerId: z.string().uuid(),
+    masterName: z.string().trim().min(2).max(140),
+    masterEmail: z.string().trim().email(),
+    temporaryPassword: z.string().min(8).max(128),
     industry: z.string().trim().max(120).optional(),
+    companySize: z.string().trim().max(80).optional(),
+    companyEmail: z.string().trim().email().optional(),
+    phone: z.string().trim().max(40).optional(),
+    website: z.union([z.literal(""), z.string().trim().url()]).optional(),
+    address: z.string().trim().max(250).optional(),
     city: z.string().trim().max(120).optional(),
     state: z.string().trim().max(120).optional(),
+    country: z.string().trim().max(80).optional(),
+    pincode: z.string().trim().max(20).optional(),
+    recruiterSeatLimit: z.coerce.number().int().min(0).max(500).default(0),
+    employerSeatLimit: z.coerce.number().int().min(0).max(500).default(0),
   }).parse({
     companyName: formData.get("companyName"),
-    ownerId: formData.get("ownerId"),
+    masterName: formData.get("masterName"),
+    masterEmail: formData.get("masterEmail"),
+    temporaryPassword: formData.get("temporaryPassword"),
     industry: formData.get("industry") || undefined,
+    companySize: formData.get("companySize") || undefined,
+    companyEmail: formData.get("companyEmail") || undefined,
+    phone: formData.get("phone") || undefined,
+    website: formData.get("website") || "",
+    address: formData.get("address") || undefined,
     city: formData.get("city") || undefined,
     state: formData.get("state") || undefined,
+    country: formData.get("country") || "India",
+    pincode: formData.get("pincode") || undefined,
+    recruiterSeatLimit: formData.get("recruiterSeatLimit") || 0,
+    employerSeatLimit: formData.get("employerSeatLimit") || 0,
   });
-  const { data: owner } = await adminSupabase.from("users").select("id,email,full_name").eq("id", parsed.ownerId).eq("role", "employer").maybeSingle();
-  if (!owner) throw new Error("Select a valid employer account as Master Employer.");
+  const owner = await createOrUpdateMasterEmployerAccount({
+    email: parsed.masterEmail,
+    password: parsed.temporaryPassword,
+    fullName: parsed.masterName,
+  });
   const { error } = await adminSupabase.from("companies").insert({
-    owner_id: parsed.ownerId,
+    owner_id: owner.id,
     company_name: parsed.companyName,
     industry: parsed.industry ?? null,
+    company_size: parsed.companySize ?? null,
+    website: parsed.website || null,
     city: parsed.city ?? null,
     state: parsed.state ?? null,
-    company_email: owner.email,
+    country: parsed.country ?? "India",
+    pincode: parsed.pincode ?? null,
+    address: parsed.address ?? null,
+    phone: parsed.phone ?? null,
+    company_email: parsed.companyEmail ?? owner.email,
+    recruiter_seat_limit: parsed.recruiterSeatLimit,
+    employer_seat_limit: parsed.employerSeatLimit,
   });
   if (error) throw new Error(error.code === "23505" ? "This master employer is already linked to a company." : error.message);
   revalidatePath("/admin/companies");

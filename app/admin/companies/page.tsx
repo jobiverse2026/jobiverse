@@ -47,7 +47,7 @@ export default async function AdminCompaniesPage({
   const successMessage = params.seats
     ? "Company seat limits updated successfully."
     : (params as any).company === "created"
-      ? "Company created and Master Employer linked successfully."
+      ? "Company portal created. Master Employer can log in directly with the assigned email and temporary password."
       : (params as any).master
         ? "Master Employer updated successfully."
         : params.verified === "1"
@@ -90,17 +90,41 @@ export default async function AdminCompaniesPage({
       </form>
 
       <form action={createAdminCompany} className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Create company</p>
-        <h2 className="mt-2 text-2xl font-semibold">Add company and assign Master Employer</h2>
-        <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_.8fr_.8fr_auto]">
-          <input name="companyName" required minLength={2} placeholder="Company name" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
-          <select name="ownerId" required className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-3">
-            <option value="">Select Master Employer</option>
-            {(owners ?? []).map((owner) => <option key={owner.id} value={owner.id}>{owner.full_name || owner.email}</option>)}
-          </select>
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Client onboarding</p>
+        <h2 className="mt-2 text-2xl font-semibold">Create company portal and Master Employer login</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-500">
+          Add the client company details, create the master employer email/password and assign seats. The client can log in directly from the employer portal and change password later.
+        </p>
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+          <input name="companyName" required minLength={2} placeholder="Company name *" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
           <input name="industry" placeholder="Industry" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="companySize" placeholder="Company size" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="companyEmail" type="email" placeholder="Company email" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="phone" placeholder="Company phone" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="website" type="url" placeholder="Website URL" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="address" placeholder="Address" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4 lg:col-span-3" />
           <input name="city" placeholder="City" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
-          <button className="cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 font-semibold text-white">Add company</button>
+          <input name="state" placeholder="State" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+          <input name="pincode" placeholder="Pincode" className="h-12 rounded-xl border border-zinc-200 bg-zinc-50 px-4" />
+        </div>
+        <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+          <p className="text-xs font-bold uppercase tracking-[.16em] text-zinc-400">Master Employer login</p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <input name="masterName" required minLength={2} placeholder="Master employer name *" className="h-12 rounded-xl border border-zinc-200 bg-white px-4" />
+            <input name="masterEmail" required type="email" placeholder="Master employer email *" className="h-12 rounded-xl border border-zinc-200 bg-white px-4" />
+            <input name="temporaryPassword" required minLength={8} type="text" placeholder="Temporary password *" className="h-12 rounded-xl border border-zinc-200 bg-white px-4" />
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+              Employer seats
+              <input name="employerSeatLimit" type="number" min="0" max="500" defaultValue={0} className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold normal-case tracking-normal" />
+            </label>
+            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+              Recruiter seats
+              <input name="recruiterSeatLimit" type="number" min="0" max="500" defaultValue={0} className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold normal-case tracking-normal" />
+            </label>
+            <button className="self-end cursor-pointer rounded-xl bg-zinc-950 px-5 py-3 font-semibold text-white transition hover:bg-zinc-800">
+              Create portal access
+            </button>
+          </div>
         </div>
       </form>
 
