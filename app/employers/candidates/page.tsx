@@ -15,7 +15,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
 
   const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(supabase
     .from("candidates")
-    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, recruiter_name, recruiter_email, created_at, requirements!inner(id,job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
+    .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, source, recruiter_name, recruiter_email, created_at, requirements!inner(id,job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
     .in("status", clientVisibleStatuses)
     .order("created_at", { ascending: false });
 
@@ -23,7 +23,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
 
   const allCandidates = (candidates ?? []) as any[];
   const visibleCandidates = source === "jobiverse"
-    ? allCandidates.filter((candidate:any) => candidate.recruiter_name === "JobiVerse Hiring Team")
+    ? allCandidates.filter((candidate:any) => candidate.source === "jobiverse_hiring_team" || candidate.recruiter_name === "JobiVerse Hiring Team")
     : allCandidates;
   const requirementCandidates = requirement ? visibleCandidates.filter((candidate:any) => firstRelation(candidate.requirements)?.id === requirement) : visibleCandidates;
   const filteredCandidates = status === "all" ? requirementCandidates : requirementCandidates.filter((candidate:any) => candidate.status === status);

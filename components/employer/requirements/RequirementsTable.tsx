@@ -16,6 +16,10 @@ type Requirement = {
   created_at: string;
   is_public?: boolean | null;
   hiring_team_requested?: boolean | null;
+  candidate_count?: number;
+  jobiverse_candidate_count?: number;
+  latest_candidate_status?: string | null;
+  candidate_status_counts?: { stage: string; count: number }[];
 };
 
 export default function RequirementsTable({
@@ -73,7 +77,9 @@ export default function RequirementsTable({
               <th className="px-6 py-4">Location</th>
               <th className="px-6 py-4">Experience</th>
               <th className="px-6 py-4">Vacancies</th>
-              <th className="px-6 py-4">Status</th>
+              <th className="px-6 py-4">Candidates</th>
+              <th className="px-6 py-4">Candidate status</th>
+              <th className="px-6 py-4">Requirement status</th>
               <th className="px-6 py-4">Priority</th>
               <th className="px-6 py-4">Action</th>
             </tr>
@@ -116,7 +122,32 @@ export default function RequirementsTable({
                 </td>
 
                 <td className="px-6 py-5">
-                  {item.status}
+                  <Link href={`/employers/candidates?requirement=${item.id}`} className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-3 py-2 text-xs font-bold text-white transition hover:-translate-y-0.5 hover:shadow-md">
+                    {item.candidate_count ?? 0} submitted
+                  </Link>
+                  {!!item.jobiverse_candidate_count && (
+                    <Link href={`/employers/candidates?source=jobiverse&requirement=${item.id}`} className="mt-2 block rounded-full bg-amber-50 px-3 py-1 text-center text-[10px] font-bold uppercase text-amber-700">
+                      {item.jobiverse_candidate_count} by JobiVerse
+                    </Link>
+                  )}
+                </td>
+
+                <td className="px-6 py-5">
+                  <div className="flex max-w-xs flex-wrap gap-2">
+                    {item.candidate_status_counts?.length ? item.candidate_status_counts.map((status) => (
+                      <Link key={status.stage} href={`/employers/candidates?requirement=${item.id}&status=${encodeURIComponent(status.stage)}`} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
+                        {status.stage}: {status.count}
+                      </Link>
+                    )) : (
+                      <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">No candidates</span>
+                    )}
+                  </div>
+                </td>
+
+                <td className="px-6 py-5">
+                  <Link href={`/employers/requirements/${item.id}`} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">
+                    {item.status}
+                  </Link>
                 </td>
 
                 <td className="px-6 py-5">

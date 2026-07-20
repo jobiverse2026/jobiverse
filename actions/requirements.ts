@@ -39,8 +39,37 @@ export async function getRequirements() {
     throw new Error(error.message);
   }
 
+  const rows = (data ?? []) as any[];
+  const requirementIds = rows.map((item) => item.id).filter(Boolean);
+  if (!requirementIds.length) return rows;
 
-  return data;
+  const { data: candidates, error: candidateError } = await adminSupabase
+    .from("candidates")
+    .select("id,requirement_id,status,source,recruiter_name,created_at")
+    .in("requirement_id", requirementIds);
+
+  if (candidateError) {
+    throw new Error(candidateError.message);
+  }
+
+  const candidateRows = (candidates ?? []) as any[];
+  const statuses = ["Submitted", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
+
+  return rows.map((requirement) => {
+    const related = candidateRows.filter((candidate) => candidate.requirement_id === requirement.id);
+    const jobiverseRelated = related.filter((candidate) => candidate.source === "jobiverse_hiring_team" || candidate.recruiter_name === "JobiVerse Hiring Team");
+    const statusCounts = statuses
+      .map((stage) => ({ stage, count: related.filter((candidate) => candidate.status === stage).length }))
+      .filter((item) => item.count > 0);
+
+    return {
+      ...requirement,
+      candidate_count: related.length,
+      jobiverse_candidate_count: jobiverseRelated.length,
+      latest_candidate_status: related.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.status ?? null,
+      candidate_status_counts: statusCounts,
+    };
+  });
 }
 
 

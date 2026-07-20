@@ -11,7 +11,7 @@ export default async function JobiverseSubmittedCard() {
   const { count } = await scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidates")
     .select("id,requirements!inner(employer_id,company_id)", { count: "exact", head: true }), access, user.id)
-    .eq("recruiter_name", "JobiVerse Hiring Team");
+    .or("source.eq.jobiverse_hiring_team,recruiter_name.eq.JobiVerse Hiring Team");
 
   return (
     <Link href="/employers/candidates?source=jobiverse" className="group flex items-center justify-between gap-5 rounded-[2rem] border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-zinc-50 p-7 text-zinc-950 shadow-xl transition hover:-translate-y-1">
