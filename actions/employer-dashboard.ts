@@ -2,11 +2,12 @@
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
+import { hiringHealthScore } from "@/lib/candidate/intelligence";
 
 const clientStatuses=["Submitted","Client Submitted","Interview","Selected","Offered","Joined","Rejected","Withdrawn"];
 export async function getEmployerDashboardData(){
   const{user}=await requireRole(["employer"]);
-  const empty={stats:{activeRequirements:0,candidates:0,interviews:0,positionsClosed:0,activeOffers:0,publishedJobs:0,jobiverseAssigned:0,externalApplicants:0,seatLimit:0,seatsUsed:0,seatsLeft:0,employerSeatLimit:0,employerSeatsUsed:0,employerSeatsLeft:0,recruiterSeatLimit:0,recruiterSeatsUsed:0,recruiterSeatsLeft:0},recentRequirements:[],recentCandidates:[],pipeline:clientStatuses.map(stage=>({stage,value:0}))};
+  const empty={stats:{activeRequirements:0,candidates:0,interviews:0,positionsClosed:0,activeOffers:0,publishedJobs:0,jobiverseAssigned:0,externalApplicants:0,hiringHealthScore:0,seatLimit:0,seatsUsed:0,seatsLeft:0,employerSeatLimit:0,employerSeatsUsed:0,employerSeatsLeft:0,recruiterSeatLimit:0,recruiterSeatsUsed:0,recruiterSeatsLeft:0},recentRequirements:[],recentCandidates:[],pipeline:clientStatuses.map(stage=>({stage,value:0}))};
   let access;try{access=await getEmployerCompanyAccess(user.id)}catch{return empty}
   const company=access.company;
   const requirementQuery=scopeEmployerRequirementQuery(adminSupabase.from("requirements").select("id,job_title,status,assigned_recruiter,created_at,is_public,hiring_team_requested").order("created_at",{ascending:false}),access,user.id);
@@ -41,6 +42,7 @@ export async function getEmployerDashboardData(){
     const statusCounts=clientStatuses.map(stage=>({stage,count:related.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length})).filter(item=>item.count>0);
     return{...requirement,candidate_count:related.length,latest_candidate_status:related[0]?.status??null,candidate_status_counts:statusCounts};
   });
-  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,...seatStats},recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length}))};
+  const healthScore=hiringHealthScore({activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,externalApplicants:externalApplicants.count??0});
+  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,hiringHealthScore:healthScore,...seatStats},recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length}))};
 }
 function normalize(value:string|null){return String(value??"").trim().toLowerCase().replaceAll("_"," ")}

@@ -157,6 +157,34 @@ export default function ProfessionalProfileForm({ profile }: { profile: any }) {
         </div>
       </section>
 
+      <section className="mt-8 rounded-[2rem] border border-zinc-200 bg-white p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-white">
+            <ShieldCheck size={19} />
+          </span>
+          <div>
+            <h2 className="text-xl font-semibold">Confidence, availability & deal-breakers</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-500">
+              These details power your Hiring Confidence Score, faster scheduling and better role matching.
+            </p>
+          </div>
+        </div>
+        <div className="mt-6 grid gap-5 md:grid-cols-2">
+          <label className="text-sm font-medium text-zinc-700">
+            Interview availability calendar
+            <textarea name="interview_availability" rows={5} defaultValue={profile?.interview_availability ?? ""} placeholder="Example: Mon-Fri after 7 PM, Saturday 11 AM-3 PM, 24 hours notice preferred." className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 outline-none focus:border-zinc-500" />
+          </label>
+          <label className="text-sm font-medium text-zinc-700">
+            Deal-breakers / non-negotiables
+            <textarea name="deal_breakers" rows={5} defaultValue={profile?.deal_breakers ?? ""} placeholder="Example: Minimum 12 LPA, Mumbai/Remote only, no night shifts, product companies preferred." className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 outline-none focus:border-zinc-500" />
+          </label>
+          <label className="text-sm font-medium text-zinc-700 md:col-span-2">
+            Career wallet notes
+            <textarea name="career_wallet_notes" rows={4} defaultValue={profile?.career_wallet_notes ?? ""} placeholder="Add portfolio context, certificate notes, work samples or important profile links you want to remember." className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 outline-none focus:border-zinc-500" />
+          </label>
+        </div>
+      </section>
+
       {message && <p className={`mt-5 text-sm ${message.includes("successfully") ? "text-emerald-600" : "text-red-600"}`}>{message}</p>}
       <button disabled={loading} className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-black via-zinc-800 to-zinc-600 px-7 py-4 font-semibold text-white disabled:opacity-50">
         <Save size={18} /> {loading ? "Saving..." : "Save Professional Profile"}

@@ -9,6 +9,10 @@ import {
   MessagesSquare,
   Mic2,
   Palette,
+  ShieldCheck,
+  CalendarClock,
+  HeartHandshake,
+  WalletCards,
   Search,
   Sparkles,
   TrendingUp,
@@ -84,6 +88,15 @@ const audiences = [
   },
 ] as const;
 
+const intelligenceFeatures = [
+  ["Confidence Layer", "Hiring Confidence Score that improves as talent adds CV, skills, availability, deal-breakers and verified assets.", ShieldCheck],
+  ["Availability Calendar", "Talent can share preferred interview windows so recruiters can schedule faster.", CalendarClock],
+  ["Application Health Tracker", "Applications show visible stages instead of disappearing into a black hole.", TrendingUp],
+  ["Deal-breaker Matching", "Salary, location, work mode and shift non-negotiables help avoid mismatched roles.", HeartHandshake],
+  ["Career Wallet", "CV versions, applications, saved roles, proofs and profile assets stay organized in one place.", WalletCards],
+  ["Employer Hiring Health Score", "Companies see funnel health across requirements, submissions, interviews and closures.", TrendingUp],
+] as const;
+
 export default function ServicesPage() {
   return (
     <main className="min-h-screen bg-[#f6f6f3] text-zinc-950">
@@ -95,6 +108,22 @@ export default function ServicesPage() {
       <PageSectionIndex items={audiences.map(({ id, eyebrow }) => ({ label: eyebrow, href: `#${id}` }))} />
 
       <div className="mx-auto max-w-[1450px] space-y-6 px-5 pb-28 sm:px-8">
+        <section className="overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white p-7 sm:p-10 lg:p-14">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">What makes JobiVerse different</p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">A smarter layer above ordinary job portals.</h2>
+            <p className="mt-5 text-lg leading-8 text-zinc-600">These features help talent stay ready, employers hire with confidence and JobiVerse track the journey transparently.</p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {intelligenceFeatures.map(([title, description, Icon]) => (
+              <article key={title} className="rounded-[1.75rem] border border-zinc-200 bg-zinc-50 p-6">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><Icon size={21} /></span>
+                <h3 className="mt-6 text-xl font-semibold">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-600">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
         <section className="flex flex-col justify-between gap-6 overflow-hidden rounded-[2.5rem] border border-zinc-200 bg-white p-7 sm:p-10 lg:flex-row lg:items-center lg:p-14"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">JobiVerse Personal</p><h2 className="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-5xl">Need clarity before choosing a service?</h2><p className="mt-4 max-w-3xl leading-7 text-zinc-600">Book a focused consultation for career direction, resume strategy, interview practice, employer hiring or creator onboarding.</p></div><Link href="/consultations" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 font-semibold text-white">Explore consultations<ArrowRight size={17}/></Link></section>
         {audiences.map((audience, audienceIndex) => {
           const AudienceIcon = audience.icon;

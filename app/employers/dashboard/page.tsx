@@ -9,6 +9,7 @@ import ActivityFeed from "./ActivityFeed";
 import { getEmployerDashboardData } from "@/actions/employer-dashboard";
 import ExternalApplicantsCard from "./ExternalApplicantsCard";
 import JobiverseSubmittedCard from "./JobiverseSubmittedCard";
+import HiringHealthCard from "./HiringHealthCard";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export default async function EmployerDashboardPage() {
         <DashboardHeader />
 
         <StatsCards stats={data.stats} />
+
+        <HiringHealthCard score={data.stats.hiringHealthScore} activeRequirements={data.stats.activeRequirements} candidates={data.stats.candidates} interviews={data.stats.interviews} positionsClosed={data.stats.positionsClosed} />
 
         <div className="grid gap-5 xl:grid-cols-2">
           <JobiverseSubmittedCard />

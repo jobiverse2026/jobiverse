@@ -25,6 +25,9 @@ const profileSchema = z.object({
   expected_salary_min: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
   expected_salary_max: z.coerce.number().min(0).optional().or(z.literal("").transform(() => undefined)),
   searchable_keywords: z.string().trim().max(1200).optional(),
+  interview_availability: z.string().trim().max(1200).optional(),
+  deal_breakers: z.string().trim().max(1200).optional(),
+  career_wallet_notes: z.string().trim().max(1200).optional(),
 });
 
 function normalizeUrl(value?: string) {
@@ -55,7 +58,7 @@ export async function saveCandidateProfile(formData: FormData) {
   }
 
   const profile = result.data;
-  const completionFields = [profile.headline, profile.phone, profile.current_location, profile.total_experience, profile.primary_skills, profile.preferred_roles, profile.linkedin, profile.bio, resumePath];
+  const completionFields = [profile.headline, profile.phone, profile.current_location, profile.total_experience, profile.primary_skills, profile.preferred_roles, profile.linkedin, profile.bio, resumePath, profile.interview_availability, profile.deal_breakers];
   const completion = Math.round((completionFields.filter(Boolean).length / completionFields.length) * 100);
 
   const { error } = await supabase.from("candidate_profiles").upsert({

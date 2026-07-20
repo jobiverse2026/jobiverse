@@ -13,7 +13,7 @@ import {
   UserPlus,
 } from "lucide-react";
 
-export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; seatLimit: number; seatsUsed: number; seatsLeft: number; employerSeatLimit?: number; employerSeatsUsed?: number; employerSeatsLeft?: number; recruiterSeatLimit?: number; recruiterSeatsUsed?: number; recruiterSeatsLeft?: number } }) {
+export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; hiringHealthScore?: number; seatLimit: number; seatsUsed: number; seatsLeft: number; employerSeatLimit?: number; employerSeatsUsed?: number; employerSeatsLeft?: number; recruiterSeatLimit?: number; recruiterSeatsUsed?: number; recruiterSeatsLeft?: number } }) {
   const stats = [
     { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness, href: "/employers/requirements" },
     { title: "Submitted Candidates", value: liveStats.candidates, subtitle: "All profiles shared with you", icon: Users, href: "/employers/candidates" },
