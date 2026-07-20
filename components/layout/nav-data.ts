@@ -81,6 +81,7 @@ export const marketplaceNavigation: NavItem[] = [
 export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "admin" | "creator", NavItem[]> = {
   candidate: [
     { title: "Dashboard", href: "/candidates/dashboard" },
+    { title: "Explore Opportunities", href: "/candidates/jobs" },
     { title: "Career", children: [
       { title: "Jobs", description: "Discover verified opportunities.", href: "/candidates/jobs", icon: Briefcase },
       { title: "Saved Jobs", description: "Return to opportunities saved for later.", href: "/candidates/saved-jobs", icon: Bookmark },

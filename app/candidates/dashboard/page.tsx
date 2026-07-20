@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Bookmark, BrainCircuit, BriefcaseBusiness, CalendarDays, CircleDollarSign, FileText, Sparkles, UserRound } from "lucide-react";
+import { ArrowRight, Bookmark, BrainCircuit, BriefcaseBusiness, CalendarDays, CircleDollarSign, FileText, MapPin, Search, Sparkles, Target, UserRound } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
 import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
 import { OpenToWorkToggle } from "@/components/candidate/OpenToWorkToggle";
@@ -27,6 +27,40 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
   ] as const;
   return <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,white,transparent_28%),radial-gradient(circle_at_88%_22%,rgba(99,102,241,.11),transparent_24%)]" /><div className="relative mx-auto max-w-7xl">
     <section className="rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl sm:p-12"><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Talent workspace</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">Welcome, {userProfile.full_name ?? "Professional"}.</h1><p className="mt-5 max-w-2xl text-zinc-300">{professional?.headline ?? "Complete your professional profile to unlock smarter career opportunities."}</p></section>
+    <section className="relative mt-6 overflow-hidden rounded-[2.5rem] border border-white bg-white p-6 shadow-xl sm:p-8 lg:grid lg:grid-cols-[1.05fr_.95fr] lg:gap-8">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(39,39,42,.16),transparent_65%)]" />
+      <div className="relative">
+        <span className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-white">
+          <Search size={14} /> Main career action
+        </span>
+        <h2 className="mt-6 max-w-3xl text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-5xl">
+          Explore opportunities built around your JobiVerse Card.
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-600">
+          Discover active roles, save the right ones, apply with your talent profile and track every stage from one workspace.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <Link href="/candidates/jobs" className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 font-semibold text-white transition hover:-translate-y-0.5">
+            Explore Opportunities <ArrowRight size={17} />
+          </Link>
+          <Link href="/candidates/saved-jobs" className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-4 font-semibold text-zinc-800">
+            Saved Jobs <Bookmark size={17} />
+          </Link>
+        </div>
+      </div>
+      <div className="relative mt-7 rounded-[2rem] bg-zinc-950 p-6 text-white lg:mt-0">
+        <div className="flex items-start justify-between gap-4">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-zinc-950"><BriefcaseBusiness size={21} /></span>
+          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-[10px] font-bold uppercase text-emerald-300">Active jobs</span>
+        </div>
+        <h3 className="mt-6 text-2xl font-semibold">Your opportunity cockpit</h3>
+        <div className="mt-5 grid gap-3 text-sm text-zinc-300">
+          <p className="flex items-center gap-3"><Target size={16} className="text-zinc-500" /> Match roles with your skills and preferences</p>
+          <p className="flex items-center gap-3"><MapPin size={16} className="text-zinc-500" /> Filter by location, work mode and experience</p>
+          <p className="flex items-center gap-3"><CalendarDays size={16} className="text-zinc-500" /> Track application health after applying</p>
+        </div>
+      </div>
+    </section>
     <section className="mt-6 rounded-[2rem] border border-white bg-white/90 p-5 shadow-sm backdrop-blur md:flex md:items-center md:justify-between md:gap-6">
       <div>
         <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Talent visibility</p>
