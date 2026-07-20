@@ -7,6 +7,7 @@ import StatusUpdate from "@/components/recruiter/candidate/StatusUpdate";
 import InterviewOutcomeForm from "@/components/recruiter/candidate/InterviewOutcomeForm";
 import PlacementManager from "@/components/recruiter/candidate/PlacementManager";
 import { firstRelation } from "@/lib/relations";
+import { formatIndiaDateTime } from "@/lib/format/date-time";
 
 
 type Props = {
@@ -317,7 +318,7 @@ export default async function CandidateDetailPage({
             {candidate.interviews.map((interview: any) => (
               <article key={interview.id} className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div><p className="text-lg font-semibold text-zinc-950">{interview.interview_round}</p><p className="mt-2 flex items-center gap-2 text-sm text-zinc-600"><CalendarDays size={16} /> {new Date(interview.interview_date).toLocaleString("en-IN")}</p></div>
+                  <div><p className="text-lg font-semibold text-zinc-950">{interview.interview_round}</p><p className="mt-2 flex items-center gap-2 text-sm text-zinc-600"><CalendarDays size={16} /> {formatIndiaDateTime(interview.interview_date)}</p></div>
                   <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold capitalize text-zinc-600 shadow-sm">{interview.status}</span>
                 </div>
                 <div className="mt-5 grid gap-3 text-sm text-zinc-600 sm:grid-cols-2"><p className="flex items-center gap-2"><Video size={16} /> {interview.interview_mode || "Mode not specified"}</p><p className="flex items-center gap-2"><UserRound size={16} /> {interview.interviewer_name || "Interviewer not specified"}</p></div>
@@ -370,7 +371,6 @@ export default async function CandidateDetailPage({
   );
 
 }
-
 
 
 

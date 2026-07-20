@@ -138,6 +138,11 @@ export function Navbar() {
     const itemPath = item.href?.split(/[?#]/)[0];
     const isActive = Boolean(itemPath && (pathname === itemPath || (itemPath !== "/" && pathname.startsWith(`${itemPath}/`))));
     const isOpen = openMenu === item.title;
+    const navItemClass = `flex items-center gap-1 rounded-xl px-2.5 py-2.5 text-[13px] font-medium transition-all duration-300 ${
+      isActive
+        ? "bg-gradient-to-r from-black via-zinc-800 to-zinc-600 text-white shadow-md shadow-black/20"
+        : "text-zinc-700 hover:bg-violet-50 hover:text-violet-800"
+    }`;
 
     return (
       <div
@@ -150,25 +155,25 @@ export function Navbar() {
           item.children && closeWithDelay()
         }
       >
-        <Link
-          href={item.href ?? "#"}
-          className={`flex items-center gap-1 rounded-xl px-2.5 py-2.5 text-[13px] font-medium transition-all duration-300 ${
-            isActive
-              ? "bg-gradient-to-r from-black via-zinc-800 to-zinc-600 text-white shadow-md shadow-black/20"
-              : "text-zinc-700 hover:bg-violet-50 hover:text-violet-800"
-          }`}
-        >
-          {item.title}
-
-          {item.children && (
+        {item.children ? (
+          <button
+            type="button"
+            onClick={() => (isOpen ? setOpenMenu(null) : openNow(item.title))}
+            className={navItemClass}
+          >
+            {item.title}
             <ChevronDown
               size={16}
               className={`transition-transform duration-300 ${
                 isOpen ? "rotate-180" : ""
               }`}
             />
-          )}
-        </Link>
+          </button>
+        ) : (
+          <Link href={item.href ?? "#"} className={navItemClass}>
+            {item.title}
+          </Link>
+        )}
 
 
         <AnimatePresence>

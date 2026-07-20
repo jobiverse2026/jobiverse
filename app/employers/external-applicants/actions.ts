@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
+import { formatIndiaDateTime } from "@/lib/format/date-time";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 async function ownedApplication(id: string, userId: string) {
@@ -103,7 +104,7 @@ export async function scheduleExternalApplicantInterview(values: unknown) {
   await notifyAdminsAboutExternalApplication(
     application,
     "External applicant interview scheduled",
-    `${profile.full_name || profile.email || "Employer"} scheduled ${parsed.round} for ${application.applicant_name || "an external applicant"} on ${interviewDate.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} for ${requirement?.job_title || "a published role"}.`
+    `${profile.full_name || profile.email || "Employer"} scheduled ${parsed.round} for ${application.applicant_name || "an external applicant"} on ${formatIndiaDateTime(interviewDate)} for ${requirement?.job_title || "a published role"}.`
   );
   revalidatePath("/admin/candidates");
   revalidatePath(`/employers/external-applicants/${application.id}`);

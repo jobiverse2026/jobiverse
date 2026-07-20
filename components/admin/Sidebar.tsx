@@ -61,6 +61,11 @@ const menuItems = [
     icon: BarChart3,
   },
   {
+    title: "Protection Audit",
+    href: "/admin/protection-audit",
+    icon: ShieldCheck,
+  },
+  {
     title: "Billing",
     href: "/admin/billing",
     icon: ReceiptIndianRupee,

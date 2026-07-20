@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/authorization";
+import { formatIndiaDateTime } from "@/lib/format/date-time";
 import { getHiringNotificationRecipients } from "@/lib/hiring/notification-targets";
 import { adminSupabase } from "@/lib/supabase/admin";
 
@@ -76,7 +77,7 @@ export async function scheduleEmployerInterview(values: unknown) {
       actorId: user.id,
     });
     const actorName = profile.full_name || profile.email || "Employer";
-    const scheduledAt = interviewDate.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    const scheduledAt = formatIndiaDateTime(interviewDate);
     if (recipients.length) {
       await adminSupabase.from("notifications").insert(recipients.map((recipient) => ({
         user_id: recipient.userId,
