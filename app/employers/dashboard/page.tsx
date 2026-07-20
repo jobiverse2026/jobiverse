@@ -10,6 +10,8 @@ import { getEmployerDashboardData } from "@/actions/employer-dashboard";
 import ExternalApplicantsCard from "./ExternalApplicantsCard";
 import JobiverseSubmittedCard from "./JobiverseSubmittedCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function EmployerDashboardPage() {
   const data = await getEmployerDashboardData();
   return (

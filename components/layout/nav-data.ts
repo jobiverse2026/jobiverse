@@ -12,6 +12,7 @@ import {
   Compass,
   WandSparkles,
   Bookmark,
+  LockKeyhole,
 } from "lucide-react";
 
 
@@ -98,7 +99,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
     { title: "Hiring", children: [
       { title: "Requirements", description: "Create and track hiring mandates.", href: "/employers/requirements", icon: Briefcase },
       { title: "Candidates", description: "Review submitted talent and offers.", href: "/employers/candidates", icon: Users },
-      { title: "Talent Search", description: "Search open-to-work JobiVerse profiles with filters.", href: "/employers/talent-search", icon: Search },
+      { title: "Talent Search", description: "Locked until paid access is approved by JobiVerse admin.", href: "/employers/talent-search", icon: LockKeyhole },
       { title: "Reports", description: "Track recruiter performance and requirement fulfilment.", href: "/employers/reports", icon: FileText },
       { title: "Team Seats", description: "Invite specific recruiters to your employer workspace.", href: "/employers/team", icon: UserRound },
       { title: "Company Profile", description: "Manage your verified organization profile.", href: "/employers/company", icon: Building2 },
@@ -116,7 +117,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
     { title: "Recruitment", children: [
       { title: "Requirements", description: "Work on assigned hiring roles.", href: "/recruiter/requirements", icon: Briefcase },
       { title: "Candidates", description: "Manage sourcing and delivery pipelines.", href: "/recruiter/candidates", icon: Users },
-      { title: "Talent Search", description: "Search open-to-work candidate profiles.", href: "/recruiter/talent-search", icon: Search },
+      { title: "Talent Search", description: "Locked until employer Talent Search access is approved.", href: "/recruiter/talent-search", icon: LockKeyhole },
       { title: "Reports", description: "Review submissions, interview movement and fulfilment.", href: "/recruiter/reports", icon: FileText },
     ]},
     { title: "Main Site", children: mainSiteMenu },

@@ -39,6 +39,7 @@ export async function inviteEmployerRecruiter(formData: FormData) {
   const seatLimit = inviteRole === "employer" ? company.employer_seat_limit : company.recruiter_seat_limit;
   if (!newEmails.length) {
     revalidatePath("/employers/team");
+    revalidatePath("/employers/dashboard");
     redirect(`/employers/team?already_access=${emails.length}&role=${inviteRole}`);
   }
   if (usedSeats + newEmails.length > seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Seats left: ${Math.max(0, seatLimit - usedSeats)}. You tried to add ${newEmails.length}. Ask JobiVerse admin to increase seats.`);
@@ -52,10 +53,12 @@ export async function inviteEmployerRecruiter(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_invitations").insert(rows);
   if (error?.code === "23505") {
     revalidatePath("/employers/team");
+    revalidatePath("/employers/dashboard");
     redirect(`/employers/team?already_access=${emails.length}&role=${inviteRole}`);
   }
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  revalidatePath("/employers/dashboard");
   const skipped = emails.length - newEmails.length;
   redirect(`/employers/team?invited_count=${newEmails.length}&already_access=${skipped}&role=${inviteRole}`);
 }
@@ -66,6 +69,7 @@ export async function cancelEmployerRecruiterInvite(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_invitations").update({ status: "cancelled", updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id).eq("status", "pending");
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  revalidatePath("/employers/dashboard");
   redirect("/employers/team?cancelled=1");
 }
 
@@ -76,6 +80,7 @@ export async function updateEmployerTeamMemberStatus(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_members").update({ status, updated_at: new Date().toISOString() }).eq("id", id).eq("employer_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  revalidatePath("/employers/dashboard");
   redirect(`/employers/team?member=${status === "active" ? "restored" : "suspended"}`);
 }
 
@@ -89,6 +94,7 @@ export async function removeEmployerTeamMemberAccess(formData: FormData) {
     .eq("employer_id", user.id);
   if (error) throw new Error(error.message);
   revalidatePath("/employers/team");
+  revalidatePath("/employers/dashboard");
   redirect("/employers/team?removed=1");
 }
 

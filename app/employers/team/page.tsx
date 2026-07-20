@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BriefcaseBusiness, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
+import { ArrowLeft, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
@@ -7,6 +7,8 @@ import { TeamInviteForm } from "@/components/employer/team/TeamInviteForm";
 import { cancelEmployerRecruiterInvite, removeEmployerTeamMemberAccess, updateEmployerTeamMemberStatus } from "./actions";
 
 type TeamRole = "employer" | "recruiter";
+
+export const dynamic = "force-dynamic";
 
 export default async function EmployerTeamPage({
   searchParams,
@@ -25,7 +27,7 @@ export default async function EmployerTeamPage({
     ? await Promise.all([
         adminSupabase
           .from("employer_team_members")
-          .select("id,email,status,role,created_at,users(full_name,avatar_url)")
+          .select("id,email,status,role,user_id,created_at")
           .eq("company_id", company.id)
           .order("created_at", { ascending: false }),
         adminSupabase
@@ -35,6 +37,12 @@ export default async function EmployerTeamPage({
           .order("created_at", { ascending: false }),
       ])
     : [{ data: [] }, { data: [] }];
+
+  const memberUserIds = [...new Set((members ?? []).map((member: any) => member.user_id).filter(Boolean))];
+  const { data: memberUsers } = memberUserIds.length
+    ? await adminSupabase.from("users").select("id,full_name,email,avatar_url").in("id", memberUserIds)
+    : { data: [] };
+  const memberUserMap = new Map((memberUsers ?? []).map((person: any) => [person.id, person]));
 
   const usage = {
     employer: seatUsage(members ?? [], invites ?? [], "employer"),
@@ -98,24 +106,10 @@ export default async function EmployerTeamPage({
               </p>
             )}
 
-            <section className="mt-7 grid gap-5 md:grid-cols-2">
-              <SeatCard
-                icon={<BriefcaseBusiness size={20} />}
-                title="Employer seats"
-                description="For company owners, HR heads or hiring managers who need the employer workspace."
-                limit={limits.employer}
-                active={usage.employer.active}
-                pending={usage.employer.pending}
-                left={left.employer}
-              />
-              <SeatCard
-                icon={<UsersRound size={20} />}
-                title="Recruiter seats"
-                description="For company recruiters who should work from the recruiter desk, not the employer portal."
-                limit={limits.recruiter}
-                active={usage.recruiter.active}
-                pending={usage.recruiter.pending}
-                left={left.recruiter}
+            <section className="mt-7">
+              <SeatOverview
+                employer={{ limit: limits.employer, active: usage.employer.active, pending: usage.employer.pending, left: left.employer }}
+                recruiter={{ limit: limits.recruiter, active: usage.recruiter.active, pending: usage.recruiter.pending, left: left.recruiter }}
               />
             </section>
 
@@ -133,7 +127,7 @@ export default async function EmployerTeamPage({
                 <div className="mt-5 space-y-3">
                   {members?.length ? (
                     members.map((member: any) => {
-                      const person = Array.isArray(member.users) ? member.users[0] : member.users;
+                      const person = memberUserMap.get(member.user_id);
                       const active = member.status === "active";
                       const role = member.role === "employer" ? "Employer" : "Recruiter";
                       return (
@@ -227,28 +221,59 @@ function seatUsage(members: any[], invites: any[], role: TeamRole) {
   return { active, pending, used: active + pending };
 }
 
-function SeatCard({ icon, title, description, limit, active, pending, left }: { icon: React.ReactNode; title: string; description: string; limit: number; active: number; pending: number; left: number }) {
+function SeatOverview({ employer, recruiter }: { employer: { limit: number; active: number; pending: number; left: number }; recruiter: { limit: number; active: number; pending: number; left: number } }) {
+  const total = {
+    limit: employer.limit + recruiter.limit,
+    active: employer.active + recruiter.active,
+    pending: employer.pending + recruiter.pending,
+    left: employer.left + recruiter.left,
+  };
   return (
     <article className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <div className="flex items-start gap-4">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-white">{icon}</span>
+      <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
-          <h2 className="text-xl font-bold">{title}</h2>
-          <p className="mt-1 text-sm leading-6 text-zinc-500">{description}</p>
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-white"><UsersRound size={20} /></span>
+            <div>
+              <h2 className="text-xl font-bold">Company seat usage</h2>
+              <p className="mt-1 text-sm leading-6 text-zinc-500">Employer and recruiter portal access from one live seat pool overview.</p>
+            </div>
+          </div>
         </div>
+        <span className="rounded-full bg-zinc-950 px-4 py-2 text-sm font-bold text-white">{total.left} seats left</span>
       </div>
       <div className="mt-5 grid grid-cols-4 gap-2 text-center">
-        <Small label="Limit" value={String(limit)} />
-        <Small label="Active" value={String(active)} />
-        <Small label="Pending" value={String(pending)} />
-        <Small label="Left" value={String(left)} />
+        <Small label="Total limit" value={String(total.limit)} />
+        <Small label="Active" value={String(total.active)} />
+        <Small label="Pending" value={String(total.pending)} />
+        <Small label="Left" value={String(total.left)} />
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <SeatBreakdown title="Employer seats" data={employer} />
+        <SeatBreakdown title="Recruiter seats" data={recruiter} />
       </div>
     </article>
   );
 }
 
+function SeatBreakdown({ title, data }: { title: string; data: { limit: number; active: number; pending: number; left: number } }) {
+  return (
+    <div className="rounded-2xl bg-zinc-50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-semibold">{title}</p>
+        <p className="text-xs font-semibold text-zinc-500">{data.left} left of {data.limit}</p>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <Small label="Limit" value={String(data.limit)} />
+        <Small label="Active" value={String(data.active)} />
+        <Small label="Pending" value={String(data.pending)} />
+      </div>
+    </div>
+  );
+}
+
 function Small({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl bg-zinc-50 p-3"><p className="text-[10px] font-bold uppercase text-zinc-400">{label}</p><p className="mt-1 text-sm font-semibold">{value}</p></div>;
+  return <div className="rounded-xl bg-white p-3"><p className="text-[10px] font-bold uppercase text-zinc-400">{label}</p><p className="mt-1 text-sm font-semibold">{value}</p></div>;
 }
 
 function Empty({ text }: { text: string }) {

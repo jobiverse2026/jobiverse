@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth/authorization";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
+export const dynamic = "force-dynamic";
+
 const selectedStatuses = new Set(["selected", "offered", "accepted", "joined", "completed", "placed"]);
 
 function asDateEnd(value?: string) {

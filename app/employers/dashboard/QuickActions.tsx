@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Plus,
-  Search,
   Users,
   BriefcaseBusiness,
   Building2,
@@ -12,6 +11,7 @@ import {
   Store,
   FileText,
   UserPlus,
+  LockKeyhole,
 } from "lucide-react";
 
 const actions = [
@@ -33,7 +33,7 @@ const actions = [
   {
     title: "Talent Search",
     href: "/employers/talent-search",
-    icon: Search,
+    icon: LockKeyhole,
   },
   {
     title: "Reports",

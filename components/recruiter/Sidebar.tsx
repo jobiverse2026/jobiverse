@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BriefcaseBusiness,
-  Search,
+  FileText,
+  LockKeyhole,
   Users,
 } from "lucide-react";
 
@@ -29,7 +30,12 @@ const menu = [
   {
     name: "Talent Search",
     href: "/recruiter/talent-search",
-    icon: Search,
+    icon: LockKeyhole,
+  },
+  {
+    name: "Reports",
+    href: "/recruiter/reports",
+    icon: FileText,
   },
 ];
 

@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
 
+export const dynamic = "force-dynamic";
+
 export default async function RecruiterDashboard() {
   const { supabase, user, profile } = await requireRole(["recruiter"]);
   const [{ data: requirements }, { data: candidates }] = await Promise.all([

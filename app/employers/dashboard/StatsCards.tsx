@@ -11,7 +11,6 @@ import {
   Globe2,
   ShieldCheck,
   UserPlus,
-  UserRoundCog,
 } from "lucide-react";
 
 export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; seatLimit: number; seatsUsed: number; seatsLeft: number; employerSeatLimit?: number; employerSeatsUsed?: number; employerSeatsLeft?: number; recruiterSeatLimit?: number; recruiterSeatsUsed?: number; recruiterSeatsLeft?: number } }) {
@@ -24,8 +23,7 @@ export default function StatsCards({ stats: liveStats }: { stats: { activeRequir
     { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock, href: "/employers/candidates?status=Interview" },
     { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee, href: "/employers/candidates?status=Offered" },
     { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck, href: "/employers/candidates?status=Joined" },
-    { title: "Employer Seats", value: liveStats.employerSeatsUsed ?? 0, subtitle: `${liveStats.employerSeatsLeft ?? 0} left of ${liveStats.employerSeatLimit ?? 0}`, icon: UserRoundCog, href: "/employers/team" },
-    { title: "Recruiter Seats", value: liveStats.recruiterSeatsUsed ?? liveStats.seatsUsed, subtitle: `${liveStats.recruiterSeatsLeft ?? liveStats.seatsLeft} left of ${liveStats.recruiterSeatLimit ?? liveStats.seatLimit}`, icon: UserPlus, href: "/employers/team" },
+    { title: "Team Seats", value: liveStats.seatsUsed, subtitle: `${liveStats.seatsLeft} left of ${liveStats.seatLimit} total seats`, icon: UserPlus, href: "/employers/team" },
   ];
   return (
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">

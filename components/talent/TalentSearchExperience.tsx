@@ -25,7 +25,7 @@ const statuses = [
 ] as const;
 
 export async function TalentSearchExperience({ role, userId, userEmail, searchParams }: { role: TalentRole; userId: string; userEmail: string; searchParams: SearchParams }) {
-  const access = role === "recruiter" ? { allowed: true, reason: "Internal recruiter access" } : await getEmployerTalentSearchAccess(userId, userEmail);
+  const access = await getEmployerTalentSearchAccess(userId, userEmail);
   const canUnlock = access.allowed;
   const queryText = clean(searchParams.q);
   const location = clean(searchParams.location);
