@@ -71,7 +71,7 @@ export async function scheduleEmployerInterview(values: unknown) {
       requirementId: requirement.id,
       companyId: requirement.company_id,
       employerId: requirement.employer_id,
-      assignedRecruiterId: requirement.assigned_recruiter,
+      assignedRecruiterId: null,
       candidateRecruiterId: candidate.recruiter_id,
       actorId: user.id,
     });

@@ -235,6 +235,22 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
                   </tr>
                 )}
               </tbody>
+              {rows.length > 0 && (
+                <tfoot className="border-t-2 border-zinc-200 bg-zinc-950 text-sm font-bold text-white">
+                  <tr>
+                    <td className="px-5 py-4">Total</td>
+                    <td className="px-5 py-4">{totals.requirements} requirements</td>
+                    <td className="px-5 py-4">{totals.openings}</td>
+                    <td className="px-5 py-4">{totals.submitted}</td>
+                    <td className="px-5 py-4">All submitted candidates</td>
+                    <td className="px-5 py-4">All statuses</td>
+                    <td className="px-5 py-4">{totals.l1}</td>
+                    <td className="px-5 py-4">{totals.l2}</td>
+                    <td className="px-5 py-4">{totals.fulfilled}</td>
+                    <td className="px-5 py-4">{pct(totals.fulfilled, totals.openings)}%</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>

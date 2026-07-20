@@ -70,20 +70,29 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
   if (requirementError) throw new Error(requirementError.message);
 
   const requirementIds = (requirements ?? []).map((requirement: any) => requirement.id);
-  const assignedRecruiterIds = [...new Set((requirements ?? []).map((requirement: any) => requirement.assigned_recruiter).filter(Boolean))];
-
   let candidateQuery = requirementIds.length
-    ? adminSupabase.from("candidates").select("id, full_name, email, status, created_at, requirement_id, recruiter_id, recruiter_name, recruiter_email").in("requirement_id", requirementIds)
+    ? adminSupabase.from("candidates").select("id, full_name, email, status, source, created_at, requirement_id, recruiter_id, recruiter_name, recruiter_email").in("requirement_id", requirementIds)
     : null;
   if (candidateQuery && from) candidateQuery = candidateQuery.gte("created_at", from);
   if (candidateQuery && to) candidateQuery = candidateQuery.lte("created_at", to);
 
-  const [{ data: candidates, error: candidateError }, { data: recruiters, error: recruiterError }] = await Promise.all([
+  const [{ data: candidates, error: candidateError }, { data: companyRecruiterMembers, error: memberError }] = await Promise.all([
     candidateQuery ? candidateQuery.order("created_at", { ascending: false }) : Promise.resolve({ data: [], error: null } as any),
-    assignedRecruiterIds.length ? adminSupabase.from("users").select("id, full_name, email").in("id", assignedRecruiterIds) : Promise.resolve({ data: [], error: null } as any),
+    adminSupabase
+      .from("employer_team_members")
+      .select("user_id,email")
+      .eq("company_id", access.company.id)
+      .eq("role", "recruiter")
+      .eq("status", "active"),
   ]);
 
   if (candidateError) throw new Error(candidateError.message);
+  if (memberError) throw new Error(memberError.message);
+
+  const companyRecruiterIds = [...new Set((companyRecruiterMembers ?? []).map((member: any) => member.user_id).filter(Boolean))];
+  const { data: recruiters, error: recruiterError } = companyRecruiterIds.length
+    ? await adminSupabase.from("users").select("id, full_name, email").in("id", companyRecruiterIds)
+    : { data: [], error: null };
   if (recruiterError) throw new Error(recruiterError.message);
 
   const candidateIds = (candidates ?? []).map((candidate: any) => candidate.id);
@@ -123,12 +132,21 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
     };
   });
 
+  const companyRecruiterIdSet = new Set(companyRecruiterIds.map(String));
+  const performanceCandidates = (candidates ?? []).filter((candidate: any) =>
+    candidate.recruiter_id &&
+    companyRecruiterIdSet.has(String(candidate.recruiter_id)) &&
+    candidate.source !== "jobiverse_hiring_team" &&
+    candidate.recruiter_email !== "jobiverse@outlook.com" &&
+    candidate.recruiter_name !== "JobiVerse Hiring Team"
+  );
+
   const performanceMap = new Map<string, any>();
-  for (const candidate of candidates ?? []) {
+  for (const candidate of performanceCandidates) {
     const requirement: any = (requirements ?? []).find((item: any) => item.id === candidate.requirement_id);
-    const recruiterId = candidate.recruiter_id ?? requirement?.assigned_recruiter ?? "jobiverse";
-    const assigned = recruiterId !== "jobiverse" ? recruiterById.get(recruiterId) : null;
-    const key = String(recruiterId || candidate.recruiter_email || "jobiverse");
+    const recruiterId = candidate.recruiter_id;
+    const assigned = recruiterById.get(recruiterId);
+    const key = String(recruiterId);
     const existing = performanceMap.get(key) ?? {
       recruiterName: candidate.recruiter_name || assigned?.full_name || assigned?.email || candidate.recruiter_email || "JobiVerse Hiring Team",
       recruiterEmail: candidate.recruiter_email || assigned?.email || "",
@@ -155,6 +173,16 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
     }, 0);
     return { ...row, requirementsWorked: row.requirementIds.size, sufficed: pct(row.fulfilled, row.openingsTouched) };
   }).sort((a, b) => b.candidates - a.candidates);
+
+  const performanceTotals = {
+    recruiters: performanceRows.length,
+    requirementsWorked: performanceRows.reduce((sum: number, row: any) => sum + row.requirementsWorked, 0),
+    candidates: performanceRows.reduce((sum: number, row: any) => sum + row.candidates, 0),
+    l1: performanceRows.reduce((sum: number, row: any) => sum + row.l1, 0),
+    l2: performanceRows.reduce((sum: number, row: any) => sum + row.l2, 0),
+    fulfilled: performanceRows.reduce((sum: number, row: any) => sum + row.fulfilled, 0),
+    openingsTouched: performanceRows.reduce((sum: number, row: any) => sum + row.openingsTouched, 0),
+  };
 
   const totals = {
     requirements: requirementRows.length,
@@ -199,12 +227,15 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
         </section>
 
         <section className="mt-7 overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">
-          <div className="border-b border-zinc-100 p-6">
-            <h2 className="text-2xl font-bold">Recruiter performance</h2>
-            <p className="mt-1 text-sm text-zinc-500">Use this to compare recruiter contribution across your requirements.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 p-6">
+            <div>
+              <h2 className="text-2xl font-bold">Recruiter performance</h2>
+              <p className="mt-1 text-sm text-zinc-500">Use this to compare recruiter contribution across your requirements.</p>
+            </div>
+            <TableCsvDownloadButton tableId="employer-recruiter-performance-table" filename="jobiverse-employer-recruiter-performance.csv" />
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[980px] w-full text-left text-sm">
+            <table id="employer-recruiter-performance-table" className="min-w-[980px] w-full text-left text-sm">
               <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
                 <tr>
                   <th className="px-5 py-4">Sr No</th>
@@ -236,6 +267,20 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                   <tr><td colSpan={8} className="px-5 py-14 text-center text-zinc-500">No recruiter performance data found for this period.</td></tr>
                 )}
               </tbody>
+              {performanceRows.length > 0 && (
+                <tfoot className="border-t-2 border-zinc-200 bg-zinc-950 text-sm font-bold text-white">
+                  <tr>
+                    <td className="px-5 py-4">Total</td>
+                    <td className="px-5 py-4">{performanceTotals.recruiters} recruiters</td>
+                    <td className="px-5 py-4">{performanceTotals.requirementsWorked}</td>
+                    <td className="px-5 py-4">{performanceTotals.candidates}</td>
+                    <td className="px-5 py-4">{performanceTotals.l1}</td>
+                    <td className="px-5 py-4">{performanceTotals.l2}</td>
+                    <td className="px-5 py-4">{performanceTotals.fulfilled}</td>
+                    <td className="px-5 py-4">{pct(performanceTotals.fulfilled, performanceTotals.openingsTouched)}%</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
@@ -296,6 +341,22 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                   <tr><td colSpan={10} className="px-5 py-16 text-center text-zinc-500">No employer report data found yet.</td></tr>
                 )}
               </tbody>
+              {requirementRows.length > 0 && (
+                <tfoot className="border-t-2 border-zinc-200 bg-zinc-950 text-sm font-bold text-white">
+                  <tr>
+                    <td className="px-5 py-4">Total</td>
+                    <td className="px-5 py-4">{totals.requirements} requirements</td>
+                    <td className="px-5 py-4">All recruiters</td>
+                    <td className="px-5 py-4">{totals.openings}</td>
+                    <td className="px-5 py-4">{totals.submitted}</td>
+                    <td className="px-5 py-4">All statuses</td>
+                    <td className="px-5 py-4">{totals.l1}</td>
+                    <td className="px-5 py-4">{totals.l2}</td>
+                    <td className="px-5 py-4">{totals.fulfilled}</td>
+                    <td className="px-5 py-4">{pct(totals.fulfilled, totals.openings)}%</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </section>
