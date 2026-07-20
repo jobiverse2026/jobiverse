@@ -29,7 +29,7 @@ export async function getEmployerDashboardData(){
   const seatStats={seatLimit,seatsUsed,seatsLeft:Math.max(0,seatLimit-seatsUsed),employerSeatLimit,employerSeatsUsed,employerSeatsLeft:Math.max(0,employerSeatLimit-employerSeatsUsed),recruiterSeatLimit,recruiterSeatsUsed,recruiterSeatsLeft:Math.max(0,recruiterSeatLimit-recruiterSeatsUsed)};
   if(!requirementIds.length)return {...empty,stats:{...empty.stats,...seatStats}};
   const[candidateRows,interviews,placements,activeOffers,externalApplicants]=await Promise.all([
-    adminSupabase.from("candidates").select("id,full_name,total_experience,status,created_at,requirement_id,recruiter_name,requirements(job_title)").in("requirement_id",requirementIds).in("status",clientStatuses).order("created_at",{ascending:false}),
+    adminSupabase.from("candidates").select("id,full_name,total_experience,status,created_at,requirement_id,recruiter_name,recruiter_email,source,requirements(job_title)").in("requirement_id",requirementIds).order("created_at",{ascending:false}),
     adminSupabase.from("interviews").select("id",{count:"exact",head:true}).in("requirement_id",requirementIds).in("status",["scheduled","rescheduled"]),
     adminSupabase.from("placements").select("id",{count:"exact",head:true}).in("requirement_id",requirementIds).in("status",["joined","completed"]),
     adminSupabase.from("placements").select("id",{count:"exact",head:true}).in("requirement_id",requirementIds).in("status",["offered","accepted"]),
@@ -38,9 +38,9 @@ export async function getEmployerDashboardData(){
   const candidates=(candidateRows.data??[]) as any[];
   const requirementsWithCandidateStatus=allRequirements.map((requirement:any)=>{
     const related=candidates.filter((candidate:any)=>candidate.requirement_id===requirement.id);
-    const statusCounts=clientStatuses.map(stage=>({stage,count:related.filter((candidate:any)=>candidate.status===stage).length})).filter(item=>item.count>0);
+    const statusCounts=clientStatuses.map(stage=>({stage,count:related.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length})).filter(item=>item.count>0);
     return{...requirement,candidate_count:related.length,latest_candidate_status:related[0]?.status??null,candidate_status_counts:statusCounts};
   });
-  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,...seatStats},recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>candidate.status===stage).length}))};
+  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,...seatStats},recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length}))};
 }
 function normalize(value:string|null){return String(value??"").trim().toLowerCase().replaceAll("_"," ")}

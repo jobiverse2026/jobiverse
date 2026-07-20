@@ -16,7 +16,7 @@ import {
 export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; seatLimit: number; seatsUsed: number; seatsLeft: number; employerSeatLimit?: number; employerSeatsUsed?: number; employerSeatsLeft?: number; recruiterSeatLimit?: number; recruiterSeatsUsed?: number; recruiterSeatsLeft?: number } }) {
   const stats = [
     { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness, href: "/employers/requirements" },
-    { title: "JobiVerse Candidates", value: liveStats.candidates, subtitle: "Profiles shared with you", icon: Users, href: "/employers/candidates?source=jobiverse" },
+    { title: "Submitted Candidates", value: liveStats.candidates, subtitle: "All profiles shared with you", icon: Users, href: "/employers/candidates" },
     { title: "Jobs Portal Live", value: liveStats.publishedJobs, subtitle: "Visible to candidates", icon: Globe2, href: "/employers/requirements" },
     { title: "JobiVerse Assigned", value: liveStats.jobiverseAssigned, subtitle: "Handled by our hiring team", icon: ShieldCheck, href: "/employers/requirements" },
     { title: "External Applicants", value: liveStats.externalApplicants, subtitle: "Direct applications", icon: UserPlus, href: "/employers/external-applicants" },

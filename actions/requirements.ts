@@ -45,7 +45,7 @@ export async function getRequirements() {
 
   const { data: candidates, error: candidateError } = await adminSupabase
     .from("candidates")
-    .select("id,requirement_id,status,source,recruiter_name,created_at")
+    .select("id,requirement_id,status,source,recruiter_name,recruiter_email,created_at")
     .in("requirement_id", requirementIds);
 
   if (candidateError) {
@@ -57,9 +57,9 @@ export async function getRequirements() {
 
   return rows.map((requirement) => {
     const related = candidateRows.filter((candidate) => candidate.requirement_id === requirement.id);
-    const jobiverseRelated = related.filter((candidate) => candidate.source === "jobiverse_hiring_team" || candidate.recruiter_name === "JobiVerse Hiring Team");
+    const jobiverseRelated = related.filter((candidate) => candidate.source === "jobiverse_hiring_team" || candidate.recruiter_name === "JobiVerse Hiring Team" || String(candidate.recruiter_email ?? "").toLowerCase() === "jobiverse@outlook.com");
     const statusCounts = statuses
-      .map((stage) => ({ stage, count: related.filter((candidate) => candidate.status === stage).length }))
+      .map((stage) => ({ stage, count: related.filter((candidate) => normalizeStatus(candidate.status) === normalizeStatus(stage)).length }))
       .filter((item) => item.count > 0);
 
     return {
@@ -70,6 +70,10 @@ export async function getRequirements() {
       candidate_status_counts: statusCounts,
     };
   });
+}
+
+function normalizeStatus(value?: string | null) {
+  return String(value ?? "").trim().toLowerCase().replaceAll("_", " ");
 }
 
 

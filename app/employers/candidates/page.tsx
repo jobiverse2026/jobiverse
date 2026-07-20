@@ -3,36 +3,36 @@ import { ArrowLeft, BadgeIndianRupee, BriefcaseBusiness, CalendarCheck, MapPin, 
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
+import { adminSupabase } from "@/lib/supabase/admin";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 
 const clientVisibleStatuses = ["Submitted", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
 export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string; requirement?: string }> }) {
-  const { supabase, user } = await requireRole(["employer"]);
+  const { user } = await requireRole(["employer"]);
   const { source = "all", status = "all", requirement = "" } = await searchParams;
   const access = await getEmployerCompanyAccess(user.id);
 
-  const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(supabase
+  const { data: candidates, error } = await scopeEmployerJoinedRequirementQuery(adminSupabase
     .from("candidates")
     .select("id, full_name, total_experience, current_location, primary_skills, notice_period, status, source, recruiter_name, recruiter_email, created_at, requirements!inner(id,job_title,employer_id,company_id), placements(status, offered_ctc, joining_date, replacement_end_date)"), access, user.id)
-    .in("status", clientVisibleStatuses)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
 
   const allCandidates = (candidates ?? []) as any[];
   const visibleCandidates = source === "jobiverse"
-    ? allCandidates.filter((candidate:any) => candidate.source === "jobiverse_hiring_team" || candidate.recruiter_name === "JobiVerse Hiring Team")
+    ? allCandidates.filter((candidate:any) => isJobiverseCandidate(candidate))
     : allCandidates;
   const requirementCandidates = requirement ? visibleCandidates.filter((candidate:any) => firstRelation(candidate.requirements)?.id === requirement) : visibleCandidates;
-  const filteredCandidates = status === "all" ? requirementCandidates : requirementCandidates.filter((candidate:any) => candidate.status === status);
+  const filteredCandidates = status === "all" ? requirementCandidates : requirementCandidates.filter((candidate:any) => normalizeStatus(candidate.status) === normalizeStatus(status));
   const offeredCandidates = filteredCandidates.filter((candidate:any) => {
     const placement = firstRelation(candidate.placements);
     return placement ? ["offered", "accepted"].includes(String(placement.status ?? "").toLowerCase()) : false;
   });
   const stageSummary = clientVisibleStatuses
-    .map((status) => ({ status, count: requirementCandidates.filter((candidate:any) => candidate.status === status).length }))
+    .map((status) => ({ status, count: requirementCandidates.filter((candidate:any) => normalizeStatus(candidate.status) === normalizeStatus(status)).length }))
     .filter((item) => item.count > 0);
 
   return (
@@ -145,7 +145,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
                     </div>
                     <h2 className="mt-6 text-2xl font-semibold tracking-tight">{displayName}</h2>
                     <p className="mt-2 flex items-center gap-2 text-sm text-zinc-500"><BriefcaseBusiness size={15} /> {requirement?.job_title ?? "Hiring requirement"}</p>
-                    {candidate.recruiter_name === "JobiVerse Hiring Team" && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Submitted by JobiVerse Hiring Team</p>}
+                    {isJobiverseCandidate(candidate) && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Submitted by JobiVerse Hiring Team</p>}
                     <div className="mt-6 space-y-3 border-t border-zinc-100 pt-5 text-sm text-zinc-600">
                       <p>{candidate.total_experience || "Experience not specified"}</p>
                       <p className="flex items-center gap-2"><MapPin size={15} /> {candidate.current_location || "Location not specified"}</p>
@@ -167,4 +167,14 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
       </div>
     </main>
   );
+}
+
+function normalizeStatus(value?: string | null) {
+  return String(value ?? "").trim().toLowerCase().replaceAll("_", " ");
+}
+
+function isJobiverseCandidate(candidate: any) {
+  return candidate.source === "jobiverse_hiring_team"
+    || candidate.recruiter_name === "JobiVerse Hiring Team"
+    || String(candidate.recruiter_email ?? "").toLowerCase() === "jobiverse@outlook.com";
 }
