@@ -27,7 +27,14 @@ export async function createCandidate(
   }
 
   if (profile.role === "recruiter" && requirement.assigned_recruiter !== user.id) {
-    throw new Error("This requirement is not assigned to you.");
+    const { data: assignment, error: assignmentError } = await adminSupabase
+      .from("requirement_recruiter_assignments")
+      .select("id")
+      .eq("requirement_id", requirementId)
+      .eq("recruiter_id", user.id)
+      .maybeSingle();
+    if (assignmentError) throw new Error(assignmentError.message);
+    if (!assignment) throw new Error("This requirement is not assigned to you.");
   }
 
 

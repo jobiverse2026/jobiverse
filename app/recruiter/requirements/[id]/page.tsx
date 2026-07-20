@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 import CompanyCard from "@/components/admin/requirement/CompanyCard";
 import ContactCard from "@/components/admin/requirement/ContactCard";
@@ -23,11 +24,11 @@ export default async function RecruiterRequirementDetailsPage({
 
   const { id } = await params;
 
-  const supabase = await createServerSupabaseClient();
+  const { user } = await requireRole(["recruiter"]);
 
   // Requirement
 
-  const { data: requirement } = await supabase
+  const { data: requirement } = await adminSupabase
     .from("requirements")
     .select("*")
     .eq("id", id)
@@ -36,10 +37,17 @@ export default async function RecruiterRequirementDetailsPage({
   if (!requirement) {
     notFound();
   }
+  const { data: assignment } = await adminSupabase
+    .from("requirement_recruiter_assignments")
+    .select("id")
+    .eq("requirement_id", id)
+    .eq("recruiter_id", user.id)
+    .maybeSingle();
+  if (requirement.assigned_recruiter !== user.id && !assignment) notFound();
 
   // Company
 
-  const { data: company } = await supabase
+  const { data: company } = await adminSupabase
     .from("companies")
     .select("*")
     .eq("id", requirement.company_id)
@@ -47,7 +55,7 @@ export default async function RecruiterRequirementDetailsPage({
 
   // Contact
 
-  const { data: contact } = await supabase
+  const { data: contact } = await adminSupabase
     .from("employer_contacts")
     .select("*")
     .eq("company_id", requirement.company_id)

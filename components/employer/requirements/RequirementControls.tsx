@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Globe2, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 import { requestJobiVerseHiringTeam, setRequirementPublished } from "@/actions/job-publishing";
-import { assignRequirementRecruiter, updateRequirementStatus } from "@/actions/requirements";
+import { assignRequirementRecruiters, updateRequirementStatus } from "@/actions/requirements";
 
 const statuses = ["Open", "Sourcing", "Interview", "Offer", "Joined", "Closed", "On Hold", "Cancelled"];
 
@@ -17,13 +17,14 @@ type Props = {
     hiring_team_requested?: boolean | null;
   };
   recruiters?: { id: string; name: string; email: string }[];
+  assignedRecruiterIds?: string[];
 };
 
-export default function RequirementControls({ requirement, recruiters = [] }: Props) {
+export default function RequirementControls({ requirement, recruiters = [], assignedRecruiterIds = [] }: Props) {
   const [published, setPublished] = useState(Boolean(requirement.is_public));
   const [jobiVerseAssigned, setJobiVerseAssigned] = useState(Boolean(requirement.hiring_team_requested));
   const [status, setStatus] = useState(requirement.status || "Open");
-  const [assignedRecruiter, setAssignedRecruiter] = useState(requirement.assigned_recruiter || "unassigned");
+  const [selectedRecruiters, setSelectedRecruiters] = useState<string[]>(assignedRecruiterIds.length ? assignedRecruiterIds : requirement.assigned_recruiter ? [requirement.assigned_recruiter] : []);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -82,22 +83,24 @@ export default function RequirementControls({ requirement, recruiters = [] }: Pr
     });
   }
 
-  function changeRecruiter(nextRecruiterId: string) {
-    const previous = assignedRecruiter;
-    setAssignedRecruiter(nextRecruiterId);
+  function toggleRecruiter(recruiterId: string) {
+    setSelectedRecruiters((current) => current.includes(recruiterId) ? current.filter((id) => id !== recruiterId) : [...current, recruiterId]);
+  }
+
+  function saveRecruiters() {
+    const previous = selectedRecruiters;
     startTransition(async () => {
       try {
-        const result = await assignRequirementRecruiter(requirement.id, nextRecruiterId);
+        const result = await assignRequirementRecruiters(requirement.id, selectedRecruiters);
         if (!result.success) {
-          setAssignedRecruiter(previous);
+          setSelectedRecruiters(previous);
           setMessage(null);
           setError(result.error || "Unable to assign recruiter.");
           return;
         }
-        const recruiter = recruiters.find((item) => item.id === nextRecruiterId);
-        showSuccess(recruiter ? `Requirement assigned to ${recruiter.name}.` : "Recruiter assignment removed.");
+        showSuccess(selectedRecruiters.length ? `Requirement assigned to ${selectedRecruiters.length} recruiter${selectedRecruiters.length === 1 ? "" : "s"}.` : "Recruiter assignment removed.");
       } catch (err) {
-        setAssignedRecruiter(previous);
+        setSelectedRecruiters(previous);
         showError(err);
       }
     });
@@ -201,19 +204,30 @@ export default function RequirementControls({ requirement, recruiters = [] }: Pr
               <p className="mt-1 text-xs leading-5 text-zinc-500">
                 Master employers can assign to any active company recruiter. Invited employers can assign to recruiters allotted to their workspace.
               </p>
-              <select
-                value={assignedRecruiter}
-                onChange={(event) => changeRecruiter(event.target.value)}
-                disabled={isPending}
-                className="mt-3 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold outline-none focus:border-zinc-950 disabled:opacity-50"
-              >
-                <option value="unassigned">Unassigned / self-managed</option>
+              <div className="mt-4 space-y-2">
                 {recruiters.map((recruiter) => (
-                  <option key={recruiter.id} value={recruiter.id}>
-                    {recruiter.name} ({recruiter.email})
-                  </option>
+                  <label key={recruiter.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 transition ${selectedRecruiters.includes(recruiter.id) ? "border-zinc-950 bg-white shadow-sm" : "border-zinc-200 bg-white/70 hover:border-zinc-400"}`}>
+                    <span>
+                      <span className="block text-sm font-semibold text-zinc-900">{recruiter.name}</span>
+                      <span className="block text-xs text-zinc-500">{recruiter.email}</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={selectedRecruiters.includes(recruiter.id)}
+                      onChange={() => toggleRecruiter(recruiter.id)}
+                      className="h-5 w-5 accent-zinc-950"
+                    />
+                  </label>
                 ))}
-              </select>
+              </div>
+              <button
+                type="button"
+                onClick={saveRecruiters}
+                disabled={isPending}
+                className="mt-4 inline-flex cursor-pointer items-center justify-center rounded-xl bg-zinc-950 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPending ? "Saving..." : `Save ${selectedRecruiters.length} recruiter${selectedRecruiters.length === 1 ? "" : "s"}`}
+              </button>
               {!recruiters.length && (
                 <p className="mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-zinc-500">
                   No active recruiters are available yet. Add recruiter access from Team Management first.

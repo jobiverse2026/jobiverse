@@ -10,12 +10,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function RecruiterDashboard() {
   const { supabase, user, profile } = await requireRole(["recruiter"]);
-  const [{ data: requirements }, { data: candidates }] = await Promise.all([
+  const [{ data: assignmentRows }, { data: directRequirements }, { data: candidates }] = await Promise.all([
+    adminSupabase
+      .from("requirement_recruiter_assignments")
+      .select("requirement_id")
+      .eq("recruiter_id", user.id),
     supabase
       .from("requirements")
       .select("id,job_title,department,status,priority,created_at")
@@ -27,6 +32,13 @@ export default async function RecruiterDashboard() {
       .eq("recruiter_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
+  const assignedIds = [...new Set((assignmentRows ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
+  const directIds = new Set((directRequirements ?? []).map((item: any) => item.id));
+  const extraIds = assignedIds.filter((id) => !directIds.has(id));
+  const { data: extraRequirements } = extraIds.length
+    ? await adminSupabase.from("requirements").select("id,job_title,department,status,priority,created_at").in("id", extraIds)
+    : { data: [] };
+  const requirements = [...(directRequirements ?? []), ...(extraRequirements ?? [])].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const candidateIds = (candidates ?? []).map((item) => item.id);
   const [{ data: interviews }, { data: placements }] = candidateIds.length

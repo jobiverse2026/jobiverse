@@ -1,20 +1,29 @@
 import Link from "next/link";
 import { Eye } from "lucide-react";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 export default async function RecruiterRequirementsPage() {
-  const supabase = await createServerSupabaseClient();
+  const { user } = await requireRole(["recruiter"]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: assignments } = await adminSupabase
+    .from("requirement_recruiter_assignments")
+    .select("requirement_id")
+    .eq("recruiter_id", user.id);
 
-  const { data: requirements } = await supabase
+  const assignedIds = [...new Set((assignments ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
+  const { data: directRequirements } = await adminSupabase
     .from("requirements")
     .select("*")
-    .eq("assigned_recruiter", user?.id ?? "")
+    .eq("assigned_recruiter", user.id)
     .order("created_at", { ascending: false });
+  const directIds = new Set((directRequirements ?? []).map((item: any) => item.id));
+  const extraIds = assignedIds.filter((id) => !directIds.has(id));
+  const { data: extraRequirements } = extraIds.length
+    ? await adminSupabase.from("requirements").select("*").in("id", extraIds)
+    : { data: [] };
+  const requirements = [...(directRequirements ?? []), ...(extraRequirements ?? [])].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="space-y-8">
