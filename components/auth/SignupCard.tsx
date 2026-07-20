@@ -7,7 +7,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { hasPendingEmployerTeamInvite } from "@/app/signup/actions";
+import { confirmSignupUser, hasPendingEmployerTeamInvite } from "@/app/signup/actions";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 
@@ -160,7 +160,13 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
 
     // If Supabase has "Confirm email" enabled, there's no session yet
     if (data.user && !data.session) {
-      setSuccess(role === "recruiter" ? "Account created. After confirmation, login from Recruiter portal with this invited email." : "Check your email to confirm your account before logging in.");
+      const confirmation = await confirmSignupUser(data.user.id, normalizedEmail, role);
+      if (confirmation.error) {
+        setError(confirmation.error);
+        setLoading(false);
+        return;
+      }
+      setSuccess("Account created successfully. You can log in now with the same email and password.");
       setLoading(false);
       return;
     }
