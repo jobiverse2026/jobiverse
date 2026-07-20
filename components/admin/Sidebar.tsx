@@ -9,7 +9,6 @@ import {
   BriefcaseBusiness,
   Building2,
   Users,
-  UserCog,
   BarChart3,
   Settings,
   ReceiptIndianRupee,
@@ -55,11 +54,6 @@ const menuItems = [
     title: "JobiVerse Candidates",
     href: "/admin/candidates",
     icon: Users,
-  },
-  {
-    title: "Recruiters",
-    href: "/admin/recruiters",
-    icon: UserCog,
   },
   {
     title: "Company Reports",

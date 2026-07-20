@@ -127,7 +127,6 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
       { title: "JobiVerse Queue", description: "View only requirements assigned to JobiVerse Hiring Team.", href: "/admin/requirements", icon: Briefcase },
       { title: "Companies", description: "Review employer organizations.", href: "/admin/companies", icon: Building2 },
       { title: "JobiVerse Candidates", description: "Track candidates submitted by JobiVerse to employers.", href: "/admin/candidates", icon: Users },
-      { title: "Recruiters", description: "Manage recruitment team access.", href: "/admin/recruiters", icon: UserRound },
       { title: "Company Reports", description: "Review company-level hiring and performance reports.", href: "/admin/analytics", icon: FileText },
     ]},
     { title: "Platform", children: [

@@ -109,6 +109,8 @@ create table public.candidates (
   user_id uuid references public.users(id) on delete set null,
   requirement_id uuid not null references public.requirements(id) on delete restrict,
   recruiter_id uuid not null references public.users(id) on delete restrict,
+  recruiter_name text,
+  recruiter_email text,
   full_name text not null,
   email text not null,
   phone text,

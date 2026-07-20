@@ -29,15 +29,6 @@ export async function updateCompanyRecruiterSeatLimit(formData: FormData) {
   redirect("/admin/companies?seats=1");
 }
 
-export async function updateRecruiterAccess(formData: FormData) {
-  await requireRole(["admin"]);
-  const id = z.string().uuid().parse(formData.get("recruiterId"));
-  const active = z.enum(["true", "false"]).parse(formData.get("active")) === "true";
-  const { error } = await adminSupabase.from("users").update({ is_active: active }).eq("id", id).eq("role", "recruiter");
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/recruiters");
-}
-
 export async function updateCandidateStatus(formData: FormData) {
   await requireRole(["admin"]);
   const id = z.string().uuid().parse(formData.get("candidateId"));

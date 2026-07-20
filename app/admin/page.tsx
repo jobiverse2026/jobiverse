@@ -26,8 +26,8 @@ export default async function AdminDashboardPage() {
   const overview = [
     {
       title: "Company reports",
-      value: stats.candidates + stats.employers + stats.recruiters + stats.creators,
-      note: `${stats.companies} companies | ${stats.employers} employer accounts`,
+      value: stats.companies,
+      note: `${stats.employers} employer accounts | ${stats.verifiedCompanies} verified`,
       href: "/admin/analytics",
       icon: Users,
     },
@@ -95,7 +95,7 @@ export default async function AdminDashboardPage() {
           Company Reports Centre
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-300 sm:text-base">
-          Monitor company reports, JobiVerse-assigned hiring queues, marketplace quality, payments, support and growth from one live workspace.
+          Monitor company-level reports, JobiVerse-assigned hiring queues, marketplace quality, payments, support and growth from one live workspace.
         </p>
       </section>
 

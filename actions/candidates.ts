@@ -164,6 +164,8 @@ export async function createCandidate(
 
     status: profile.role === "admin" ? "Client Submitted" : "Submitted",
 
+    source: profile.role === "admin" ? "jobiverse_hiring_team" : "recruiter",
+
   };
 
 
