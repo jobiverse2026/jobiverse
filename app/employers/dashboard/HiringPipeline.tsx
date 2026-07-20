@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function HiringPipeline({ pipeline }: { pipeline: { stage: string; value: number }[] }) {
@@ -16,7 +17,7 @@ export default function HiringPipeline({ pipeline }: { pipeline: { stage: string
 
       <div className="space-y-6">
         {pipeline.map((item) => (
-          <div key={item.stage}>
+          <Link href={`/employers/candidates?status=${encodeURIComponent(item.stage)}`} key={item.stage} className="block rounded-2xl p-2 transition hover:bg-zinc-50">
             <div className="mb-2 flex justify-between">
               <span>{item.stage}</span>
               <span>{item.value}</span>
@@ -30,7 +31,7 @@ export default function HiringPipeline({ pipeline }: { pipeline: { stage: string
                 }}
               />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </motion.div>

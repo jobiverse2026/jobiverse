@@ -7,9 +7,9 @@ import { firstRelation } from "@/lib/relations";
 const clientVisibleStatuses = ["Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"];
 const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 
-export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string }> }) {
+export default async function EmployerCandidatesPage({ searchParams }: { searchParams: Promise<{ source?: string; status?: string }> }) {
   const { supabase, user } = await requireRole(["employer"]);
-  const { source = "all" } = await searchParams;
+  const { source = "all", status = "all" } = await searchParams;
 
   const { data: candidates, error } = await supabase
     .from("candidates")
@@ -24,7 +24,8 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
   const visibleCandidates = source === "jobiverse"
     ? allCandidates.filter((candidate) => candidate.recruiter_name === "JobiVerse Hiring Team")
     : allCandidates;
-  const offeredCandidates = visibleCandidates.filter((candidate) => {
+  const filteredCandidates = status === "all" ? visibleCandidates : visibleCandidates.filter((candidate) => candidate.status === status);
+  const offeredCandidates = filteredCandidates.filter((candidate) => {
     const placement = firstRelation(candidate.placements);
     return placement ? ["offered", "accepted"].includes(String(placement.status ?? "").toLowerCase()) : false;
   });
@@ -54,7 +55,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
           </div>
           <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
             <Users size={20} />
-            <span className="text-2xl font-semibold">{visibleCandidates.length}</span>
+            <span className="text-2xl font-semibold">{filteredCandidates.length}</span>
             <span className="text-sm text-zinc-400">profiles</span>
           </div>
         </div>
@@ -71,11 +72,12 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
         {!!stageSummary.length && (
           <section className="mt-6 flex flex-wrap gap-3">
             {stageSummary.map((item) => (
-              <div key={item.status} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 shadow-sm">
+              <Link href={`/employers/candidates?source=${source}&status=${encodeURIComponent(item.status)}`} key={item.status} className={`rounded-2xl border px-5 py-3 shadow-sm transition hover:-translate-y-0.5 ${status === item.status ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-950"}`}>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{item.status}</p>
                 <p className="mt-1 text-xl font-bold">{item.count}</p>
-              </div>
+              </Link>
             ))}
+            {status !== "all" && <Link href={`/employers/candidates?source=${source}`} className="rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 shadow-sm">Clear filter</Link>}
           </section>
         )}
 
@@ -115,11 +117,11 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
           </section>
         )}
 
-        {!visibleCandidates.length ? (
+        {!filteredCandidates.length ? (
           <section className="mt-8 rounded-[2rem] border border-dashed border-zinc-300 bg-white/75 px-6 py-20 text-center backdrop-blur-xl">
             <Users className="mx-auto text-zinc-400" size={34} />
-            <h2 className="mt-5 text-2xl font-semibold">No candidates shared yet</h2>
-            <p className="mx-auto mt-3 max-w-xl text-zinc-500">Profiles will appear here once your recruiter moves a candidate to Client Submitted.</p>
+              <h2 className="mt-5 text-2xl font-semibold">{status === "all" ? "No candidates shared yet" : `No ${status} candidates yet`}</h2>
+              <p className="mx-auto mt-3 max-w-xl text-zinc-500">Profiles will appear here once your recruiter moves a candidate to the selected stage.</p>
           </section>
         ) : (
           <section className="mt-12">
@@ -128,7 +130,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
               <h2 className="mt-2 text-3xl font-semibold tracking-tight">All candidates</h2>
             </div>
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {visibleCandidates.map((candidate) => {
+              {filteredCandidates.map((candidate) => {
                 const placement = firstRelation(candidate.placements);
                 const requirement = firstRelation(candidate.requirements);
                 const displayName = candidate.full_name || "Candidate";

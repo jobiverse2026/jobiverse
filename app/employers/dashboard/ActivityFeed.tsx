@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Briefcase, UserPlus } from "lucide-react";
 
 type Requirement = { id: string; job_title: string; created_at: string };
@@ -8,8 +9,8 @@ type Candidate = { id: string; full_name: string; status: string; created_at: st
 
 export default function ActivityFeed({ requirements, candidates }: { requirements: Requirement[]; candidates: Candidate[] }) {
   const activities = [
-    ...requirements.map((item) => ({ id: `requirement-${item.id}`, icon: Briefcase, title: `Requirement created: ${item.job_title}`, createdAt: item.created_at })),
-    ...candidates.map((item) => ({ id: `candidate-${item.id}`, icon: UserPlus, title: `${item.full_name} | ${item.status}`, createdAt: item.created_at })),
+    ...requirements.map((item) => ({ id: `requirement-${item.id}`, icon: Briefcase, title: `Requirement created: ${item.job_title}`, createdAt: item.created_at, href: `/employers/requirements/${item.id}` })),
+    ...candidates.map((item) => ({ id: `candidate-${item.id}`, icon: UserPlus, title: `${item.full_name} | ${item.status}`, createdAt: item.created_at, href: `/employers/candidates/${item.id}` })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
   return (
     <motion.div
@@ -26,9 +27,10 @@ export default function ActivityFeed({ requirements, candidates }: { requirement
           const Icon = activity.icon;
 
           return (
-            <div
+            <Link
               key={activity.id}
-              className="flex items-start gap-4"
+              href={activity.href}
+              className="flex items-start gap-4 rounded-2xl p-2 transition hover:bg-zinc-50"
             >
               <div className="rounded-xl bg-blue-50 p-3 text-blue-600">
                 <Icon size={20} />
@@ -43,14 +45,13 @@ export default function ActivityFeed({ requirements, candidates }: { requirement
                   {new Date(activity.createdAt).toLocaleDateString("en-IN")}
                 </p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
     </motion.div>
   );
 }
-
 
 
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   BriefcaseBusiness,
@@ -14,15 +15,15 @@ import {
 
 export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; seatLimit: number; seatsUsed: number; seatsLeft: number } }) {
   const stats = [
-    { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness },
-    { title: "JobiVerse Candidates", value: liveStats.candidates, subtitle: "Profiles shared with you", icon: Users },
-    { title: "Jobs Portal Live", value: liveStats.publishedJobs, subtitle: "Visible to candidates", icon: Globe2 },
-    { title: "JobiVerse Assigned", value: liveStats.jobiverseAssigned, subtitle: "Handled by our hiring team", icon: ShieldCheck },
-    { title: "External Applicants", value: liveStats.externalApplicants, subtitle: "Direct applications", icon: UserPlus },
-    { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock },
-    { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee },
-    { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck },
-    { title: "Seats Used", value: liveStats.seatsUsed, subtitle: `${liveStats.seatsLeft} left of ${liveStats.seatLimit}`, icon: UserPlus },
+    { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness, href: "/employers/requirements" },
+    { title: "JobiVerse Candidates", value: liveStats.candidates, subtitle: "Profiles shared with you", icon: Users, href: "/employers/candidates?source=jobiverse" },
+    { title: "Jobs Portal Live", value: liveStats.publishedJobs, subtitle: "Visible to candidates", icon: Globe2, href: "/employers/requirements" },
+    { title: "JobiVerse Assigned", value: liveStats.jobiverseAssigned, subtitle: "Handled by our hiring team", icon: ShieldCheck, href: "/employers/requirements" },
+    { title: "External Applicants", value: liveStats.externalApplicants, subtitle: "Direct applications", icon: UserPlus, href: "/employers/external-applicants" },
+    { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock, href: "/employers/candidates?status=Interview" },
+    { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee, href: "/employers/candidates?status=Offered" },
+    { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck, href: "/employers/candidates?status=Joined" },
+    { title: "Seats Used", value: liveStats.seatsUsed, subtitle: `${liveStats.seatsLeft} left of ${liveStats.seatLimit}`, icon: UserPlus, href: "/employers/team" },
   ];
   return (
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
@@ -40,29 +41,30 @@ export default function StatsCards({ stats: liveStats }: { stats: { activeRequir
             whileHover={{
               y: -8,
             }}
-            className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg backdrop-blur-xl"
           >
-            <div className="flex items-center justify-between">
-              <div className="rounded-2xl bg-zinc-950 p-3">
-                <Icon className="text-white" size={24} />
+            <Link href={item.href} className="group block rounded-3xl border border-white/70 bg-white/80 p-6 shadow-lg backdrop-blur-xl transition hover:border-zinc-300 hover:bg-white hover:shadow-2xl">
+              <div className="flex items-center justify-between">
+                <div className="rounded-2xl bg-zinc-950 p-3 transition group-hover:scale-105">
+                  <Icon className="text-white" size={24} />
+                </div>
+
+                <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+                  OPEN
+                </span>
               </div>
 
-              <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                LIVE
-              </span>
-            </div>
+              <h3 className="mt-6 text-sm text-zinc-500">
+                {item.title}
+              </h3>
 
-            <h3 className="mt-6 text-sm text-zinc-500">
-              {item.title}
-            </h3>
+              <p className="mt-2 text-4xl font-bold">
+                {item.value}
+              </p>
 
-            <p className="mt-2 text-4xl font-bold">
-              {item.value}
-            </p>
-
-            <p className="mt-3 text-sm text-zinc-500">
-              {item.subtitle}
-            </p>
+              <p className="mt-3 text-sm text-zinc-500">
+                {item.subtitle}
+              </p>
+            </Link>
           </motion.div>
         );
       })}
