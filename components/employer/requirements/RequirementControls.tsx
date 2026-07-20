@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Globe2, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
-import { setRequirementPublished } from "@/actions/job-publishing";
+import { requestJobiVerseHiringTeam, setRequirementPublished } from "@/actions/job-publishing";
 import { updateRequirementStatus } from "@/actions/requirements";
 
 const statuses = ["Open", "Sourcing", "Interview", "Offer", "Joined", "Closed", "On Hold", "Cancelled"];
@@ -19,6 +19,7 @@ type Props = {
 
 export default function RequirementControls({ requirement }: Props) {
   const [published, setPublished] = useState(Boolean(requirement.is_public));
+  const [jobiVerseAssigned, setJobiVerseAssigned] = useState(Boolean(requirement.hiring_team_requested));
   const [status, setStatus] = useState(requirement.status || "Open");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,18 @@ export default function RequirementControls({ requirement }: Props) {
     });
   }
 
+  function assignToJobiVerse() {
+    startTransition(async () => {
+      try {
+        await requestJobiVerseHiringTeam(requirement.id);
+        setJobiVerseAssigned(true);
+        showSuccess("Requirement assigned to JobiVerse Hiring Team. Our team has been notified.");
+      } catch (err) {
+        showError(err);
+      }
+    });
+  }
+
   return (
     <section className="rounded-[2.25rem] border border-zinc-200 bg-white p-6 shadow-[0_30px_80px_-50px_rgba(0,0,0,.45)]">
       <div className="flex items-start gap-3">
@@ -104,6 +117,34 @@ export default function RequirementControls({ requirement }: Props) {
               className="cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Saving..." : published ? "Unpublish" : "Publish"}
+            </button>
+          </div>
+        </div>
+
+        <div className={`rounded-2xl border p-5 ${jobiVerseAssigned ? "border-amber-200 bg-amber-50" : "border-zinc-200 bg-zinc-50"}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex gap-3">
+              <ShieldCheck size={19} className={jobiVerseAssigned ? "text-amber-700" : "text-zinc-600"} />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">JobiVerse Hiring Team</p>
+                <h3 className="mt-1 font-semibold">{jobiVerseAssigned ? "Assigned to JobiVerse" : "Assign this role to JobiVerse"}</h3>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">
+                  {jobiVerseAssigned
+                    ? "JobiVerse can now source, screen and submit candidates for this requirement."
+                    : "Request JobiVerse support for sourcing, screening, interview coordination and active hiring follow-up."}
+                </p>
+                <p className="mt-2 rounded-xl bg-white/80 px-3 py-2 text-xs font-semibold leading-5 text-zinc-700">
+                  Commercials for JobiVerse Hiring Team support are negotiable as per role complexity, volume and partnership scope.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={assignToJobiVerse}
+              disabled={isPending || jobiVerseAssigned}
+              className="cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {jobiVerseAssigned ? "Assigned" : isPending ? "Saving..." : "Assign"}
             </button>
           </div>
         </div>
