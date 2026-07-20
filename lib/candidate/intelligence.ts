@@ -135,6 +135,23 @@ export function computeRecruiterQualityScore(input: {
   return { score, label };
 }
 
+export function recruiterQualitySuggestions(input: {
+  candidates: number;
+  l1: number;
+  l2: number;
+  fulfilled: number;
+  requirementsWorked: number;
+}) {
+  const suggestions = [
+    input.candidates < 5 && "Submit more relevant profiles against active assigned requirements.",
+    input.candidates > 0 && input.l1 === 0 && "Improve first-screen quality so more candidates reach L1 interview.",
+    input.l1 > 0 && input.l2 === 0 && "Follow up after L1 and refine shortlists for L2 movement.",
+    input.candidates > 0 && input.fulfilled === 0 && "Track interview feedback and push stronger fitment before offer stage.",
+    input.requirementsWorked < 2 && "Work across more assigned requirements to improve coverage score.",
+  ].filter(Boolean) as string[];
+  return suggestions.length ? suggestions.slice(0, 3) : ["Maintain submission quality, fast follow-ups and accurate candidate status updates."];
+}
+
 export type JobMatchInput = {
   job_title?: string | null;
   primary_skills?: string | null;

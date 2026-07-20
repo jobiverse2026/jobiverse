@@ -3,7 +3,7 @@ import { BarChart3, BriefcaseBusiness, CalendarDays, CheckCircle2, FileText, Fil
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
 import { TableCsvDownloadButton } from "@/components/reports/TableCsvDownloadButton";
-import { computeRecruiterQualityScore } from "@/lib/candidate/intelligence";
+import { computeRecruiterQualityScore, recruiterQualitySuggestions } from "@/lib/candidate/intelligence";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -141,6 +141,7 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
     openings: rows.reduce((sum, row) => sum + row.openings, 0),
   };
   const quality = computeRecruiterQualityScore({ candidates: totals.submitted, l1: totals.l1, l2: totals.l2, fulfilled: totals.fulfilled, requirementsWorked: totals.requirements });
+  const qualitySuggestions = recruiterQualitySuggestions({ candidates: totals.submitted, l1: totals.l1, l2: totals.l2, fulfilled: totals.fulfilled, requirementsWorked: totals.requirements });
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -173,6 +174,21 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
           <Metric icon={<CalendarDays size={18} />} label="L1 interviews" value={totals.l1} />
           <Metric icon={<BarChart3 size={18} />} label="L2 interviews" value={totals.l2} />
           <Metric icon={<CheckCircle2 size={18} />} label="Quality score" value={`${quality.score} / ${quality.label}`} />
+        </section>
+
+        <section className="mt-7 rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">How to improve quality score</p>
+              <h2 className="mt-2 text-2xl font-bold">Next best actions for better recruiter performance.</h2>
+            </div>
+            <Link href="/recruiter/requirements" className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Open assigned roles</Link>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {qualitySuggestions.map((item) => (
+              <p key={item} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-sm font-semibold leading-6 text-zinc-700">{item}</p>
+            ))}
+          </div>
         </section>
 
         <section className="mt-7 overflow-hidden rounded-[2rem] border border-zinc-200 bg-white shadow-sm">

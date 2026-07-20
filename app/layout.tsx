@@ -11,7 +11,6 @@ import { GlobalMessagesButton } from "@/components/messages/global-messages-butt
 import { AttachmentNameEnhancer } from "@/components/forms/attachment-name-enhancer";
 import { GlobalActionSuccess } from "@/components/forms/global-action-success";
 import { ConsentManager } from "@/components/privacy/consent-manager";
-import { WhatsAppLeadCapture } from "@/components/layout/whatsapp-lead-capture";
 
 
 export const metadata: Metadata = {
@@ -55,7 +54,6 @@ export default function RootLayout({
           <Navbar />
           <LogoutSuccessNotice />
           <GlobalMessagesButton />
-          <WhatsAppLeadCapture />
           <AttachmentNameEnhancer />
           <Suspense fallback={null}><GlobalActionSuccess /></Suspense>
           <ConsentManager />

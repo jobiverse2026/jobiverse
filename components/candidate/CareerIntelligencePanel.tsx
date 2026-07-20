@@ -26,6 +26,20 @@ export function CareerIntelligencePanel({
     ["Saved jobs", savedJobs],
     ["Verified proofs", verifiedItems],
   ] as const;
+  const confidenceActions = [
+    !profile?.resume_path && { label: "Upload CV", href: "/candidates/resume" },
+    !profile?.primary_skills && { label: "Add skills", href: "/candidates/profile" },
+    !profile?.preferred_roles && { label: "Set target roles", href: "/candidates/profile" },
+    !profile?.interview_availability && { label: "Add availability", href: "/candidates/profile" },
+    !profile?.deal_breakers && { label: "Add deal-breakers", href: "/candidates/profile" },
+    !profile?.open_to_work && { label: "Open to work", href: "/candidates/dashboard" },
+  ].filter(Boolean).slice(0, 3) as { label: string; href: string }[];
+  const careerActions = [
+    completeness.score < 85 && { label: "Complete profile", href: "/candidates/profile" },
+    resumeVersions === 0 && { label: "Manage resume", href: "/candidates/resume" },
+    savedJobs === 0 && { label: "Save jobs", href: "/candidates/jobs" },
+    applications === 0 && { label: "Apply to roles", href: "/candidates/jobs" },
+  ].filter(Boolean).slice(0, 3) as { label: string; href: string }[];
 
   return (
     <section className="mt-8 grid gap-5 xl:grid-cols-3">
@@ -57,6 +71,13 @@ export function CareerIntelligencePanel({
             </p>
           ))}
           </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(confidenceActions.length ? confidenceActions : [{ label: "Keep profile updated", href: "/candidates/profile" }]).map((action) => (
+              <Link key={action.label} href={action.href} className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white">
+                {action.label} <ArrowRight size={14} />
+              </Link>
+            ))}
+          </div>
         </div>
       </article>
 
@@ -76,6 +97,21 @@ export function CareerIntelligencePanel({
         <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
           <div className="rounded-2xl border border-white/10 bg-white/[.06] p-4"><span className="text-zinc-500">Profile depth</span><p className="mt-1 text-lg font-bold">{completeness.done}/{completeness.total}</p></div>
           <div className="rounded-2xl border border-white/10 bg-white/[.06] p-4"><span className="text-zinc-500">Career activity</span><p className="mt-1 text-lg font-bold">{applications + savedJobs}</p></div>
+        </div>
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[.06] p-4">
+          <p className="text-xs font-bold uppercase tracking-[.16em] text-zinc-500">How to score higher</p>
+          <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+            {(completeness.missing.length ? completeness.missing.slice(0, 3) : ["Apply to relevant roles", "Keep your JobiVerse Card fresh"]).map((item) => (
+              <li key={item} className="flex gap-2"><CheckCircle2 className="mt-0.5 shrink-0 text-emerald-300" size={15} />{item}</li>
+            ))}
+          </ul>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(careerActions.length ? careerActions : [{ label: "Explore roles", href: "/candidates/jobs" }]).map((action) => (
+              <Link key={action.label} href={action.href} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-zinc-950">
+                {action.label} <ArrowRight size={14} />
+              </Link>
+            ))}
+          </div>
         </div>
       </article>
 

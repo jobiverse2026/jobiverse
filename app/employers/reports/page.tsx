@@ -4,7 +4,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
 import { TableCsvDownloadButton } from "@/components/reports/TableCsvDownloadButton";
-import { computeRecruiterQualityScore } from "@/lib/candidate/intelligence";
+import { computeRecruiterQualityScore, recruiterQualitySuggestions } from "@/lib/candidate/intelligence";
 
 type SearchParams = Promise<{ from?: string; to?: string }>;
 
@@ -172,8 +172,9 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
       const requirement: any = (requirements ?? []).find((item: any) => item.id === requirementId);
       return sum + Number(requirement?.vacancies ?? 0);
     }, 0);
-    const quality = computeRecruiterQualityScore({ candidates: row.candidates, l1: row.l1, l2: row.l2, fulfilled: row.fulfilled, requirementsWorked: row.requirementIds.size });
-    return { ...row, requirementsWorked: row.requirementIds.size, sufficed: pct(row.fulfilled, row.openingsTouched), qualityScore: quality.score, qualityLabel: quality.label };
+    const qualityInput = { candidates: row.candidates, l1: row.l1, l2: row.l2, fulfilled: row.fulfilled, requirementsWorked: row.requirementIds.size };
+    const quality = computeRecruiterQualityScore(qualityInput);
+    return { ...row, requirementsWorked: row.requirementIds.size, sufficed: pct(row.fulfilled, row.openingsTouched), qualityScore: quality.score, qualityLabel: quality.label, suggestions: recruiterQualitySuggestions(qualityInput) };
   }).sort((a, b) => b.candidates - a.candidates);
 
   const performanceTotals = {
@@ -243,6 +244,7 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                   <th className="px-5 py-4">Sr No</th>
                   <th className="px-5 py-4">Recruiter</th>
                   <th className="px-5 py-4">Quality score</th>
+                  <th className="px-5 py-4">Improve next</th>
                   <th className="px-5 py-4">Requirements worked</th>
                   <th className="px-5 py-4">Candidates submitted</th>
                   <th className="px-5 py-4">L1</th>
@@ -265,6 +267,7 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                       </div>
                       <p className="mt-1 text-xs font-semibold text-zinc-500">{row.qualityLabel}</p>
                     </td>
+                    <td className="max-w-[320px] px-5 py-5 text-xs leading-5 text-zinc-600">{row.suggestions?.[0] ?? "Maintain submission quality and status hygiene."}</td>
                     <td className="px-5 py-5">{row.requirementsWorked}</td>
                     <td className="px-5 py-5 font-semibold">{row.candidates}</td>
                     <td className="px-5 py-5">{row.l1}</td>
@@ -273,7 +276,7 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                     <td className="px-5 py-5 font-bold">{row.sufficed}%</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={9} className="px-5 py-14 text-center text-zinc-500">No recruiter performance data found for this period.</td></tr>
+                  <tr><td colSpan={10} className="px-5 py-14 text-center text-zinc-500">No recruiter performance data found for this period.</td></tr>
                 )}
               </tbody>
               {performanceRows.length > 0 && (
@@ -282,6 +285,7 @@ export default async function EmployerReportsPage({ searchParams }: { searchPara
                     <td className="px-5 py-4">Total</td>
                     <td className="px-5 py-4">{performanceTotals.recruiters} recruiters</td>
                     <td className="px-5 py-4">Avg {performanceRows.length ? Math.round(performanceRows.reduce((sum:any, row:any)=>sum+row.qualityScore,0)/performanceRows.length) : 0}</td>
+                    <td className="px-5 py-4">Top suggestions</td>
                     <td className="px-5 py-4">{performanceTotals.requirementsWorked}</td>
                     <td className="px-5 py-4">{performanceTotals.candidates}</td>
                     <td className="px-5 py-4">{performanceTotals.l1}</td>

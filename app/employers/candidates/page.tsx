@@ -34,6 +34,10 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
   const stageSummary = clientVisibleStatuses
     .map((status) => ({ status, count: requirementCandidates.filter((candidate:any) => normalizeStatus(candidate.status) === normalizeStatus(status)).length }))
     .filter((item) => item.count > 0);
+  const requirementOptions = [...new Map(visibleCandidates.map((candidate:any) => {
+    const req = firstRelation(candidate.requirements);
+    return req?.id ? [req.id, req] : null;
+  }).filter(Boolean) as [string, any][]).values()];
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -107,7 +111,16 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
                 <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Candidate comparison</p>
                 <h2 className="mt-2 text-3xl font-semibold tracking-tight">Compare top profiles quickly</h2>
               </div>
-              <span className="rounded-full bg-zinc-100 px-4 py-2 text-xs font-bold uppercase text-zinc-600">First 5 shown</span>
+              <form className="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="source" value={source} />
+                {status !== "all" && <input type="hidden" name="status" value={status} />}
+                <select name="requirement" defaultValue={requirement} className="h-11 min-w-[240px] rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-500">
+                  <option value="">All requirements</option>
+                  {requirementOptions.map((item:any) => <option key={item.id} value={item.id}>{item.job_title || "Untitled requirement"}</option>)}
+                </select>
+                <button className="cursor-pointer rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white">Filter</button>
+                <span className="rounded-full bg-zinc-100 px-4 py-2 text-xs font-bold uppercase text-zinc-600">First 5 shown</span>
+              </form>
             </div>
             <div className="mt-6 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
