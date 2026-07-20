@@ -46,3 +46,38 @@ export async function confirmSignupUser(userId: string, email: string, role: "ca
 
   return { confirmed: true };
 }
+
+export async function confirmExistingSignupEmail(email: string, role: "candidate" | "employer" | "recruiter" | "creator") {
+  const input = z.object({
+    email: z.string().trim().email(),
+    role: signupRoleSchema,
+  }).safeParse({ email, role });
+
+  if (!input.success) return { error: "Unable to verify this account. Please check the email and try again." };
+
+  if (input.data.role === "recruiter") {
+    const invited = await hasPendingEmployerTeamInvite(input.data.email, "recruiter");
+    if (!invited) return { error: "Recruiter access is not assigned to this email yet." };
+  }
+
+  const normalizedEmail = input.data.email.toLowerCase();
+  let page = 1;
+  let userId: string | null = null;
+
+  while (!userId && page <= 10) {
+    const { data, error } = await adminSupabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) return { error: error.message };
+
+    const match = data.users.find((user) => user.email?.toLowerCase() === normalizedEmail);
+    if (match) userId = match.id;
+    if (!data.users.length || data.users.length < 1000) break;
+    page += 1;
+  }
+
+  if (!userId) return { error: "Signup account was not found. Please create an account first." };
+
+  const { error } = await adminSupabase.auth.admin.updateUserById(userId, { email_confirm: true });
+  if (error) return { error: error.message };
+
+  return { confirmed: true };
+}
