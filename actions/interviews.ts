@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { requireRole } from "@/lib/auth/authorization";
+import { getHiringNotificationRecipients } from "@/lib/hiring/notification-targets";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 const interviewSchema = z.object({
   candidateId: z.string().uuid(),
@@ -42,7 +44,7 @@ export async function scheduleEmployerInterview(values: unknown) {
     throw new Error("Please select a valid future interview date and time.");
   }
 
-  const { supabase } = await requireRole(["employer"]);
+  const { supabase, user, profile } = await requireRole(["employer"]);
   const { data, error } = await supabase.rpc("schedule_candidate_interview", {
     p_candidate_id: parsed.candidateId,
     p_interview_round: parsed.interviewRound,
@@ -53,6 +55,39 @@ export async function scheduleEmployerInterview(values: unknown) {
   });
 
   if (error) throw new Error(error.message);
+
+  const { data: candidate } = await adminSupabase
+    .from("candidates")
+    .select("id, full_name, recruiter_id, requirements(id, job_title, employer_id, company_id, assigned_recruiter)")
+    .eq("id", parsed.candidateId)
+    .maybeSingle();
+
+  const requirement = Array.isArray((candidate as any)?.requirements)
+    ? (candidate as any).requirements[0]
+    : (candidate as any)?.requirements;
+
+  if (candidate && requirement) {
+    const recipients = await getHiringNotificationRecipients({
+      requirementId: requirement.id,
+      companyId: requirement.company_id,
+      employerId: requirement.employer_id,
+      assignedRecruiterId: requirement.assigned_recruiter,
+      candidateRecruiterId: candidate.recruiter_id,
+      actorId: user.id,
+    });
+    const actorName = profile.full_name || profile.email || "Employer";
+    const scheduledAt = interviewDate.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    if (recipients.length) {
+      await adminSupabase.from("notifications").insert(recipients.map((recipient) => ({
+        user_id: recipient.userId,
+        type: "interview_scheduled",
+        title: "Interview scheduled",
+        message: `${actorName} scheduled ${parsed.interviewRound} for ${candidate.full_name || "a candidate"} on ${scheduledAt}.`,
+        href: recipient.role === "employer" ? `/employers/candidates/${candidate.id}` : `/recruiter/requirements/${requirement.id}`,
+        reference_id: candidate.id,
+      })));
+    }
+  }
 
   revalidatePath(`/employers/candidates/${parsed.candidateId}`);
   revalidatePath("/employers/candidates");

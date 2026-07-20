@@ -146,7 +146,7 @@ export default function RequirementsTable({
 
                 <td className="px-6 py-5">
                   <Link href={`/employers/requirements/${item.id}`} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-200">
-                    {item.status}
+                    {requirementStatusLabel(item.status)}
                   </Link>
                 </td>
 
@@ -189,4 +189,15 @@ export default function RequirementsTable({
       </div>
     </div>
   );
+}
+
+function requirementStatusLabel(status?: string | null) {
+  const value = String(status ?? "").toLowerCase().replaceAll("_", " ").trim();
+  if (["open", "sourcing"].includes(value)) return "Working";
+  if (value === "interview") return "Interview stage";
+  if (value === "offer") return "Offer stage";
+  if (["joined", "closed", "filled"].includes(value)) return "Filled";
+  if (value === "on hold") return "On Hold";
+  if (value === "cancelled") return "Cancelled";
+  return status || "Working";
 }
