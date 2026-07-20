@@ -8,8 +8,6 @@ export async function GET() {
     const [
       unreadNotifications,
       requirements,
-      companies,
-      candidates,
       billing,
       marketplace,
       serviceReports,
@@ -30,8 +28,6 @@ export async function GET() {
     ] = await Promise.all([
       supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
-      supabase.from("companies").select("id", { count: "exact", head: true }),
-      supabase.from("candidates").select("id", { count: "exact", head: true }).or("recruiter_name.eq.JobiVerse Hiring Team,recruiter_email.eq.jobiverse@outlook.com").not("status", "in", '("Joined","Rejected","Withdrawn")'),
       supabase.from("placements").select("id", { count: "exact", head: true }).in("payment_status", ["not_invoiced", "invoiced", "partially_paid", "overdue"]),
       supabase.from("marketplace_orders").select("id", { count: "exact", head: true }).eq("status", "completed").in("payout_status", ["eligible", "held"]),
       supabase.from("marketplace_service_reports").select("id", { count: "exact", head: true }).in("status", ["open", "reviewing"]),
@@ -53,8 +49,6 @@ export async function GET() {
     return Response.json({
       "/admin": unreadNotifications.count ?? 0,
       "/admin/requirements": requirements.count ?? 0,
-      "/admin/companies": companies.count ?? 0,
-      "/admin/candidates": candidates.count ?? 0,
       "/admin/analytics": 0,
       "/admin/growth": 0,
       "/admin/campus": campusEnquiries.count ?? 0,

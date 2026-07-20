@@ -8,6 +8,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 const statuses = ["Submitted", "Screening", "Client Submitted", "Interview", "Selected", "Offered", "Joined", "Rejected", "Withdrawn"] as const;
 const externalStatuses = ["Applied", "Under Review", "Shortlisted", "Interview", "Offered", "Hired", "Rejected", "Withdrawn"] as const;
 const statusFilterOptions = [...new Set([...statuses, ...externalStatuses])];
+const dateFormatter = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
 export default async function AdminCandidatesPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; source?: string }> }) {
   await requireRole(["admin"]);
@@ -170,9 +171,20 @@ export default async function AdminCandidatesPage({ searchParams }: { searchPara
                   <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4 xl:w-[620px]">
                     <Small label="Role" value={requirement?.job_title || "-"} />
                     <Small label="Company" value={company?.company_name || "-"} />
-                    <Small label="Source" value="Jobs Portal" />
+                    <Small label="Current status" value={application.status || "Applied"} />
                     <Small label="Experience" value={application.total_experience || "-"} />
                   </div>
+                </div>
+                <div className="mt-5 rounded-2xl border border-violet-200 bg-white/85 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[.16em] text-violet-500">External candidate status</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <Small label="Pipeline stage" value={application.status || "Applied"} />
+                    <Small label="Applied on" value={application.applied_at ? dateFormatter.format(new Date(application.applied_at)) : "-"} />
+                    <Small label="Fee tracking" value="Direct joining • 3%" />
+                  </div>
+                  <p className="mt-3 text-xs text-zinc-500">
+                    JobiVerse can track this applicant even though they came directly through the Jobs Portal.
+                  </p>
                 </div>
               </article>
             );
