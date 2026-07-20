@@ -55,9 +55,15 @@ export default async function EmployerTeamPage({
     : { data: [] };
   const memberUserMap = new Map((memberUsers ?? []).map((person: any) => [person.id, person]));
 
+  const recruiterAllowanceUsed = isMasterEmployer
+    ? scopedMembers
+        .filter((member: any) => member.role === "employer" && member.status === "active")
+        .reduce((total: number, member: any) => total + Number(member.recruiter_seat_limit ?? 0), 0)
+    : 0;
+  const recruiterDirectUsage = seatUsage(scopedMembers, scopedInvites, "recruiter");
   const usage = {
     employer: seatUsage(scopedMembers, scopedInvites, "employer"),
-    recruiter: seatUsage(scopedMembers, scopedInvites, "recruiter"),
+    recruiter: { ...recruiterDirectUsage, allocated: recruiterAllowanceUsed, used: recruiterDirectUsage.used + recruiterAllowanceUsed },
   };
   const limits = {
     employer: isMasterEmployer ? company?.employer_seat_limit ?? 0 : 0,
@@ -122,7 +128,7 @@ export default async function EmployerTeamPage({
             <section className="mt-7">
               <SeatOverview
                 employer={{ limit: limits.employer, active: usage.employer.active, pending: usage.employer.pending, left: left.employer }}
-                recruiter={{ limit: limits.recruiter, active: usage.recruiter.active, pending: usage.recruiter.pending, left: left.recruiter }}
+                recruiter={{ limit: limits.recruiter, active: usage.recruiter.active, pending: usage.recruiter.pending, allocated: usage.recruiter.allocated, left: left.recruiter }}
               />
             </section>
 
@@ -167,7 +173,7 @@ export default async function EmployerTeamPage({
                                     name="recruiterSeatLimit"
                                     type="number"
                                     min="0"
-                                    max="500"
+                                    max={Math.max(0, left.recruiter + Number(member.recruiter_seat_limit ?? 0))}
                                     defaultValue={member.recruiter_seat_limit ?? 0}
                                     className="h-9 w-20 rounded-lg border border-zinc-200 px-2 text-xs font-semibold"
                                     aria-label="Recruiter seat allowance"
@@ -252,10 +258,10 @@ function seatUsage(members: any[], invites: any[], role: TeamRole) {
   return { active, pending, used: active + pending };
 }
 
-function SeatOverview({ employer, recruiter }: { employer: { limit: number; active: number; pending: number; left: number }; recruiter: { limit: number; active: number; pending: number; left: number } }) {
+function SeatOverview({ employer, recruiter }: { employer: { limit: number; active: number; pending: number; left: number }; recruiter: { limit: number; active: number; pending: number; allocated?: number; left: number } }) {
   const total = {
     limit: employer.limit + recruiter.limit,
-    active: employer.active + recruiter.active,
+    active: employer.active + recruiter.active + (recruiter.allocated ?? 0),
     pending: employer.pending + recruiter.pending,
     left: employer.left + recruiter.left,
   };
@@ -275,7 +281,7 @@ function SeatOverview({ employer, recruiter }: { employer: { limit: number; acti
       </div>
       <div className="mt-5 grid grid-cols-4 gap-2 text-center">
         <Small label="Total limit" value={String(total.limit)} />
-        <Small label="Active" value={String(total.active)} />
+        <Small label="Used" value={String(total.active)} />
         <Small label="Pending" value={String(total.pending)} />
         <Small label="Left" value={String(total.left)} />
       </div>
@@ -287,7 +293,7 @@ function SeatOverview({ employer, recruiter }: { employer: { limit: number; acti
   );
 }
 
-function SeatBreakdown({ title, data }: { title: string; data: { limit: number; active: number; pending: number; left: number } }) {
+function SeatBreakdown({ title, data }: { title: string; data: { limit: number; active: number; pending: number; allocated?: number; left: number } }) {
   return (
     <div className="rounded-2xl bg-zinc-50 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -298,6 +304,7 @@ function SeatBreakdown({ title, data }: { title: string; data: { limit: number; 
         <Small label="Limit" value={String(data.limit)} />
         <Small label="Active" value={String(data.active)} />
         <Small label="Pending" value={String(data.pending)} />
+        {typeof data.allocated === "number" && <Small label="Allocated" value={String(data.allocated)} />}
       </div>
     </div>
   );
