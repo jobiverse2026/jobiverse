@@ -18,6 +18,13 @@ type Props = {
   }>;
 };
 
+function isMissingRequirementAssignmentsTable(error: any) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || (message.includes("requirement_recruiter_assignments") && (message.includes("schema cache") || message.includes("does not exist") || message.includes("could not find")));
+}
+
 export default async function RecruiterRequirementDetailsPage({
   params,
 }: Props) {
@@ -37,12 +44,13 @@ export default async function RecruiterRequirementDetailsPage({
   if (!requirement) {
     notFound();
   }
-  const { data: assignment } = await adminSupabase
+  const { data: assignment, error: assignmentError } = await adminSupabase
     .from("requirement_recruiter_assignments")
     .select("id")
     .eq("requirement_id", id)
     .eq("recruiter_id", user.id)
     .maybeSingle();
+  if (assignmentError && !isMissingRequirementAssignmentsTable(assignmentError)) throw new Error(assignmentError.message);
   if (requirement.assigned_recruiter !== user.id && !assignment) notFound();
 
   // Company

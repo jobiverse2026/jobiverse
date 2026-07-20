@@ -12,11 +12,18 @@ import {
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
+function isMissingRequirementAssignmentsTable(error: any) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || (message.includes("requirement_recruiter_assignments") && (message.includes("schema cache") || message.includes("does not exist") || message.includes("could not find")));
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function RecruiterDashboard() {
   const { supabase, user, profile } = await requireRole(["recruiter"]);
-  const [{ data: assignmentRows }, { data: directRequirements }, { data: candidates }] = await Promise.all([
+  const [{ data: assignmentRows, error: assignmentError }, { data: directRequirements }, { data: candidates }] = await Promise.all([
     adminSupabase
       .from("requirement_recruiter_assignments")
       .select("requirement_id")
@@ -32,7 +39,8 @@ export default async function RecruiterDashboard() {
       .eq("recruiter_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
-  const assignedIds = [...new Set((assignmentRows ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
+  if (assignmentError && !isMissingRequirementAssignmentsTable(assignmentError)) throw new Error(assignmentError.message);
+  const assignedIds = assignmentError ? [] : [...new Set((assignmentRows ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
   const directIds = new Set((directRequirements ?? []).map((item: any) => item.id));
   const extraIds = assignedIds.filter((id) => !directIds.has(id));
   const { data: extraRequirements } = extraIds.length

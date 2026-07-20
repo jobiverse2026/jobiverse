@@ -7,6 +7,12 @@ import { requirementSchema } from "@/validation/requirement";
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
 
+function isMissingRequirementAssignmentsTable(error: any) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || (message.includes("requirement_recruiter_assignments") && (message.includes("schema cache") || message.includes("does not exist") || message.includes("could not find")));
+}
 
 export async function getRequirements() {
   const supabase = await createServerSupabaseClient();
@@ -113,7 +119,7 @@ export async function getRequirementRecruiterAssignments(requirementId: string) 
     .select("recruiter_id")
     .eq("requirement_id", requirementId);
   if (error) {
-    if (error.code === "42P01") return requirement.assigned_recruiter ? [requirement.assigned_recruiter] : [];
+    if (isMissingRequirementAssignmentsTable(error)) return requirement.assigned_recruiter ? [requirement.assigned_recruiter] : [];
     throw new Error(error.message);
   }
   const assigned = (data ?? []).map((row: any) => row.recruiter_id).filter(Boolean);
@@ -360,7 +366,12 @@ export async function assignRequirementRecruiters(
     .from("requirement_recruiter_assignments")
     .select("recruiter_id")
     .eq("requirement_id", id);
-  if (existingError) return { success: false, error: existingError.message };
+  if (existingError) {
+    if (isMissingRequirementAssignmentsTable(existingError)) {
+      return { success: false, error: "Multiple recruiter assignment table is not live yet. Please run the latest Supabase SQL migration, then refresh the page." };
+    }
+    return { success: false, error: existingError.message };
+  }
 
   const existingIds = new Set((existingRows ?? []).map((row: any) => row.recruiter_id));
   const selectedIds = new Set(selectedRecruiterIds);

@@ -3,6 +3,12 @@
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
+function isMissingRequirementAssignmentsTable(error: any) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || (message.includes("requirement_recruiter_assignments") && (message.includes("schema cache") || message.includes("does not exist") || message.includes("could not find")));
+}
 
 export async function createCandidate(
   formData: FormData
@@ -33,7 +39,7 @@ export async function createCandidate(
       .eq("requirement_id", requirementId)
       .eq("recruiter_id", user.id)
       .maybeSingle();
-    if (assignmentError) throw new Error(assignmentError.message);
+    if (assignmentError && !isMissingRequirementAssignmentsTable(assignmentError)) throw new Error(assignmentError.message);
     if (!assignment) throw new Error("This requirement is not assigned to you.");
   }
 

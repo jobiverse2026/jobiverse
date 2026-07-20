@@ -4,15 +4,23 @@ import { Eye } from "lucide-react";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
 
+function isMissingRequirementAssignmentsTable(error: any) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "42P01"
+    || error?.code === "PGRST205"
+    || (message.includes("requirement_recruiter_assignments") && (message.includes("schema cache") || message.includes("does not exist") || message.includes("could not find")));
+}
+
 export default async function RecruiterRequirementsPage() {
   const { user } = await requireRole(["recruiter"]);
 
-  const { data: assignments } = await adminSupabase
+  const { data: assignments, error: assignmentError } = await adminSupabase
     .from("requirement_recruiter_assignments")
     .select("requirement_id")
     .eq("recruiter_id", user.id);
+  if (assignmentError && !isMissingRequirementAssignmentsTable(assignmentError)) throw new Error(assignmentError.message);
 
-  const assignedIds = [...new Set((assignments ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
+  const assignedIds = assignmentError ? [] : [...new Set((assignments ?? []).map((item: any) => item.requirement_id).filter(Boolean))];
   const { data: directRequirements } = await adminSupabase
     .from("requirements")
     .select("*")
