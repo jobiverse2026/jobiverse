@@ -33,12 +33,16 @@ export async function inviteEmployerRecruiter(formData: FormData) {
     adminSupabase.from("employer_team_invitations").select("id", { count: "exact", head: true }).eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").gt("expires_at", new Date().toISOString()),
     adminSupabase.from("employer_team_invitations").select("invited_email").eq("company_id", company.id).eq("role", inviteRole).eq("status", "pending").in("invited_email", emails),
   ]);
-  const duplicateEmails = (duplicateInvites ?? []).map((invite) => invite.invited_email);
-  if (duplicateEmails.length) throw new Error(`These emails already have pending ${inviteRole} access: ${duplicateEmails.join(", ")}`);
+  const duplicateEmails = new Set((duplicateInvites ?? []).map((invite) => invite.invited_email));
+  const newEmails = emails.filter((email) => !duplicateEmails.has(email));
   const usedSeats = (activeMembers ?? 0) + (pendingInvites ?? 0);
   const seatLimit = inviteRole === "employer" ? company.employer_seat_limit : company.recruiter_seat_limit;
-  if (usedSeats + emails.length > seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Seats left: ${Math.max(0, seatLimit - usedSeats)}. You tried to add ${emails.length}. Ask JobiVerse admin to increase seats.`);
-  const rows = emails.map((email) => ({
+  if (!newEmails.length) {
+    revalidatePath("/employers/team");
+    redirect(`/employers/team?already_access=${emails.length}&role=${inviteRole}`);
+  }
+  if (usedSeats + newEmails.length > seatLimit) throw new Error(`${inviteRole === "employer" ? "Employer" : "Recruiter"} invite limit reached. Seats left: ${Math.max(0, seatLimit - usedSeats)}. You tried to add ${newEmails.length}. Ask JobiVerse admin to increase seats.`);
+  const rows = newEmails.map((email) => ({
     company_id: company.id,
     employer_id: user.id,
     invited_email: email,
@@ -48,7 +52,8 @@ export async function inviteEmployerRecruiter(formData: FormData) {
   const { error } = await adminSupabase.from("employer_team_invitations").insert(rows);
   if (error) throw new Error(error.code === "23505" ? "This email already has a pending invite for your company." : error.message);
   revalidatePath("/employers/team");
-  redirect(`/employers/team?invited_count=${emails.length}&role=${inviteRole}`);
+  const skipped = emails.length - newEmails.length;
+  redirect(`/employers/team?invited_count=${newEmails.length}&already_access=${skipped}&role=${inviteRole}`);
 }
 
 export async function cancelEmployerRecruiterInvite(formData: FormData) {

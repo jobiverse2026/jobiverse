@@ -11,7 +11,7 @@ type TeamRole = "employer" | "recruiter";
 export default async function EmployerTeamPage({
   searchParams,
 }: {
-  searchParams: Promise<{ invited?: string; invited_count?: string; role?: string; cancelled?: string; member?: string; removed?: string }>;
+  searchParams: Promise<{ invited?: string; invited_count?: string; already_access?: string; role?: string; cancelled?: string; member?: string; removed?: string }>;
 }) {
   const { user } = await requireRole(["employer"]);
   const params = await searchParams;
@@ -53,7 +53,9 @@ export default async function EmployerTeamPage({
   const successMessage = params.invited
     ? `${invitedRole} invitation created for ${params.invited}.`
     : params.invited_count
-      ? `${params.invited_count} ${invitedRole.toLowerCase()} access ${params.invited_count === "1" ? "entry" : "entries"} created successfully.`
+      ? `${params.invited_count} new ${invitedRole.toLowerCase()} access ${params.invited_count === "1" ? "entry" : "entries"} created successfully${Number(params.already_access ?? 0) > 0 ? `; ${params.already_access} already had pending access` : ""}.`
+    : params.already_access
+      ? `${params.already_access} ${invitedRole.toLowerCase()} ${params.already_access === "1" ? "email already has" : "emails already have"} pending access.`
     : params.cancelled
       ? "Invitation cancelled successfully."
       : params.member === "restored"
