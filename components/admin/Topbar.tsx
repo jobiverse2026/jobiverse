@@ -2,7 +2,12 @@
 
 import { CalendarDays, Menu, Search } from "lucide-react";
 
+import UserMenu from "@/components/auth/UserMenu";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { useUser } from "@/hooks/useUser";
+
 export default function Topbar({ onMenu }: { onMenu?: () => void }) {
+  const { user, loading } = useUser();
   const today = new Date().toLocaleDateString("en-IN", {
     weekday: "long",
     day: "numeric",
@@ -31,10 +36,14 @@ export default function Topbar({ onMenu }: { onMenu?: () => void }) {
           <span className="text-sm font-medium text-zinc-700">{today}</span>
         </div>
 
-        <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-2 py-2 sm:px-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-sm font-bold text-white sm:h-11 sm:w-11">A</div>
-          <div className="hidden lg:block"><p className="text-sm font-semibold">Admin</p><p className="text-xs text-zinc-500">Platform control</p></div>
-        </div>
+        {loading ? (
+          <div className="h-12 w-36 animate-pulse rounded-2xl border border-zinc-200 bg-white" />
+        ) : user ? (
+          <div className="flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-2 py-2 sm:px-3">
+            <NotificationBell userId={user.id} />
+            <UserMenu />
+          </div>
+        ) : null}
       </div>
     </header>
   );

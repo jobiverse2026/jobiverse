@@ -40,7 +40,16 @@ export default function UserMenu() {
 
 
 
-  const dashboardLink = "/dashboard";
+  const dashboardLink =
+    role === "admin"
+      ? "/admin"
+      : role === "recruiter"
+        ? "/recruiter"
+        : role === "employer"
+          ? "/employers/dashboard"
+          : role === "creator"
+            ? "/earn-with-jobiverse/dashboard"
+            : "/candidates/dashboard";
 
 
 
