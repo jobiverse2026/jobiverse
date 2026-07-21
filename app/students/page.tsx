@@ -70,7 +70,7 @@ export default function StudentsPage() {
                 <GraduationCap size={15} /> JobiVerse for Students
               </span>
               <h1 className="mt-8 max-w-4xl text-5xl font-semibold leading-[.95] tracking-[-.055em] sm:text-6xl lg:text-8xl">
-                Your career starts<br /><span className="text-zinc-400">before your first job.</span>
+                Your career starts <br /><span className="text-zinc-400">before your first job.</span>
               </h1>
               <p className="mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-xl">
                 A dedicated launchpad for students and recent graduates to discover their direction, build a stronger profile and enter the working world with confidence.
