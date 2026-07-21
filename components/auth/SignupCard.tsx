@@ -19,6 +19,22 @@ const roleRedirect: Record<Role, string> = {
   creator: "/earn-with-jobiverse/dashboard",
 };
 
+const signupTitle: Record<Role, string> = {
+  candidate: "Candidate Sign Up",
+  employer: "Employer Sign Up",
+  recruiter: "Recruiter Sign Up",
+  admin: "Admin Sign Up",
+  creator: "Creator Sign Up",
+};
+
+const signupSubtitle: Record<Role, string> = {
+  candidate: "Join JobiVerse as a candidate",
+  employer: "Join JobiVerse as an employer",
+  recruiter: "Join JobiVerse as a recruiter",
+  admin: "Request a verified admin workspace",
+  creator: "Join JobiVerse as a creator",
+};
+
 function authErrorMessage(error: unknown) {
   if (!error) return "Unable to create account. Please try again.";
   if (error instanceof Error) {
@@ -289,9 +305,9 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
         </div>
 
         <div className="text-center">
-          <h2 className="text-3xl font-semibold tracking-[-.035em]">{role === "candidate" ? "Candidate Sign Up" : role === "employer" ? "Employer Sign Up" : role === "recruiter" ? "Recruiter Sign Up" : role === "creator" ? "Creator Sign Up" : "Admin Sign Up"}</h2>
+          <h2 className="text-3xl font-semibold tracking-[-.035em]">{signupTitle[role]}</h2>
           <p className="mt-2 text-sm text-zinc-500">
-            {privilegedRole ? `Request a verified ${role} workspace` : `Join JobiVerse as ${role === "employer" ? "an employer" : role === "creator" ? "a creator" : "a candidate"}`}
+            {signupSubtitle[role]}
           </p>
         </div>
 
