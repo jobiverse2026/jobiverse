@@ -4,6 +4,10 @@ import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 
 import { BillingProfileCard } from "@/components/payments/billing-profile-card";
 import { RazorpayPaymentButton } from "@/components/payments/razorpay-payment-button";
+import {
+  amountWithPaymentProcessing,
+  paymentProcessingFeeFor,
+} from "@/lib/payments/processing-fee";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type CheckoutSearchParams = {
@@ -90,6 +94,9 @@ export default async function MarketplaceCheckoutPage({
     eyebrow = "Accepted negotiation";
   }
 
+  const processingFee = paymentProcessingFeeFor(amount);
+  const payableAmount = amountWithPaymentProcessing(amount);
+
   return (
     <main className="min-h-screen bg-[#f6f6f3] px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-5xl">
@@ -110,11 +117,10 @@ export default async function MarketplaceCheckoutPage({
             <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm text-zinc-400">Final payable amount</p>
               <p className="mt-2 text-4xl font-semibold">
-                INR {amount.toLocaleString("en-IN")}
+                INR {payableAmount.toLocaleString("en-IN")}
               </p>
               <p className="mt-2 text-xs text-zinc-500">
-                Includes the applicable JobiVerse platform margin. No additional
-                marketplace markup will be added.
+                Includes service amount and payment processing recovery.
               </p>
             </div>
           </section>
@@ -124,8 +130,23 @@ export default async function MarketplaceCheckoutPage({
               <div>
                 <p className="font-semibold">Secure payment</p>
                 <p className="text-xs text-zinc-500">
-                  Amount payable INR {amount.toLocaleString("en-IN")}
+                  Amount payable INR {payableAmount.toLocaleString("en-IN")}
                 </p>
+              </div>
+            </div>
+            <div className="my-6 h-px bg-zinc-200" />
+            <div className="space-y-3 rounded-2xl bg-zinc-50 p-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-zinc-500">Service amount</span>
+                <span className="font-semibold">INR {amount.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-zinc-500">Payment processing recovery</span>
+                <span className="font-semibold">INR {processingFee.toLocaleString("en-IN")}</span>
+              </div>
+              <div className="flex justify-between gap-4 border-t border-zinc-200 pt-3">
+                <span className="font-semibold">Total payable</span>
+                <span className="font-bold">INR {payableAmount.toLocaleString("en-IN")}</span>
               </div>
             </div>
             <div className="my-6 h-px bg-zinc-200" />
@@ -137,7 +158,7 @@ export default async function MarketplaceCheckoutPage({
                 <RazorpayPaymentButton
                   targetType={targetType}
                   targetId={targetId}
-                  label={`Pay INR ${amount.toLocaleString("en-IN")}`}
+                  label={`Pay INR ${payableAmount.toLocaleString("en-IN")}`}
                 />
               </div>
             ) : (
