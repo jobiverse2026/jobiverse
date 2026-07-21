@@ -22,6 +22,10 @@ export async function hasPendingEmployerTeamInvite(email: string, role: "employe
   return (count ?? 0) > 0;
 }
 
+export async function requiresEmailConfirmation() {
+  return process.env.SUPABASE_AUTH_SMTP_READY === "true";
+}
+
 export async function confirmSignupUser(userId: string, email: string, role: "candidate" | "employer" | "recruiter" | "creator") {
   const input = z.object({
     userId: z.string().uuid(),

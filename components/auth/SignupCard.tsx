@@ -7,7 +7,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { confirmSignupUser, hasPendingEmployerTeamInvite } from "@/app/signup/actions";
+import { confirmSignupUser, hasPendingEmployerTeamInvite, requiresEmailConfirmation } from "@/app/signup/actions";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 
@@ -161,6 +161,14 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
 
     if (!data.user) {
       setError("Account was not created. Please check Supabase Authentication logs for the signup request.");
+      setLoading(false);
+      return;
+    }
+
+    const mustConfirmEmail = await requiresEmailConfirmation();
+    if (mustConfirmEmail && data.session) {
+      await supabase.auth.signOut().catch(() => null);
+      setSuccess(signupConfirmationMessage);
       setLoading(false);
       return;
     }
