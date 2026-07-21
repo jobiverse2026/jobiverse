@@ -104,6 +104,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   const supabase = createBrowserSupabaseClient();
   const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
   const privilegedRole = role === "admin";
+  const socialSignupAllowed = !["employer", "recruiter", "admin"].includes(role);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,9 +414,16 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
           )}
         </form>
 
-        <div className="flex items-center gap-3"><span className="h-px flex-1 bg-zinc-200"/><span className="text-[10px] font-bold uppercase tracking-[.16em] text-zinc-400">or continue securely</span><span className="h-px flex-1 bg-zinc-200"/></div>
-        <div className="grid gap-3 sm:grid-cols-2"><button onClick={handleGoogleAuth} type="button" className="group flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 px-4 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg"><span className="grid h-8 w-8 place-items-center rounded-full border border-zinc-100 bg-white text-base font-black text-blue-600 shadow-sm transition group-hover:scale-105">G</span><span>Google</span></button><button onClick={handleLinkedInAuth} type="button" className="group flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50 px-4 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#0a66c2] text-sm font-black text-white shadow-sm transition group-hover:scale-105">in</span><span>LinkedIn</span></button></div>
-        {privilegedRole&&<p className="-mt-3 text-center text-[11px] leading-5 text-zinc-400">OAuth does not grant a new Admin or Recruiter role. Only an account already authorized by JobiVerse or an employer invite can enter this workspace.</p>}
+        {socialSignupAllowed ? (
+          <>
+            <div className="flex items-center gap-3"><span className="h-px flex-1 bg-zinc-200"/><span className="text-[10px] font-bold uppercase tracking-[.16em] text-zinc-400">or continue securely</span><span className="h-px flex-1 bg-zinc-200"/></div>
+            <div className="grid gap-3 sm:grid-cols-2"><button onClick={handleGoogleAuth} type="button" className="group flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50 px-4 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-lg"><span className="grid h-8 w-8 place-items-center rounded-full border border-zinc-100 bg-white text-base font-black text-blue-600 shadow-sm transition group-hover:scale-105">G</span><span>Google</span></button><button onClick={handleLinkedInAuth} type="button" className="group flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl border border-blue-100 bg-gradient-to-br from-white to-blue-50 px-4 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#0a66c2] text-sm font-black text-white shadow-sm transition group-hover:scale-105">in</span><span>LinkedIn</span></button></div>
+          </>
+        ) : (
+          <p className="-mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-medium leading-6 text-amber-900">
+            Employer and recruiter access is invite-only. Please sign up with the exact authorized email using email and password.
+          </p>
+        )}
 
         <p className="text-center text-sm text-zinc-500">
           Already have an account?{" "}

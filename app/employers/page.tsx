@@ -14,6 +14,13 @@ import {
   Code2,
   LockKeyhole,
   UserCheck,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  FileBarChart2,
+  MailPlus,
+  MessageSquareText,
+  Sparkles,
 } from "lucide-react";
 
 
@@ -70,6 +77,57 @@ const recruitmentServices = [
   { title: "Flexible Hiring Support", description: "Recruitment solutions aligned to startup, SME and enterprise requirements.", icon: BriefcaseBusiness },
 ];
 
+const portalFeatures = [
+  {
+    title: "Master Employer Workspace",
+    description: "One verified company owner can manage company data, seat limits, team access and full hiring visibility.",
+    icon: Building2,
+  },
+  {
+    title: "Employer & Recruiter Seats",
+    description: "Invite exact employer or recruiter emails, assign seat limits and control who can access your company workspace.",
+    icon: MailPlus,
+  },
+  {
+    title: "Requirement Command Center",
+    description: "Create requirements, edit details, publish jobs, assign recruiters and track role progress from one place.",
+    icon: ClipboardList,
+  },
+  {
+    title: "Unified Candidate Pipeline",
+    description: "See recruiter-submitted, JobiVerse-submitted and direct job-portal applicants together with source filters.",
+    icon: Users,
+  },
+  {
+    title: "Interview Calendar & Status Flow",
+    description: "Schedule interviews, view upcoming meetings and move candidates through interview, offer and joining stages.",
+    icon: CalendarDays,
+  },
+  {
+    title: "Reports & Performance",
+    description: "Download recruiter reports, requirement progress reports and date-wise performance summaries with totals.",
+    icon: FileBarChart2,
+  },
+  {
+    title: "Paid Talent Search",
+    description: "Unlock search access for open-to-work JobiVerse cards with skill, location, role and notice-period filters.",
+    icon: LockKeyhole,
+  },
+  {
+    title: "Messages & Notifications",
+    description: "Get relevant alerts for assignments, candidates, interviews, feedback and employer workflow changes.",
+    icon: MessageSquareText,
+  },
+];
+
+const portalFlow = [
+  "JobiVerse creates or verifies your company workspace.",
+  "Your Master Employer receives controlled access and seat limits.",
+  "You invite team members by exact email and assign recruiter seats.",
+  "Create requirements, publish jobs or assign roles to JobiVerse.",
+  "Track candidates, interviews, reports and hiring outcomes securely.",
+];
+
 
 
 export default function EmployersPage() {
@@ -96,13 +154,74 @@ export default function EmployersPage() {
 
       />
 
-      <PageSectionIndex items={[{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Talent Search",href:"#talent-search"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
+      <PageSectionIndex items={[{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Portal preview",href:"#employer-portal-preview"},{label:"Talent Search",href:"#talent-search"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
 
       <section id="employer-recruitment-services" className="bg-[#f6f6f3] py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
 
           <div className="max-w-3xl"><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Recruitment services</p><h2 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-5xl">The right hiring support for every critical role.</h2><p className="mt-5 text-lg leading-8 text-zinc-600">Recruitment-only solutions now live here, together with the employer journey and hiring process.</p></div>
           <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">{recruitmentServices.map(({title,description,icon:Icon},index)=><article key={title} className="rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="flex items-center justify-between"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-black text-white"><Icon size={22}/></span><span className="text-xs font-bold text-zinc-300">0{index+1}</span></div><h3 className="mt-7 text-xl font-semibold">{title}</h3><p className="mt-3 leading-7 text-zinc-600">{description}</p></article>)}</div>
+        </div>
+      </section>
+
+      <section id="employer-portal-preview" className="bg-white py-24">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="overflow-hidden rounded-[3rem] border border-zinc-200 bg-[#f6f6f3] shadow-2xl">
+            <div className="grid gap-0 lg:grid-cols-[.86fr_1.14fr]">
+              <div className="relative overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white sm:p-12">
+                <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/10" />
+                <div className="absolute -bottom-28 left-10 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-zinc-300">
+                  <LockKeyhole size={15} /> Access locked, benefits visible
+                </span>
+                <h2 className="mt-8 text-4xl font-semibold tracking-[-.05em] sm:text-6xl">
+                  See what unlocks inside the Employer Portal.
+                </h2>
+                <p className="mt-6 max-w-xl text-base leading-8 text-zinc-300">
+                  Employer access is intentionally controlled so company data, candidate details and hiring activity stay protected. But the value is transparent: JobiVerse gives employers a complete hiring workspace, not just a contact form.
+                </p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link href="/contact" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-zinc-950">
+                    Request employer access <Sparkles size={17} />
+                  </Link>
+                  <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-4 font-semibold text-white">
+                    View access pricing
+                  </Link>
+                </div>
+                <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[.06] p-6">
+                  <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">How access works</p>
+                  <div className="mt-5 space-y-4">
+                    {portalFlow.map((step, index) => (
+                      <div key={step} className="flex gap-3 text-sm leading-6 text-zinc-300">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-xs font-bold text-zinc-950">{index + 1}</span>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-8 lg:p-10">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {portalFeatures.map(({ title, description, icon: Icon }) => (
+                    <article key={title} className="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                      <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white">
+                        <Icon size={21} />
+                      </span>
+                      <h3 className="mt-5 text-lg font-semibold">{title}</h3>
+                      <p className="mt-3 text-sm leading-6 text-zinc-600">{description}</p>
+                    </article>
+                  ))}
+                </div>
+                <div className="mt-5 rounded-[2rem] border border-amber-200 bg-amber-50 p-6">
+                  <p className="text-sm font-semibold text-amber-950">Commercial protection note</p>
+                  <p className="mt-2 text-sm leading-6 text-amber-900">
+                    Direct job-portal candidate joining is tracked with JobiVerse protection terms. Hiring through the JobiVerse team remains a separate managed recruitment partnership.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
