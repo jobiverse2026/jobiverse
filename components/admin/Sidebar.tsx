@@ -165,7 +165,14 @@ const menuItems = [
 export default function Sidebar({ open = false, onClose }: { open?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const [counts,setCounts]=useState<Record<string,number>>({});
-  useEffect(()=>{let active=true;fetch("/api/admin/pending-counts").then(response=>response.json()).then(data=>{if(active)setCounts(data)}).catch(()=>{});return()=>{active=false}},[pathname]);
+  useEffect(()=>{
+    let active=true;
+    const loadCounts=()=>fetch("/api/admin/pending-counts").then(response=>response.json()).then(data=>{if(active)setCounts(data)}).catch(()=>{});
+    loadCounts();
+    const interval=window.setInterval(loadCounts,15000);
+    window.addEventListener("focus",loadCounts);
+    return()=>{active=false;window.clearInterval(interval);window.removeEventListener("focus",loadCounts)};
+  },[pathname]);
 
   return (
     <aside

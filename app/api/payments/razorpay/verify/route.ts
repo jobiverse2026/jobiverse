@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { verifyRazorpayPayment } from "@/lib/payments/razorpay";
+import { notifyAdminsAboutCapturedPayment } from "@/lib/payments/admin-payment-notifications";
 
 type PaymentAttempt = { id:string; user_id:string; target_type:string; target_id:string; local_order_id:string|null; amount:number; status:string };
 
@@ -18,6 +19,7 @@ export async function POST(request:Request){
       if(error)throw new Error(error.message);
     }
     await activatePurchase(attempt,body.razorpay_payment_id);
+    await notifyAdminsAboutCapturedPayment({attemptId:attempt.id,userId:attempt.user_id,targetType:attempt.target_type,amount:attempt.amount,paymentId:body.razorpay_payment_id});
     return Response.json({success:true,redirectUrl:destination(attempt)});
   }catch(error){return Response.json({error:error instanceof Error?error.message:"Payment verification failed."},{status:500})}
 }
