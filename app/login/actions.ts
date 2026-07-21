@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { claimPendingEmployerTeamInvite } from "@/lib/employer-team/invitations";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
+import { adminSupabase } from "@/lib/supabase/admin";
 import { confirmExistingSignupEmail } from "@/app/signup/actions";
 
 type LoginRole="candidate"|"employer"|"recruiter"|"admin"|"creator";
@@ -21,5 +23,13 @@ export async function loginWithRoleAction(email:string,password:string,expectedR
   }
   const{data:profile,error:profileError}=await supabase.from("users").select("role,is_active").eq("id",user.id).maybeSingle();if(profileError||!profile?.role){await supabase.auth.signOut();return{error:"User profile not found."}}if(profile.is_active===false){await supabase.auth.signOut();return{error:"This account is currently inactive. Contact JobiVerse support."}}
   const creatorAccess=expectedRole==="creator"&&["candidate","creator"].includes(profile.role);if(!creatorAccess&&profile.role!==expectedRole){await supabase.auth.signOut();return{error:`You are not authorized for this portal. This account belongs to the ${profile.role} portal.`}}
+  if(expectedRole==="employer"){
+    try{await getEmployerCompanyAccess(user.id);}
+    catch{await supabase.auth.signOut();return{error:"Employer login is available only after JobiVerse assigns company seats. Please contact JobiVerse to activate employer access."};}
+  }
+  if(expectedRole==="recruiter"){
+    const{count,error:memberError}=await adminSupabase.from("employer_team_members").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("role","recruiter").eq("status","active");
+    if(memberError||!count){await supabase.auth.signOut();return{error:"Recruiter login is available only after your employer adds this email to recruiter seats. Please contact your employer or JobiVerse."};}
+  }
   return{redirect:safeDestination(next,roleRedirect[expectedRole])};
 }

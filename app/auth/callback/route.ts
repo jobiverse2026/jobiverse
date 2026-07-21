@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { claimPendingEmployerTeamInvite } from "@/lib/employer-team/invitations";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 
@@ -106,6 +108,29 @@ export async function GET(request: Request) {
   if (!creatorAccess && actualRole !== requestedRole) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login/${requestedRole}?error=wrong_role`);
+  }
+
+  if (actualRole === "employer") {
+    try {
+      await getEmployerCompanyAccess(user.id);
+    } catch {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login/employer?error=employer_access_required`);
+    }
+  }
+
+  if (actualRole === "recruiter") {
+    const { count, error } = await adminSupabase
+      .from("employer_team_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("role", "recruiter")
+      .eq("status", "active");
+
+    if (error || !count) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login/recruiter?error=recruiter_access_required`);
+    }
   }
 
   return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? roleRedirect[actualRole]));

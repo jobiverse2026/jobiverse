@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
 type EmailOtpType = "signup" | "email_change" | "recovery" | "invite" | "magiclink";
@@ -50,6 +52,29 @@ export async function GET(request: Request) {
   const role = validRole(profile?.role ?? data.user.user_metadata?.role);
 
   if (type === "recovery") return NextResponse.redirect(`${origin}/reset-password?role=${role}`);
+
+  if (role === "employer") {
+    try {
+      await getEmployerCompanyAccess(data.user.id);
+    } catch {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login/employer?error=employer_access_required`);
+    }
+  }
+
+  if (role === "recruiter") {
+    const { count, error } = await adminSupabase
+      .from("employer_team_members")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", data.user.id)
+      .eq("role", "recruiter")
+      .eq("status", "active");
+
+    if (error || !count) {
+      await supabase.auth.signOut();
+      return NextResponse.redirect(`${origin}/login/recruiter?error=recruiter_access_required`);
+    }
+  }
 
   return NextResponse.redirect(freshAuthRedirect(origin, roleRedirect[role]));
 }

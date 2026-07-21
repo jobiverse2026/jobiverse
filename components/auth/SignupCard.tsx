@@ -87,7 +87,6 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
   const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
-  const inviteSignup = Boolean(safeNext?.startsWith("/employer-invite/"));
   const privilegedRole = role === "admin";
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -101,17 +100,21 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (role === "recruiter" && !inviteSignup) {
+    if (role === "employer" || role === "recruiter") {
       setLoading(true);
       try {
-        const invited = await hasPendingEmployerTeamInvite(normalizedEmail, "recruiter");
+        const invited = await hasPendingEmployerTeamInvite(normalizedEmail, role);
         if (!invited) {
-          setError("You are not authorized for the recruiter portal yet. Ask your employer to add this exact email in Team seats first.");
+          setError(
+            role === "employer"
+              ? "Employer signup is not open publicly. Please contact JobiVerse to activate company seats, or use the exact email invited by your company."
+              : "Recruiter signup is not open publicly. Please ask your employer to add this exact email to recruiter seats, or contact JobiVerse."
+          );
           setLoading(false);
           return;
         }
       } catch (reason) {
-        setError(reason instanceof Error ? reason.message : "Unable to verify recruiter access. Please try again.");
+        setError(reason instanceof Error ? reason.message : "Unable to verify workspace access. Please try again.");
         setLoading(false);
         return;
       }
