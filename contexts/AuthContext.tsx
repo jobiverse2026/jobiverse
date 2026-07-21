@@ -213,7 +213,10 @@ export function AuthProvider({
       let validSession = error ? null : session;
       const hasActiveBrowserSession = sessionStorage.getItem(browserSessionKey) === "active";
       const isPasswordRecovery = window.location.pathname === "/reset-password";
-      const isAuthCallback = window.location.pathname.includes("/auth/callback") || window.location.search.includes("code=");
+      const isAuthCallback =
+        window.location.pathname.includes("/auth/callback") ||
+        window.location.search.includes("code=") ||
+        window.location.search.includes("auth_fresh=1");
       const lastBrowserExit = Number(window.localStorage.getItem(lastBrowserExitKey) ?? 0);
       const looksLikeReopenedAfterClose =
         Boolean(validSession) &&

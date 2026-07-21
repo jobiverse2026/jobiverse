@@ -21,6 +21,12 @@ function safeInternalPath(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") && !value.includes("\\") ? value : null;
 }
 
+function freshAuthRedirect(origin: string, path: string) {
+  const target = new URL(path, origin);
+  target.searchParams.set("auth_fresh", "1");
+  return target.toString();
+}
+
 function text(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -102,5 +108,5 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login/${requestedRole}?error=wrong_role`);
   }
 
-  return NextResponse.redirect(`${origin}${requestedNext ?? roleRedirect[requestedRole]}`);
+  return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? roleRedirect[requestedRole]));
 }
