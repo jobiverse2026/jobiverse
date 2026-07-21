@@ -6,50 +6,59 @@ import {
   UsersRound,
   BrainCircuit,
   Handshake,
-  TrendingUp,
   ArrowUpRight,
+  GraduationCap,
+  Palette,
 } from "lucide-react";
 
 
 const services = [
   {
     number: "01",
-    title: "Talent Discovery",
+    title: "Hiring & Talent Systems",
     description:
-      "Identify exceptional professionals through advanced sourcing, industry expertise and a powerful talent network.",
+      "Recruitment support, employer workspaces, requirement tracking, recruiter collaboration and protected hiring workflows.",
     icon: Search,
   },
 
   {
     number: "02",
-    title: "Recruitment Solutions",
+    title: "Career Growth Tools",
     description:
-      "Complete hiring support across IT and Non-IT functions, from requirement understanding to successful placement.",
+      "JobiVerse Cards, profile completeness, confidence scoring, application tracking and guidance for better career moves.",
     icon: UsersRound,
   },
 
   {
     number: "03",
-    title: "AI Powered Hiring",
+    title: "Student & Fresher Launchpad",
     description:
-      "Future-ready recruitment powered by intelligent matching, smarter screening and data-driven decisions.",
-    icon: BrainCircuit,
+      "Resume support, first-job preparation, campus partnerships, events and practical readiness for early careers.",
+    icon: GraduationCap,
   },
 
   {
     number: "04",
-    title: "Executive Search",
+    title: "Creator Marketplace",
     description:
-      "Strategic talent acquisition for leadership and specialized roles where the right fit matters most.",
-    icon: Handshake,
+      "A trusted space for experts to offer career services, editable CV templates, interview help and professional support.",
+    icon: Palette,
   },
 
   {
     number: "05",
-    title: "Career Services",
+    title: "JobiVerse Personal",
     description:
-      "Helping professionals grow with resume guidance, career support and opportunities aligned with their goals.",
-    icon: TrendingUp,
+      "Direct JobiVerse services for resume building, hiring consultation, candidate screening and structured career support.",
+    icon: Handshake,
+  },
+
+  {
+    number: "06",
+    title: "Future AI Intelligence",
+    description:
+      "AI resume analysis, interview preparation, matching intelligence and career coaching are ready to activate when paid AI is enabled.",
+    icon: BrainCircuit,
   },
 ];
 
@@ -138,7 +147,7 @@ export function Services() {
             "
           >
 
-            OUR SERVICES
+            WHAT LIVES INSIDE
 
           </p>
 
@@ -157,11 +166,11 @@ export function Services() {
             "
           >
 
-            Hiring Solutions
+            More Than Recruitment.
 
             <br />
 
-            Built For Growth.
+            A Work Universe.
 
           </h2>
 
@@ -178,9 +187,9 @@ export function Services() {
             "
           >
 
-            From discovering talent to developing careers,
-            JobiVerse provides complete hiring solutions
-            for the modern workforce.
+            JobiVerse connects the pieces that usually stay separate:
+            hiring, jobs, career readiness, creator services, reports,
+            marketplace support and future AI intelligence.
 
           </p>
 

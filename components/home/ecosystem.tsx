@@ -7,32 +7,46 @@ import {
   BrainCircuit,
   BriefcaseBusiness,
   ArrowUpRight,
+  GraduationCap,
+  Palette,
 } from "lucide-react";
 
 
 const ecosystem = [
   {
-    title: "Employers",
+    title: "Employer Universe",
     description:
-      "Build high-performing teams faster with expert recruitment solutions, industry knowledge and quality talent access.",
+      "A controlled hiring workspace for requirements, seats, recruiter collaboration, reports, interviews and talent discovery.",
     icon: Building2,
   },
   {
-    title: "Candidates",
+    title: "Professional Universe",
     description:
-      "Discover meaningful opportunities, improve your career profile and grow from your first job to leadership.",
+      "A career command center for opportunities, JobiVerse Cards, confidence scores, applications and growth guidance.",
     icon: Users,
   },
   {
-    title: "AI Hiring",
+    title: "Student Universe",
     description:
-      "Experience the future of recruitment with intelligent tools designed for smarter hiring decisions.",
+      "A first-career layer for resumes, interview readiness, campus support, skill roadmaps and early opportunities.",
+    icon: GraduationCap,
+  },
+  {
+    title: "Creator Universe",
+    description:
+      "A marketplace where career experts and template creators can earn by offering trusted services through JobiVerse.",
+    icon: Palette,
+  },
+  {
+    title: "Intelligence Layer",
+    description:
+      "Career scores, hiring health, candidate matching signals, application health and future AI tools work across the platform.",
     icon: BrainCircuit,
   },
   {
-    title: "Career Growth",
+    title: "Recruitment Core",
     description:
-      "A complete career ecosystem supporting professionals at every stage of their journey.",
+      "Human hiring expertise remains at the center for sourcing, screening, coordination, protection and successful closures.",
     icon: BriefcaseBusiness,
   },
 ];
@@ -156,9 +170,9 @@ export function Ecosystem() {
             "
           >
 
-            A connected ecosystem where companies,
-            candidates and intelligent technology come together
-            to create better hiring experiences.
+            A connected ecosystem where hiring, careers,
+            learning, services and intelligent technology come together
+            to support every stage of work.
 
           </p>
 
@@ -179,7 +193,7 @@ export function Ecosystem() {
           grid
           gap-6
           md:grid-cols-2
-          lg:grid-cols-4
+          lg:grid-cols-3
           "
         >
 
