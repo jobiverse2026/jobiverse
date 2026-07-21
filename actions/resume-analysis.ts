@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/authorization";
+import { adminSupabase } from "@/lib/supabase/admin";
 
 const schema = {
   type: "object",
@@ -22,6 +23,7 @@ const schema = {
 };
 
 export async function analyzeCandidateResume() {
+  const model = process.env.OPENAI_RESUME_MODEL || "gpt-5.6-luna";
   if (process.env.ENABLE_PAID_AI !== "true") throw new Error("JobiVerse AI Resume Analyzer is coming soon.");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("AI service is not configured.");
@@ -34,7 +36,15 @@ export async function analyzeCandidateResume() {
   if (downloadError || !resume) throw new Error(downloadError?.message ?? "Unable to read your resume.");
   if (resume.size > 5 * 1024 * 1024) throw new Error("Resume must be 5 MB or less.");
   const fileData = `data:application/pdf;base64,${Buffer.from(await resume.arrayBuffer()).toString("base64")}`;
-  const model = process.env.OPENAI_RESUME_MODEL || "gpt-5.6-luna";
+
+  await adminSupabase.from("ai_interaction_audit").insert({
+    user_id: user.id,
+    feature_key: "resume_analyzer",
+    input_reference: profile.resume_path,
+    model_provider: "OpenAI",
+    model_name: model,
+    status: "started",
+  });
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -49,14 +59,42 @@ export async function analyzeCandidateResume() {
     }),
   });
 
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload?.error?.message ?? "AI analysis failed. Please try again.");
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const providerMessage = payload?.error?.message ?? "AI analysis failed. Please try again.";
+    const code = payload?.error?.code ?? payload?.error?.type ?? String(response.status);
+    await adminSupabase.from("ai_interaction_audit").insert({
+      user_id: user.id,
+      feature_key: "resume_analyzer",
+      input_reference: profile.resume_path,
+      model_provider: "OpenAI",
+      model_name: model,
+      status: "failed",
+      error_code: String(code),
+    });
+    if (response.status === 429 || String(code).includes("quota")) {
+      throw new Error("AI usage limit or billing is not active right now. Please try again after JobiVerse AI credits are refreshed.");
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("AI service key is not authorized. Please check the OpenAI API key in production settings.");
+    }
+    throw new Error(providerMessage);
+  }
   const outputText = payload.output_text ?? payload.output?.flatMap((item: any) => item.content ?? []).find((item: any) => item.type === "output_text")?.text;
   if (!outputText) throw new Error("AI returned an empty analysis.");
   const analysis = JSON.parse(outputText);
 
   const { error: saveError } = await supabase.from("resume_analyses").insert({ candidate_user_id: user.id, resume_path: profile.resume_path, model, ...analysis });
   if (saveError) throw new Error(saveError.message);
+  await adminSupabase.from("ai_interaction_audit").insert({
+    user_id: user.id,
+    feature_key: "resume_analyzer",
+    input_reference: profile.resume_path,
+    output_reference: "resume_analyses",
+    model_provider: "OpenAI",
+    model_name: model,
+    status: "completed",
+  });
   revalidatePath("/candidates/resume-analysis");
   revalidatePath("/candidates/dashboard");
   return analysis;

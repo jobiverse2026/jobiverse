@@ -110,7 +110,7 @@ export async function getRequirement(id: string) {
 export async function getAssignableRequirementRecruiters() {
   const { user } = await requireRole(["employer"]);
   const access = await getEmployerCompanyAccess(user.id);
-  let memberQuery = adminSupabase
+  const memberQuery = adminSupabase
     .from("employer_team_members")
     .select("user_id,email,employer_id,created_at")
     .eq("company_id", access.company.id)
