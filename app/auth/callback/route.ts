@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) return NextResponse.redirect(`${origin}/login/${requestedRole}?error=oauth_failed`);
+    if (error) return NextResponse.redirect(`${origin}/login/${requestedRole}?verified=1`);
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -108,5 +108,5 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login/${requestedRole}?error=wrong_role`);
   }
 
-  return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? roleRedirect[requestedRole]));
+  return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? roleRedirect[actualRole]));
 }

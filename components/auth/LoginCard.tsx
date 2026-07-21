@@ -41,6 +41,7 @@ export default function LoginCard({ role = "candidate" }: Props) {
 
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
+  const verified = searchParams.get("verified") === "1";
   const visibleError = error ?? (urlError ? urlErrorMessage[urlError] ?? "Access could not be completed. Please try again." : null);
 
   const oauthCallbackUrl = () => {
@@ -174,6 +175,11 @@ export default function LoginCard({ role = "candidate" }: Props) {
           {visibleError && (
             <p className="text-sm text-red-600" role="alert">
               {visibleError}
+            </p>
+          )}
+          {!visibleError && verified && (
+            <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800" role="status">
+              Email verified successfully. Please log in once to open your JobiVerse dashboard.
             </p>
           )}
 
