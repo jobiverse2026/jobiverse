@@ -50,6 +50,13 @@ function authErrorMessage(error: unknown) {
   return "Authentication failed, but Supabase did not return a message. Please check Supabase Auth logs and SMTP settings.";
 }
 
+const signupConfirmationMessage =
+  "If this email is new, a confirmation link has been sent. Please check inbox, spam and promotions. If you already have an account, log in or use Forgot password.";
+
+function isSignupUserLookupIssue(message: string) {
+  return /not found|user was not found|account was not found/i.test(message);
+}
+
 function logAuthIssue(label: string, error: unknown) {
   const payload =
     error instanceof Error
@@ -162,11 +169,11 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
     if (data.user && !data.session) {
       const confirmation = await confirmSignupUser(data.user.id, normalizedEmail, role);
       if (confirmation.error) {
-        setError(confirmation.error);
+        setError(isSignupUserLookupIssue(confirmation.error) ? signupConfirmationMessage : confirmation.error);
         setLoading(false);
         return;
       }
-      setSuccess("Account created successfully. You can log in now with the same email and password.");
+      setSuccess(confirmation.emailConfirmationRequired ? signupConfirmationMessage : "Account created successfully. You can log in now with the same email and password.");
       setLoading(false);
       return;
     }

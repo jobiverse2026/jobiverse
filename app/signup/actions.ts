@@ -36,6 +36,10 @@ export async function confirmSignupUser(userId: string, email: string, role: "ca
     if (!invited) return { error: "Recruiter access is not assigned to this email yet." };
   }
 
+  if (process.env.SUPABASE_AUTH_SMTP_READY === "true") {
+    return { emailConfirmationRequired: true };
+  }
+
   const normalizedEmail = input.data.email.toLowerCase();
   const { data: authUser, error: authReadError } = await adminSupabase.auth.admin.getUserById(input.data.userId);
   if (authReadError || !authUser.user) return { error: authReadError?.message ?? "Signup user was not found." };
