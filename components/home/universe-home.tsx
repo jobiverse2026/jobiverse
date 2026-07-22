@@ -116,7 +116,7 @@ export function UniverseHome() {
                 JobiVerse brings talent, students, companies and creators into one premium ecosystem — where a person can build a career, a company can build a team, and an expert can build income.
               </motion.p>
               <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} className="mt-10 flex flex-wrap gap-3">
-                <Link href="#worlds" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black transition hover:-translate-y-0.5 hover:shadow-xl">
+                <Link href="/choose-your-world" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-black transition hover:-translate-y-0.5 hover:shadow-xl">
                   Choose your world <ArrowRight size={18} />
                 </Link>
                 <Link href="/pricing" className="rounded-2xl border border-white/20 bg-white/5 px-6 py-4 font-semibold text-white transition hover:bg-white/10">
@@ -157,7 +157,7 @@ export function UniverseHome() {
               <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-500">Choose your world</p>
               <h2 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-6xl">One platform. Four doors.</h2>
             </div>
-            <p className="max-w-xl text-sm leading-7 text-zinc-600">The homepage should not feel like one service. It should feel like an ecosystem where every user type has a clear place to begin.</p>
+            <p className="max-w-xl text-sm leading-7 text-zinc-600">Every visitor gets a clear starting point — professionals, freshers, employers and creators all enter through their own dedicated path.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {worlds.map(({ title, eyebrow, text, href, action, icon: Icon }, index) => (
@@ -219,7 +219,7 @@ export function UniverseHome() {
               <div>
                 <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-500">What users can do</p>
                 <h2 className="mt-5 text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-6xl">Every click opens a useful path.</h2>
-                <p className="mt-6 leading-8 text-zinc-600">Visitors should immediately understand that JobiVerse is useful even before they are hiring. They can apply, learn, earn, buy services, build a card or partner with us.</p>
+                <p className="mt-6 leading-8 text-zinc-600">People can apply, learn, earn, buy services, build a JobiVerse Card, explore opportunities or partner with us — without feeling locked into one single service.</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {actionCards.map(({ title, text, href, icon: Icon }) => (
@@ -284,7 +284,7 @@ export function UniverseHome() {
           <h2 className="mx-auto mt-7 max-w-4xl text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-6xl">Start anywhere. Grow everywhere.</h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-zinc-600">Whether someone wants a job, a better resume, a hiring workspace, a career service, a campus partnership or a way to earn — JobiVerse gives them a door.</p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link href="#worlds" className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 font-bold text-white">
+            <Link href="/choose-your-world" className="inline-flex items-center gap-2 rounded-2xl bg-zinc-950 px-6 py-4 font-bold text-white">
               Choose your world <ArrowRight size={17} />
             </Link>
             <Link href="/contact" className="rounded-2xl border border-zinc-200 bg-white px-6 py-4 font-bold text-zinc-950">
