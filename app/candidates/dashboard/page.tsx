@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/authorization";
 import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
 import { OpenToWorkToggle } from "@/components/candidate/OpenToWorkToggle";
 import { CareerIntelligencePanel } from "@/components/candidate/CareerIntelligencePanel";
+import { isPaidAIEnabled } from "@/lib/ai/launch";
 
 export default async function CandidateDashboardPage({ searchParams }: { searchParams: Promise<{ visibility?: string }> }) {
   const { supabase, user, profile: userProfile } = await requireRole(["candidate"]);
@@ -20,7 +21,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
   ]);
   const professional = profileResult.data;
   const isOpenToWork = Boolean(professional?.open_to_work);
-  const aiEnabled = process.env.ENABLE_PAID_AI === "true";
+  const aiEnabled = isPaidAIEnabled();
   const visibilityMessage = params.visibility === "open" ? "Open to work is active. Verified employers and recruiters can discover your profile." : params.visibility === "hidden" ? "Open to work is off. Your profile stays private unless you apply to a role." : null;
   const stats = [
     ["Applications", applicationsResult.count ?? 0, BriefcaseBusiness, "/candidates/applications"], ["Interviews", interviewsResult.count ?? 0, CalendarDays, "/candidates/applications"],

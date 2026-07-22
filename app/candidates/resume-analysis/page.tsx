@@ -5,11 +5,12 @@ import ResumeAnalyzerClient from "@/components/candidate/ResumeAnalyzerClient";
 import { BillingProfileCard } from "@/components/payments/billing-profile-card";
 import { RazorpayPaymentButton } from "@/components/payments/razorpay-payment-button";
 import { amountWithPaymentProcessing, paymentProcessingFeeFor } from "@/lib/payments/processing-fee";
+import { isPaidAIEnabled } from "@/lib/ai/launch";
 
 type Analysis = { id: string; ats_score: number; impact_score: number; readability_score: number; keyword_score: number; summary: string; strengths: string[]; improvements: string[]; missing_keywords: string[]; suggested_roles: string[]; section_feedback: { section: string; feedback: string }[]; created_at: string };
 
 export default async function ResumeAnalysisPage() {
-  const aiEnabled = process.env.ENABLE_PAID_AI === "true";
+  const aiEnabled = isPaidAIEnabled();
   const { supabase, user } = await requireRole(["candidate"]);
   const price = Number(process.env.AI_RESUME_ANALYSIS_PRICE_INR || "99");
   const processingFee = paymentProcessingFeeFor(price);

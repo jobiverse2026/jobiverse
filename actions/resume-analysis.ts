@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/authorization";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { isPaidAIEnabled } from "@/lib/ai/launch";
 
 type ResumeAnalysis = {
   ats_score: number;
@@ -18,7 +19,7 @@ type ResumeAnalysis = {
 };
 
 export async function analyzeCandidateResume() {
-  if (process.env.ENABLE_PAID_AI !== "true") throw new Error("JobiVerse AI Resume Analyzer is coming soon.");
+  if (!isPaidAIEnabled()) throw new Error("JobiVerse AI Resume Analyzer is coming soon.");
   const provider = (process.env.AI_PROVIDER || (process.env.GEMINI_API_KEY ? "gemini" : "openai")).toLowerCase();
   const model = provider === "gemini" ? (process.env.GEMINI_RESUME_MODEL || "gemini-2.5-flash") : (process.env.OPENAI_RESUME_MODEL || "gpt-5.6-luna");
   const { supabase, user } = await requireRole(["candidate"]);
