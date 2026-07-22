@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, type ElementType } from "react";
-import { BadgeIndianRupee, BriefcaseBusiness, ChevronDown, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, ChevronDown, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
 
 type PricingItem = {
   name: string;
   price: string;
   note: string;
+  href?: string;
+  action?: string;
 };
 
 type PricingSection = {
@@ -164,6 +167,33 @@ const sections: PricingSection[] = [
   },
 ];
 
+function pricingAction(sectionId: string, item: PricingItem) {
+  const name = item.name.toLowerCase();
+  const price = item.price.toLowerCase();
+  if (price.includes("coming soon") || name.includes("ai ") || name.includes("ats compatibility")) {
+    return { label: "Coming soon", href: "", disabled: true };
+  }
+  if (item.href) return { label: item.action ?? "Buy now", href: item.href, disabled: false };
+  if (sectionId === "employers") return { label: item.price === "Custom" ? "Request proposal" : "Buy access", href: "/plans", disabled: false };
+  if (sectionId === "hiring-fees") {
+    if (name.includes("referral")) return { label: "Start referral", href: "/referrals", disabled: false };
+    return { label: item.price.includes("%") || item.price === "Custom" || item.price.includes("Negotiable") ? "Start request" : "Buy now", href: "/employers/requirements/new", disabled: false };
+  }
+  if (sectionId === "professionals") {
+    if (name.includes("career free") || name.includes("career plus") || name.includes("career pro")) return { label: item.price === "Free" ? "Activate free" : "Buy plan", href: "/plans", disabled: false };
+    return { label: "Book service", href: "/marketplace?audience=professional", disabled: false };
+  }
+  if (sectionId === "students") return { label: "Book service", href: "/marketplace?audience=student", disabled: false };
+  if (sectionId === "employer-services") return { label: "Book service", href: "/marketplace?audience=employer", disabled: false };
+  if (sectionId === "cv-templates") return { label: "View templates", href: "/candidates/resume-builder", disabled: false };
+  if (sectionId === "creators") {
+    if (name.includes("creator account")) return { label: "Start earning", href: "/earn-with-jobiverse", disabled: false };
+    return { label: "Feature service", href: "/earn-with-jobiverse/dashboard/services", disabled: false };
+  }
+  if (sectionId === "campus-events") return { label: "Enquire now", href: "/campus-partnerships", disabled: false };
+  return { label: "Continue", href: "/contact", disabled: false };
+}
+
 export function PricingExplorer() {
   const [open, setOpen] = useState(sections[0].id);
 
@@ -211,15 +241,9 @@ export function PricingExplorer() {
                   {active && (
                     <div className="border-t border-zinc-100 p-6 pt-5 sm:p-8">
                       <p className="max-w-3xl text-sm leading-7 text-zinc-500">{section.description}</p>
-                      <div className="mt-6 grid gap-3 md:grid-cols-2">
+                      <div className="mt-6 grid gap-3">
                         {section.items.map((item) => (
-                          <div key={`${section.id}-${item.name}`} className="rounded-2xl border border-zinc-100 bg-zinc-50 p-5">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <h3 className="max-w-sm font-semibold text-zinc-950">{item.name}</h3>
-                              <span className="rounded-full bg-white px-3 py-1 text-sm font-bold text-zinc-800 shadow-sm">{item.price}</span>
-                            </div>
-                            <p className="mt-3 text-sm leading-6 text-zinc-500">{item.note}</p>
-                          </div>
+                          <PricingRow key={`${section.id}-${item.name}`} item={item} sectionId={section.id} />
                         ))}
                       </div>
                       {section.footer && (
@@ -237,5 +261,33 @@ export function PricingExplorer() {
         </div>
       </div>
     </section>
+  );
+}
+
+function PricingRow({ item, sectionId }: { item: PricingItem; sectionId: string }) {
+  const action = pricingAction(sectionId, item);
+
+  return (
+    <div className="grid gap-4 rounded-[1.6rem] border border-zinc-100 bg-zinc-50 p-5 transition hover:border-zinc-300 hover:bg-white hover:shadow-sm lg:grid-cols-[1fr_230px] lg:items-stretch">
+      <div>
+        <h3 className="font-semibold text-zinc-950">{item.name}</h3>
+        <p className="mt-3 text-sm leading-6 text-zinc-500">{item.note}</p>
+      </div>
+      <div className="flex flex-col justify-between rounded-[1.25rem] border border-zinc-200 bg-white p-4 shadow-sm">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[.14em] text-zinc-400">Price / action</p>
+          <p className="mt-2 text-xl font-bold tracking-[-.02em] text-zinc-950">{item.price}</p>
+        </div>
+        {action.disabled ? (
+          <span className="mt-5 inline-flex items-center justify-center rounded-xl bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-400">
+            {action.label}
+          </span>
+        ) : (
+          <Link href={action.href} className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-lg">
+            {action.label} <ArrowRight size={15} />
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }
