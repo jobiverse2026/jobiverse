@@ -2,7 +2,7 @@
 
 import { useState, type ElementType } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, ChevronDown, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
+import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
 import { serviceSlugForCategory } from "@/lib/marketplace/category-map";
 
 type PricingItem = {
@@ -22,6 +22,11 @@ type PricingSection = {
   icon: ElementType;
   items: PricingItem[];
   footer?: string;
+};
+
+type SelectedPrice = {
+  sectionId: string;
+  item: PricingItem;
 };
 
 const sections: PricingSection[] = [
@@ -202,6 +207,10 @@ function pricingAction(sectionId: string, item: PricingItem) {
 
 export function PricingExplorer() {
   const [open, setOpen] = useState(sections[0].id);
+  const [selected, setSelected] = useState<SelectedPrice | null>(null);
+  const activeSection = sections.find((section) => section.id === open) ?? sections[0];
+  const ActiveIcon = activeSection.icon;
+  const selectedAction = selected ? pricingAction(selected.sectionId, selected.item) : null;
 
   return (
     <section className="px-5 pb-28 sm:px-8">
@@ -211,7 +220,10 @@ export function PricingExplorer() {
             {sections.map(({ id, title, kicker, icon: Icon }) => (
               <button
                 key={id}
-                onClick={() => setOpen(id)}
+                onClick={() => {
+                  setOpen(id);
+                  setSelected(null);
+                }}
                 className={`mb-2 flex w-full cursor-pointer items-center gap-3 rounded-2xl p-4 text-left transition ${open === id ? "bg-zinc-950 text-white" : "bg-zinc-50 text-zinc-700 hover:bg-zinc-100"}`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${open === id ? "bg-white text-zinc-950" : "bg-white text-zinc-700"}`}>
@@ -225,56 +237,86 @@ export function PricingExplorer() {
             ))}
           </aside>
 
-          <div className="space-y-4">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              const active = open === section.id;
-              return (
-                <article key={section.id} className={`overflow-hidden rounded-[2.5rem] border bg-white shadow-sm ${active ? "border-zinc-950" : "border-zinc-200"}`}>
-                  <button onClick={() => setOpen(active ? "" : section.id)} className="flex w-full cursor-pointer items-center justify-between gap-4 p-6 text-left sm:p-8">
-                    <span className="flex items-center gap-4">
-                      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-950 text-white">
-                        <Icon size={22} />
-                      </span>
-                      <span>
-                        <span className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">{section.kicker}</span>
-                        <span className="mt-1 block text-2xl font-bold tracking-[-.03em]">{section.title}</span>
-                      </span>
-                    </span>
-                    <ChevronDown className={`shrink-0 transition ${active ? "rotate-180" : ""}`} />
-                  </button>
-
-                  {active && (
-                    <div className="border-t border-zinc-100 p-6 pt-5 sm:p-8">
-                      <p className="max-w-3xl text-sm leading-7 text-zinc-500">{section.description}</p>
-                      <div className="mt-6 grid gap-3">
-                        {section.items.map((item) => (
-                          <PricingRow key={`${section.id}-${item.name}`} item={item} sectionId={section.id} />
-                        ))}
-                      </div>
-                      {section.footer && (
-                        <p className="mt-5 flex gap-2 rounded-2xl bg-zinc-950 p-4 text-sm leading-6 text-white">
-                          <CircleDollarSign className="mt-0.5 shrink-0" size={17} />
-                          {section.footer}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </div>
+          <article className="overflow-hidden rounded-[2.5rem] border border-zinc-950 bg-white shadow-sm">
+            <div className="flex items-center gap-4 p-6 sm:p-8">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-950 text-white">
+                <ActiveIcon size={22} />
+              </span>
+              <span>
+                <span className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">{activeSection.kicker}</span>
+                <span className="mt-1 block text-2xl font-bold tracking-[-.03em]">{activeSection.title}</span>
+              </span>
+            </div>
+            <div className="border-t border-zinc-100 p-6 pt-5 sm:p-8">
+              <p className="max-w-3xl text-sm leading-7 text-zinc-500">{activeSection.description}</p>
+              <div className="mt-6 grid gap-3">
+                {activeSection.items.map((item) => (
+                  <PricingRow
+                    key={`${activeSection.id}-${item.name}`}
+                    item={item}
+                    sectionId={activeSection.id}
+                    selected={selected?.sectionId === activeSection.id && selected.item.name === item.name}
+                    onSelect={() => setSelected({ sectionId: activeSection.id, item })}
+                  />
+                ))}
+              </div>
+              {activeSection.footer && (
+                <p className="mt-5 flex gap-2 rounded-2xl bg-zinc-950 p-4 text-sm leading-6 text-white">
+                  <CircleDollarSign className="mt-0.5 shrink-0" size={17} />
+                  {activeSection.footer}
+                </p>
+              )}
+            </div>
+          </article>
         </div>
+        {selected && selectedAction && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/45 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true">
+            <div className="grid max-h-[88vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border border-zinc-800 bg-zinc-950 p-5 text-white shadow-2xl lg:grid-cols-[1fr_300px]">
+              <div className="p-3 sm:p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-zinc-500">Selected pricing</p>
+                <h3 className="mt-2 text-3xl font-bold tracking-[-.04em]">{selected.item.name}</h3>
+                <p className="mt-4 text-sm leading-7 text-zinc-300">{selected.item.note}</p>
+                {!!selected.item.details?.length && (
+                  <div className="mt-6 grid gap-2 rounded-2xl border border-white/10 bg-white/[.06] p-4">
+                    {selected.item.details.map((detail) => (
+                      <p key={detail} className="flex gap-2 text-sm leading-6 text-zinc-300">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
+                        {detail}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-6 text-xs leading-6 text-zinc-500">You can review the offer here first. Continue only when you want to login, access or buy this item.</p>
+              </div>
+              <div className="rounded-[1.5rem] bg-white p-5 text-zinc-950">
+                <p className="text-[10px] font-bold uppercase tracking-[.16em] text-zinc-400">Pay / continue</p>
+                <p className="mt-2 text-2xl font-black tracking-[-.03em]">{selected.item.price}</p>
+                {selectedAction.disabled ? (
+                  <span className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-400">
+                    {selectedAction.label}
+                  </span>
+                ) : (
+                  <Link href={selectedAction.href} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-lg">
+                    {selectedAction.label} <ArrowRight size={15} />
+                  </Link>
+                )}
+                <button type="button" onClick={() => setSelected(null)} className="mt-3 w-full cursor-pointer rounded-xl border border-zinc-200 px-4 py-3 text-sm font-bold text-zinc-600 transition hover:bg-zinc-50">
+                  Back to pricing list
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function PricingRow({ item, sectionId }: { item: PricingItem; sectionId: string }) {
+function PricingRow({ item, sectionId, selected, onSelect }: { item: PricingItem; sectionId: string; selected: boolean; onSelect: () => void }) {
   const action = pricingAction(sectionId, item);
 
   return (
-    <div className="grid gap-4 rounded-[1.6rem] border border-zinc-100 bg-zinc-50 p-5 transition hover:border-zinc-300 hover:bg-white hover:shadow-sm lg:grid-cols-[1fr_230px] lg:items-stretch">
+    <div className={`grid gap-4 rounded-[1.6rem] border p-5 transition hover:border-zinc-300 hover:bg-white hover:shadow-sm lg:grid-cols-[1fr_230px] lg:items-stretch ${selected ? "border-zinc-950 bg-white shadow-sm" : "border-zinc-100 bg-zinc-50"}`}>
       <div>
         <h3 className="font-semibold text-zinc-950">{item.name}</h3>
         <p className="mt-3 text-sm leading-6 text-zinc-500">{item.note}</p>
@@ -299,9 +341,9 @@ function PricingRow({ item, sectionId }: { item: PricingItem; sectionId: string 
             {action.label}
           </span>
         ) : (
-          <Link href={action.href} className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-lg">
-            {action.label} <ArrowRight size={15} />
-          </Link>
+          <button type="button" onClick={onSelect} className="mt-5 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-lg">
+            View details <ArrowRight size={15} />
+          </button>
         )}
       </div>
     </div>
