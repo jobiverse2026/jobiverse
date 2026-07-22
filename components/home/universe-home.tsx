@@ -152,12 +152,11 @@ export function UniverseHome() {
 
       <section id="worlds" className="bg-[#f6f6f3] px-5 py-12 sm:px-8">
         <div className="mx-auto max-w-[1450px]">
-          <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div className="mb-7">
             <div>
               <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-500">Choose your world</p>
               <h2 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-6xl">One platform. Four doors.</h2>
             </div>
-            <p className="max-w-xl text-sm leading-7 text-zinc-600">Every visitor gets a clear starting point — professionals, freshers, employers and creators all enter through their own dedicated path.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {worlds.map(({ title, eyebrow, text, href, action, icon: Icon }, index) => (
