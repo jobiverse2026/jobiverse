@@ -3,6 +3,7 @@
 import { useState, type ElementType } from "react";
 import Link from "next/link";
 import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, ChevronDown, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
+import { serviceSlugForCategory } from "@/lib/marketplace/category-map";
 
 type PricingItem = {
   name: string;
@@ -10,6 +11,7 @@ type PricingItem = {
   note: string;
   href?: string;
   action?: string;
+  details?: string[];
 };
 
 type PricingSection = {
@@ -30,12 +32,12 @@ const sections: PricingSection[] = [
     description: "For companies that want hiring workspace access, team seats, reports and controlled recruitment operations.",
     icon: BriefcaseBusiness,
     items: [
-      { name: "Employer Starter", price: "₹2,999/month", note: "1 master employer, 2 employer seats, 2 recruiter seats, 5 active requirements, jobs portal posting, basic tracking and reports." },
-      { name: "Employer Growth", price: "₹7,999/month", note: "1 master employer, 5 employer seats, 10 recruiter seats, 20 active requirements, interview calendar, hiring funnel and recruiter reports." },
-      { name: "Employer Enterprise", price: "Custom", note: "Custom seats, departments, bulk hiring dashboard, dedicated JobiVerse account manager, reports, SLA and custom terms." },
-      { name: "Extra employer seat", price: "₹2,000/year/seat", note: "For additional company users who manage requirements, candidates, reports and team visibility." },
-      { name: "Extra recruiter seat", price: "₹1,000/year/seat", note: "For assigned sourcing users who submit candidates and work on recruiter pipelines." },
-      { name: "Talent Search Access", price: "₹1,999/month", note: "Locked add-on. Search only Open to Work JobiVerse profiles after payment and admin approval." },
+      { name: "Employer Starter", price: "₹2,999/month", note: "1 master employer, 2 employer seats, 2 recruiter seats, 5 active requirements, jobs portal posting, basic tracking and reports.", details: ["Best for small companies starting structured hiring.", "Includes requirement creation, applicant tracking and basic reports.", "Talent Search is not included; it remains a paid add-on."] },
+      { name: "Employer Growth", price: "₹7,999/month", note: "1 master employer, 5 employer seats, 10 recruiter seats, 20 active requirements, interview calendar, hiring funnel and recruiter reports.", details: ["Best for SMEs with regular hiring volume.", "Includes wider team seats, interview calendar and recruiter performance reporting.", "Useful when multiple employers/recruiters collaborate under one company workspace."] },
+      { name: "Employer Enterprise", price: "Custom", note: "Custom seats, departments, bulk hiring dashboard, dedicated JobiVerse account manager, reports, SLA and custom terms.", details: ["Best for larger teams, high-volume hiring or custom workflows.", "Commercials, seats, support SLA and reports are finalized after a JobiVerse discussion.", "Can include dedicated account ownership and custom operating process."] },
+      { name: "Extra employer seat", price: "₹2,000/year/seat", note: "For additional company users who manage requirements, candidates, reports and team visibility.", details: ["Used when more employer-side users need controlled access.", "Master employer/admin can control access based on seat limits.", "Invited employer access stays restricted as per company rules."] },
+      { name: "Extra recruiter seat", price: "₹1,000/year/seat", note: "For assigned sourcing users who submit candidates and work on recruiter pipelines.", details: ["Used when the company needs more recruiter users.", "Recruiters can work on assigned requirements and submit candidates.", "Recruiter access stays separate from employer/admin access."] },
+      { name: "Talent Search Access", price: "₹1,999/month", note: "Locked add-on. Search only Open to Work JobiVerse profiles after payment and admin approval.", details: ["Unlocks searchable open-to-work talent profiles.", "Includes filters like skills, location, experience and notice period.", "Access starts only after payment and JobiVerse admin approval."] },
     ],
     footer: "Recruitment success fee is separate from SaaS/workspace subscriptions.",
   },
@@ -170,22 +172,26 @@ const sections: PricingSection[] = [
 function pricingAction(sectionId: string, item: PricingItem) {
   const name = item.name.toLowerCase();
   const price = item.price.toLowerCase();
+  const marketplaceServiceHref = (category: string) => `/marketplace/services/${serviceSlugForCategory(category)}?type=${encodeURIComponent(category)}`;
   if (price.includes("coming soon") || name.includes("ai ") || name.includes("ats compatibility")) {
     return { label: "Coming soon", href: "", disabled: true };
   }
   if (item.href) return { label: item.action ?? "Buy now", href: item.href, disabled: false };
-  if (sectionId === "employers") return { label: item.price === "Custom" ? "Request proposal" : "Buy access", href: "/plans", disabled: false };
+  if (sectionId === "employers") return { label: item.price === "Custom" ? "Login to request proposal" : "Login to access / buy", href: "/plans", disabled: false };
   if (sectionId === "hiring-fees") {
     if (name.includes("referral")) return { label: "Start referral", href: "/referrals", disabled: false };
     return { label: item.price.includes("%") || item.price === "Custom" || item.price.includes("Negotiable") ? "Start request" : "Buy now", href: "/employers/requirements/new", disabled: false };
   }
   if (sectionId === "professionals") {
     if (name.includes("career free") || name.includes("career plus") || name.includes("career pro")) return { label: item.price === "Free" ? "Activate free" : "Buy plan", href: "/plans", disabled: false };
-    return { label: "Book service", href: "/marketplace?audience=professional", disabled: false };
+    return { label: "Book service", href: marketplaceServiceHref(item.name), disabled: false };
   }
-  if (sectionId === "students") return { label: "Book service", href: "/marketplace?audience=student", disabled: false };
-  if (sectionId === "employer-services") return { label: "Book service", href: "/marketplace?audience=employer", disabled: false };
-  if (sectionId === "cv-templates") return { label: "View templates", href: "/candidates/resume-builder", disabled: false };
+  if (sectionId === "students") return { label: "Book service", href: marketplaceServiceHref(item.name), disabled: false };
+  if (sectionId === "employer-services") return { label: "Book service", href: marketplaceServiceHref(item.name), disabled: false };
+  if (sectionId === "cv-templates") {
+    if (name.includes("jobiverse editable")) return { label: "View templates", href: marketplaceServiceHref("Editable CV Template"), disabled: false };
+    return { label: "View templates", href: "/candidates/resume-builder", disabled: false };
+  }
   if (sectionId === "creators") {
     if (name.includes("creator account")) return { label: "Start earning", href: "/earn-with-jobiverse", disabled: false };
     return { label: "Feature service", href: "/earn-with-jobiverse/dashboard/services", disabled: false };
@@ -272,6 +278,16 @@ function PricingRow({ item, sectionId }: { item: PricingItem; sectionId: string 
       <div>
         <h3 className="font-semibold text-zinc-950">{item.name}</h3>
         <p className="mt-3 text-sm leading-6 text-zinc-500">{item.note}</p>
+        {!!item.details?.length && (
+          <div className="mt-4 grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4">
+            {item.details.map((detail) => (
+              <p key={detail} className="flex gap-2 text-sm leading-6 text-zinc-600">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-950" />
+                {detail}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex flex-col justify-between rounded-[1.25rem] border border-zinc-200 bg-white p-4 shadow-sm">
         <div>
