@@ -4,26 +4,21 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   BriefcaseBusiness,
-  Users,
   CalendarClock,
   BadgeCheck,
   BadgeIndianRupee,
   Globe2,
-  ShieldCheck,
   UserPlus,
 } from "lucide-react";
 
 export default function StatsCards({ stats: liveStats }: { stats: { activeRequirements: number; candidates: number; interviews: number; positionsClosed: number; activeOffers: number; publishedJobs: number; jobiverseAssigned: number; externalApplicants: number; hiringHealthScore?: number; seatLimit: number; seatsUsed: number; seatsLeft: number; employerSeatLimit?: number; employerSeatsUsed?: number; employerSeatsLeft?: number; recruiterSeatLimit?: number; recruiterSeatsUsed?: number; recruiterSeatsLeft?: number } }) {
   const stats = [
     { title: "Active Requirements", value: liveStats.activeRequirements, subtitle: "Currently active", icon: BriefcaseBusiness, href: "/employers/requirements" },
-    { title: "Submitted Candidates", value: liveStats.candidates, subtitle: "All profiles shared with you", icon: Users, href: "/employers/candidates" },
     { title: "Jobs Portal Live", value: liveStats.publishedJobs, subtitle: "Visible to candidates", icon: Globe2, href: "/employers/requirements" },
-    { title: "JobiVerse Assigned", value: liveStats.jobiverseAssigned, subtitle: "Handled by our hiring team", icon: ShieldCheck, href: "/employers/requirements" },
-    { title: "External Applicants", value: liveStats.externalApplicants, subtitle: "Direct applications", icon: UserPlus, href: "/employers/external-applicants" },
-    { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock, href: "/employers/candidates?status=Interview" },
-    { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee, href: "/employers/candidates?status=Offered" },
-    { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck, href: "/employers/candidates?status=Joined" },
-    { title: "Team Seats", value: liveStats.seatsUsed, subtitle: `${liveStats.seatsLeft} left of ${liveStats.seatLimit} total seats`, icon: UserPlus, href: "/employers/team" },
+    { title: "Direct Applicants", value: liveStats.externalApplicants, subtitle: "Jobs Portal applications", icon: UserPlus, href: "/employers/candidates?source=external" },
+    { title: "Interviews", value: liveStats.interviews, subtitle: "Scheduled", icon: CalendarClock, href: "/employers/candidates?source=external&status=Interview" },
+    { title: "Active Offers", value: liveStats.activeOffers, subtitle: "Offered or accepted", icon: BadgeIndianRupee, href: "/employers/candidates?source=external&status=Offered" },
+    { title: "Positions Closed", value: liveStats.positionsClosed, subtitle: "Joined or completed", icon: BadgeCheck, href: "/employers/candidates?source=external&status=Joined" },
   ];
   return (
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">

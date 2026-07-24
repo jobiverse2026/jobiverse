@@ -11,6 +11,7 @@ import ExternalApplicantsCard from "./ExternalApplicantsCard";
 import JobiverseSubmittedCard from "./JobiverseSubmittedCard";
 import HiringHealthCard from "./HiringHealthCard";
 import FreeHiringCard from "./FreeHiringCard";
+import SubscriptionToolsSection from "./SubscriptionToolsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -23,26 +24,42 @@ export default async function EmployerDashboardPage() {
 
         <FreeHiringCard />
 
+        <section>
+          <p className="text-xs font-bold uppercase tracking-[.2em] text-emerald-700">Free hiring workspace</p>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-3xl font-semibold tracking-[-.04em] text-zinc-950">Post, receive applications and hire.</h2>
+              <p className="mt-2 text-sm text-zinc-500">These tools remain available without an employer subscription.</p>
+            </div>
+            <span className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-black uppercase tracking-[.16em] text-emerald-800">Free access</span>
+          </div>
+        </section>
+
         <StatsCards stats={data.stats} />
 
-        <HiringHealthCard score={data.stats.hiringHealthScore} activeRequirements={data.stats.activeRequirements} candidates={data.stats.candidates} interviews={data.stats.interviews} positionsClosed={data.stats.positionsClosed} />
-
-        <div className="grid gap-5 xl:grid-cols-2">
-          <JobiverseSubmittedCard />
-          <ExternalApplicantsCard />
-        </div>
+        <ExternalApplicantsCard />
 
         <QuickActions />
 
-        <div className="grid gap-8 xl:grid-cols-2">
-          <RecentRequirements requirements={data.recentRequirements} />
-          <RecentCandidates candidates={data.recentCandidates} />
-        </div>
+        <RecentRequirements requirements={data.recentRequirements} />
 
-        <div className="grid gap-8 xl:grid-cols-2">
-          <HiringPipeline pipeline={data.pipeline} />
-          <ActivityFeed requirements={data.recentRequirements} candidates={data.recentCandidates} />
-        </div>
+        <SubscriptionToolsSection entitlements={data.entitlements} />
+
+        {data.entitlements.coreSubscriptionActive && (
+          <section id="hiring-intelligence" className="scroll-mt-32 space-y-8">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-500">Subscription intelligence</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-.04em] text-zinc-950">Your complete hiring operation.</h2>
+            </div>
+            <HiringHealthCard score={data.stats.hiringHealthScore} activeRequirements={data.stats.activeRequirements} candidates={data.stats.candidates} interviews={data.stats.interviews} positionsClosed={data.stats.positionsClosed} />
+            <JobiverseSubmittedCard />
+            <div className="grid gap-8 xl:grid-cols-2">
+              <RecentCandidates candidates={data.recentCandidates} />
+              <HiringPipeline pipeline={data.pipeline} />
+            </div>
+            <ActivityFeed requirements={data.recentRequirements} candidates={data.recentCandidates} />
+          </section>
+        )}
       </div>
     </DashboardLayout>
   );

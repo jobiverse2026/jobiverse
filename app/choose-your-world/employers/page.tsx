@@ -11,12 +11,12 @@ import {
 } from "lucide-react";
 
 const benefits = [
-  { title: "Free employer workspace", text: "Create your company profile, publish roles and manage direct applicants without an upfront subscription.", icon: Building2 },
-  { title: "Free Jobs Portal posting", text: "Post roles for ₹0 upfront, reach JobiVerse talent and pay only after a successful direct hire.", icon: BriefcaseBusiness },
-  { title: "Candidate pipeline visibility", text: "Direct applicants, recruiter-submitted candidates and JobiVerse-submitted profiles remain clearly attributed.", icon: UsersRound },
-  { title: "Hiring reports", text: "Track requirement status, candidate counts, interviews, outcomes and recruiter performance.", icon: BarChart3 },
-  { title: "Talent Search add-on", text: "Optional paid access to Open to Work JobiVerse profiles after payment and admin approval.", icon: LockKeyhole },
-  { title: "Hiring protection", text: "Protected candidate introductions and transparent commercial terms for portal and assisted hiring.", icon: ShieldCheck },
+  { title: "Free employer workspace", text: "Create your company profile, publish roles and manage direct applicants without an upfront subscription.", access: "Free", icon: Building2 },
+  { title: "Free Jobs Portal posting", text: "Post roles for ₹0 upfront, reach JobiVerse talent and pay only after a successful direct hire.", access: "Free", icon: BriefcaseBusiness },
+  { title: "Submitted candidate workspace", text: "Unlock recruiter-submitted and JobiVerse-submitted profiles with clear source attribution and workflow controls.", access: "Subscription", icon: UsersRound },
+  { title: "Hiring reports", text: "Unlock requirement status, candidate counts, interviews, outcomes and recruiter performance reporting.", access: "Subscription", icon: BarChart3 },
+  { title: "Talent Search add-on", text: "Optional paid access to Open to Work JobiVerse profiles after payment and admin approval.", access: "Paid add-on", icon: LockKeyhole },
+  { title: "Hiring protection", text: "Protected candidate introductions and transparent commercial terms for portal and assisted hiring.", access: "JobiVerse", icon: ShieldCheck },
 ];
 
 const plans = [
@@ -105,16 +105,19 @@ export default function EmployerWorldPage() {
         </section>
 
         <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {benefits.map(({ title, text, icon: Icon }) => (
+          {benefits.map(({ title, text, access, icon: Icon }) => (
             <article key={title} className="rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><Icon size={21} /></span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><Icon size={21} /></span>
+                <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${access === "Free" ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-700"}`}>{access}</span>
+              </div>
               <h2 className="mt-6 text-xl font-bold tracking-[-.03em]">{title}</h2>
               <p className="mt-3 text-sm leading-7 text-zinc-600">{text}</p>
             </article>
           ))}
         </section>
 
-        <section className="mt-14">
+        <section id="employer-plans" className="mt-14 scroll-mt-32">
           <div className="mb-6">
             <p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-500">Workspace access</p>
             <h2 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-zinc-950 sm:text-5xl">Begin free. Add operating power as you grow.</h2>
@@ -128,7 +131,7 @@ export default function EmployerWorldPage() {
                 <div className="mt-7 space-y-3">
                   {plan.items.map((item) => <p key={item} className={`rounded-2xl px-4 py-3 text-sm font-semibold ${plan.featured ? "bg-white/10 text-zinc-300" : "bg-zinc-50 text-zinc-600"}`}>{item}</p>)}
                 </div>
-                <Link href={plan.name === "Free Hiring" ? "/signup?role=employer" : "/contact"} className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-bold ${plan.featured ? "bg-white text-zinc-950" : "bg-zinc-950 text-white"}`}>
+                <Link href={plan.name === "Free Hiring" ? "/signup?role=employer" : "/plans?audience=employer"} className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-sm font-bold ${plan.featured ? "bg-white text-zinc-950" : "bg-zinc-950 text-white"}`}>
                   {plan.name === "Free Hiring" ? "Create free account" : "Request activation"} <ArrowRight size={16} />
                 </Link>
               </article>

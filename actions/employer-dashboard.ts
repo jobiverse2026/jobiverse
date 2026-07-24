@@ -7,7 +7,7 @@ import { hiringHealthScore } from "@/lib/candidate/intelligence";
 const clientStatuses=["Submitted","Client Submitted","Interview","Selected","Offered","Joined","Rejected","Withdrawn"];
 export async function getEmployerDashboardData(){
   const{user}=await requireRole(["employer"]);
-  const empty={stats:{activeRequirements:0,candidates:0,interviews:0,positionsClosed:0,activeOffers:0,publishedJobs:0,jobiverseAssigned:0,externalApplicants:0,hiringHealthScore:0,seatLimit:0,seatsUsed:0,seatsLeft:0,employerSeatLimit:0,employerSeatsUsed:0,employerSeatsLeft:0,recruiterSeatLimit:0,recruiterSeatsUsed:0,recruiterSeatsLeft:0},recentRequirements:[],recentCandidates:[],pipeline:clientStatuses.map(stage=>({stage,value:0}))};
+  const empty={stats:{activeRequirements:0,candidates:0,interviews:0,positionsClosed:0,activeOffers:0,publishedJobs:0,jobiverseAssigned:0,externalApplicants:0,hiringHealthScore:0,seatLimit:0,seatsUsed:0,seatsLeft:0,employerSeatLimit:0,employerSeatsUsed:0,employerSeatsLeft:0,recruiterSeatLimit:0,recruiterSeatsUsed:0,recruiterSeatsLeft:0},entitlements:{coreSubscriptionActive:false,corePlanName:null as string|null,talentSearchActive:false,teamSeatsActive:false},recentRequirements:[],recentCandidates:[],pipeline:clientStatuses.map(stage=>({stage,value:0}))};
   let access;try{access=await getEmployerCompanyAccess(user.id)}catch{return empty}
   const company=access.company;
   const requirementQuery=scopeEmployerRequirementQuery(adminSupabase.from("requirements").select("id,job_title,status,assigned_recruiter,created_at,is_public,hiring_team_requested").order("created_at",{ascending:false}),access,user.id);
@@ -28,7 +28,11 @@ export async function getEmployerDashboardData(){
   const seatLimit=employerSeatLimit+recruiterSeatLimit;
   const seatsUsed=employerSeatsUsed+recruiterSeatsUsed;
   const seatStats={seatLimit,seatsUsed,seatsLeft:Math.max(0,seatLimit-seatsUsed),employerSeatLimit,employerSeatsUsed,employerSeatsLeft:Math.max(0,employerSeatLimit-employerSeatsUsed),recruiterSeatLimit,recruiterSeatsUsed,recruiterSeatsLeft:Math.max(0,recruiterSeatLimit-recruiterSeatsUsed)};
-  if(!requirementIds.length)return {...empty,stats:{...empty.stats,...seatStats}};
+  const {data:subscriptionRows}=await adminSupabase.from("platform_subscriptions").select("status,platform_plans(slug,name)").eq("user_id",company.owner_id).eq("status","active");
+  const activePlans=(subscriptionRows??[]).map((row:any)=>Array.isArray(row.platform_plans)?row.platform_plans[0]:row.platform_plans).filter(Boolean);
+  const corePlan=activePlans.find((plan:any)=>["employer-starter","employer-growth","employer-enterprise"].includes(plan.slug));
+  const entitlements={coreSubscriptionActive:Boolean(corePlan),corePlanName:corePlan?.name??null,talentSearchActive:activePlans.some((plan:any)=>["employer-talent-search","employer-enterprise"].includes(plan.slug)),teamSeatsActive:seatLimit>0};
+  if(!requirementIds.length)return {...empty,stats:{...empty.stats,...seatStats},entitlements};
   const[candidateRows,interviews,placements,activeOffers,externalApplicants]=await Promise.all([
     adminSupabase.from("candidates").select("id,full_name,total_experience,status,created_at,requirement_id,recruiter_name,recruiter_email,source,requirements(job_title)").in("requirement_id",requirementIds).order("created_at",{ascending:false}),
     adminSupabase.from("interviews").select("id",{count:"exact",head:true}).in("requirement_id",requirementIds).in("status",["scheduled","rescheduled"]),
@@ -43,6 +47,6 @@ export async function getEmployerDashboardData(){
     return{...requirement,candidate_count:related.length,latest_candidate_status:related[0]?.status??null,candidate_status_counts:statusCounts};
   });
   const healthScore=hiringHealthScore({activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,externalApplicants:externalApplicants.count??0});
-  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,hiringHealthScore:healthScore,...seatStats},recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length}))};
+  return{stats:{activeRequirements,candidates:candidates.length,interviews:interviews.count??0,positionsClosed:placements.count??0,activeOffers:activeOffers.count??0,publishedJobs:allRequirements.filter((item:any)=>item.is_public).length,jobiverseAssigned:allRequirements.filter((item:any)=>item.hiring_team_requested).length,externalApplicants:externalApplicants.count??0,hiringHealthScore:healthScore,...seatStats},entitlements,recentRequirements:requirementsWithCandidateStatus.slice(0,5),recentCandidates:candidates.slice(0,5),pipeline:clientStatuses.map(stage=>({stage,value:candidates.filter((candidate:any)=>normalize(candidate.status)===normalize(stage)).length}))};
 }
 function normalize(value:string|null){return String(value??"").trim().toLowerCase().replaceAll("_"," ")}

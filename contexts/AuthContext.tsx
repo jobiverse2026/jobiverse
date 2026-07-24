@@ -36,7 +36,7 @@ function isStaleRefreshTokenError(error: unknown) {
         ? JSON.stringify(error)
         : String(error ?? "");
 
-  return /invalid refresh token|refresh token not found|AuthRetryableFetchError/i.test(message);
+  return /invalid refresh token|refresh token not found/i.test(message);
 }
 
 function clearSupabaseBrowserSession() {
@@ -62,11 +62,6 @@ function clearSupabaseBrowserSession() {
     // Ignore browser storage errors; the user can still continue by clearing site data manually.
   }
 }
-
-const browserSessionKey = "jobiverse-browser-session";
-const lastBrowserExitKey = "jobiverse-last-browser-exit";
-const restoredSessionGraceMs = 5000;
-
 
 interface AuthContextType {
   user: User | null;
@@ -179,18 +174,6 @@ export function AuthProvider({
 
     window.addEventListener("unhandledrejection", handleRejectedAuthRefresh);
 
-    const rememberBrowserExit = () => {
-      try {
-        window.localStorage.setItem(lastBrowserExitKey, String(Date.now()));
-      } catch {
-        // Ignore storage errors.
-      }
-    };
-
-    window.addEventListener("pagehide", rememberBrowserExit);
-
-
-
     const initializeAuth = async () => {
 
       const {
@@ -210,29 +193,7 @@ export function AuthProvider({
 
 
 
-      let validSession = error ? null : session;
-      const hasActiveBrowserSession = sessionStorage.getItem(browserSessionKey) === "active";
-      const isPasswordRecovery = window.location.pathname === "/reset-password";
-      const isAuthCallback =
-        window.location.pathname.includes("/auth/callback") ||
-        window.location.search.includes("code=") ||
-        window.location.search.includes("auth_fresh=1");
-      const lastBrowserExit = Number(window.localStorage.getItem(lastBrowserExitKey) ?? 0);
-      const looksLikeReopenedAfterClose =
-        Boolean(validSession) &&
-        lastBrowserExit > 0 &&
-        Date.now() - lastBrowserExit > restoredSessionGraceMs &&
-        !isPasswordRecovery &&
-        !isAuthCallback;
-
-      if (validSession && (!hasActiveBrowserSession || looksLikeReopenedAfterClose) && !isPasswordRecovery && !isAuthCallback) {
-        clearSupabaseBrowserSession();
-        await supabase.auth.signOut({ scope: "local" });
-        validSession = null;
-      }
-
-      if (!isPasswordRecovery) sessionStorage.setItem(browserSessionKey, "active");
-      window.localStorage.removeItem(lastBrowserExitKey);
+      const validSession = error ? null : session;
       setSession(validSession);
 
       const currentUser = validSession?.user ?? null;
@@ -254,6 +215,40 @@ export function AuthProvider({
 
 
     initializeAuth();
+
+    const reconcileAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (error) {
+        if (isStaleRefreshTokenError(error)) {
+          clearSupabaseBrowserSession();
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+        }
+        return;
+      }
+
+      const currentUser = data.session?.user ?? null;
+      setSession(data.session);
+      setUser(currentUser);
+      await fetchProfile(currentUser);
+      if (mounted) setLoading(false);
+    };
+
+    const reconcileVisibleTab = () => {
+      if (document.visibilityState === "visible") void reconcileAuth();
+    };
+
+    const reconcileStoredAuth = (event: StorageEvent) => {
+      if (event.key === null || event.key.startsWith("sb-") || event.key.includes("supabase")) {
+        void reconcileAuth();
+      }
+    };
+
+    window.addEventListener("focus", reconcileAuth);
+    window.addEventListener("storage", reconcileStoredAuth);
+    document.addEventListener("visibilitychange", reconcileVisibleTab);
 
 
 
@@ -301,7 +296,9 @@ export function AuthProvider({
       mounted = false;
 
       window.removeEventListener("unhandledrejection", handleRejectedAuthRefresh);
-      window.removeEventListener("pagehide", rememberBrowserExit);
+      window.removeEventListener("focus", reconcileAuth);
+      window.removeEventListener("storage", reconcileStoredAuth);
+      document.removeEventListener("visibilitychange", reconcileVisibleTab);
 
       subscription.unsubscribe();
 

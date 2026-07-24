@@ -25,7 +25,6 @@ const urlErrorMessage: Record<string, string> = {
   profile_missing: "Your account exists, but portal access is not assigned yet. Please contact JobiVerse support.",
   oauth_failed: "Secure sign-in could not be completed. Please try again.",
   creator_required: "Creator studio access is available only for creator-enabled candidate accounts.",
-  employer_access_required: "Employer login is available only after JobiVerse assigns company seats. Please contact JobiVerse to activate employer access.",
   recruiter_access_required: "Recruiter login is available only after your employer adds this email to recruiter seats. Please contact your employer or JobiVerse.",
 };
 
@@ -61,8 +60,6 @@ export default function LoginCard({ role = "candidate" }: Props) {
   setLoading(true);
 
   try {
-
-    sessionStorage.setItem("jobiverse-browser-session", "active");
 
     const result = await loginWithRoleAction(
         email,

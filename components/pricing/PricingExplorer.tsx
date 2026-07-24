@@ -34,18 +34,18 @@ const sections: PricingSection[] = [
     id: "employers",
     title: "Employers & company workspaces",
     kicker: "Subscriptions",
-    description: "Start with free public job posting and direct applicant tracking. Upgrade only when your company needs seats, Talent Search or advanced operations.",
+    description: "Start with free public job posting and direct applicant tracking. Submitted-candidate access, company seats, reports and hiring intelligence unlock through subscriptions; Talent Search remains a separately approved add-on.",
     icon: BriefcaseBusiness,
     items: [
-      { name: "Free Hiring", price: "₹0 upfront", note: "Create an employer workspace, publish public roles and manage direct applicants without buying a subscription.", href: "/signup?role=employer", action: "Post a job free", details: ["Public job posting has no upfront charge.", "Direct applicant tracking and interview workflow are included.", "A one-time 3% of annual CTC fee applies only when a candidate who applied through the Jobs Portal successfully joins."] },
-      { name: "Employer Starter", price: "₹2,999/month", note: "1 master employer, 2 employer seats, 2 recruiter seats, 5 active requirements, jobs portal posting, basic tracking and reports.", details: ["Best for small companies starting structured hiring.", "Includes requirement creation, applicant tracking and basic reports.", "Talent Search is not included; it remains a paid add-on."] },
-      { name: "Employer Growth", price: "₹7,999/month", note: "1 master employer, 5 employer seats, 10 recruiter seats, 20 active requirements, interview calendar, hiring funnel and recruiter reports.", details: ["Best for SMEs with regular hiring volume.", "Includes wider team seats, interview calendar and recruiter performance reporting.", "Useful when multiple employers/recruiters collaborate under one company workspace."] },
-      { name: "Employer Enterprise", price: "Custom", note: "Custom seats, departments, bulk hiring dashboard, dedicated JobiVerse account manager, reports, SLA and custom terms.", details: ["Best for larger teams, high-volume hiring or custom workflows.", "Commercials, seats, support SLA and reports are finalized after a JobiVerse discussion.", "Can include dedicated account ownership and custom operating process."] },
+      { name: "Free Hiring", price: "₹0 upfront", note: "Create an employer workspace, publish public roles and manage candidates who apply directly through the Jobs Portal.", href: "/signup?role=employer", action: "Post a job free", details: ["Public job posting, direct applications and the direct interview/offer workflow are available without a subscription.", "JobiVerse/recruiter-submitted candidates, team seats, advanced reports and hiring intelligence stay locked.", "A one-time 3% of annual CTC fee applies only when a candidate who applied through the Jobs Portal successfully joins."] },
+      { name: "Employer Starter", price: "₹2,999/month", note: "Unlock the submitted-candidate workspace, controlled team access and basic reports for a small hiring team.", details: ["Includes 1 master employer, 2 employer seats, 2 recruiter seats and up to 5 active requirements.", "Unlocks JobiVerse/recruiter-submitted candidates, team seats and basic hiring reports.", "Talent Search is not included; it remains a separately paid and admin-approved add-on."] },
+      { name: "Employer Growth", price: "₹7,999/month", note: "Run a multi-user hiring operation with broader seats, hiring intelligence, calendars and performance reporting.", details: ["Includes 1 master employer, 5 employer seats, 10 recruiter seats and up to 20 active requirements.", "Unlocks the candidate pipeline, interview calendar, hiring health, funnel analytics and recruiter performance reports.", "Talent Search remains a separately approved add-on unless included in a custom commercial agreement."] },
+      { name: "Employer Enterprise", price: "Custom", note: "Custom seats, bulk hiring, advanced workflows, dedicated JobiVerse ownership, reports and SLA.", details: ["Includes all agreed subscription workspace modules with company-specific controls.", "Seats, departments, Talent Search, reports and support scope are documented in the approved proposal.", "Best for high-volume hiring, multiple teams or custom operating workflows."] },
       { name: "Extra employer seat", price: "₹2,000/year/seat", note: "For additional company users who manage requirements, candidates, reports and team visibility.", details: ["Used when more employer-side users need controlled access.", "Master employer/admin can control access based on seat limits.", "Invited employer access stays restricted as per company rules."] },
       { name: "Extra recruiter seat", price: "₹1,000/year/seat", note: "For assigned sourcing users who submit candidates and work on recruiter pipelines.", details: ["Used when the company needs more recruiter users.", "Recruiters can work on assigned requirements and submit candidates.", "Recruiter access stays separate from employer/admin access."] },
       { name: "Talent Search Access", price: "₹1,999/month", note: "Locked add-on. Search only Open to Work JobiVerse profiles after payment and admin approval.", details: ["Unlocks searchable open-to-work talent profiles.", "Includes filters like skills, location, experience and notice period.", "Access starts only after payment and JobiVerse admin approval."] },
     ],
-    footer: "Free Jobs Portal posting needs no subscription. A direct applicant joining carries a one-time 3% annual-CTC success fee; paid workspace upgrades remain optional.",
+    footer: "Free Jobs Portal posting and direct applicant management need no subscription. Submitted profiles, seats, reports and intelligence are paid workspace tools. A direct applicant joining carries a one-time 3% annual-CTC success fee.",
   },
   {
     id: "hiring-fees",
@@ -187,13 +187,13 @@ function pricingAction(sectionId: string, item: PricingItem) {
     return { label: "Coming soon", href: "", disabled: true };
   }
   if (item.href) return { label: item.action ?? "Buy now", href: item.href, disabled: false };
-  if (sectionId === "employers") return { label: item.price === "Custom" ? "Login to request proposal" : "Login to access / buy", href: "/plans", disabled: false };
+  if (sectionId === "employers") return { label: item.price === "Custom" ? "Login to request proposal" : "Login to access / buy", href: "/plans?audience=employer", disabled: false };
   if (sectionId === "hiring-fees") {
     if (name.includes("referral")) return { label: "Start referral", href: "/referrals", disabled: false };
     return { label: item.price.includes("%") || item.price === "Custom" || item.price.includes("Negotiable") ? "Start request" : "Buy now", href: "/employers/requirements/new", disabled: false };
   }
   if (sectionId === "professionals") {
-    if (name.includes("career free") || name.includes("career plus") || name.includes("career pro")) return { label: item.price === "Free" ? "Activate free" : "Buy plan", href: "/plans", disabled: false };
+    if (name.includes("career free") || name.includes("career plus") || name.includes("career pro")) return { label: item.price === "Free" ? "Activate free" : "Buy plan", href: "/plans?audience=candidate", disabled: false };
     return { label: "Book service", href: marketplaceServiceHref(item.name), disabled: false };
   }
   if (sectionId === "students") return { label: "Book service", href: marketplaceServiceHref(item.name), disabled: false };

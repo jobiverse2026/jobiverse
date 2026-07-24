@@ -7,11 +7,12 @@ export function planChecklist(slug?: string | null, name?: string | null): PlanC
   switch (slug) {
     case "employer-starter":
       return {
-        summary: "Employer Starter workspace request. Verify company intent, then guide them to company profile + first requirement.",
+        summary: "Employer Starter subscription request. Unlock the core paid workspace only after payment or commercial approval.",
         deliverables: [
-          "Confirm company details and business email.",
-          "Ensure master employer access is correct.",
-          "Guide employer to submit first hiring requirement.",
+          "Verify payment and company details.",
+          "Confirm one master employer and assign the included employer/recruiter seat limits.",
+          "Activate submitted-candidate access and basic reports.",
+          "Confirm the active-requirement allowance.",
           "Keep Talent Search locked unless paid separately.",
         ],
       };
