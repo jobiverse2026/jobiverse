@@ -51,8 +51,8 @@ export default function IntroAnimation() {
 
           <div className="relative z-10 flex flex-col items-center px-6 text-center">
             <motion.div
-              initial={{ opacity: 0, scale: 0.15, filter: "blur(20px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              initial={{ opacity: 0, scale: 0.15 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
               className="relative flex h-32 w-32 items-center justify-center md:h-40 md:w-40"
             >

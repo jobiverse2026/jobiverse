@@ -215,6 +215,23 @@ export function PricingExplorer() {
   const activeSection = sections.find((section) => section.id === open) ?? sections[0];
   const selectedAction = selected ? pricingAction(selected.sectionId, selected.item) : null;
 
+  const toggleMobileSection = (sectionId: string) => {
+    const nextOpen = open === sectionId ? "" : sectionId;
+    setOpen(nextOpen);
+    setSelected(null);
+
+    if (nextOpen) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.getElementById(`mobile-pricing-trigger-${sectionId}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        });
+      });
+    }
+  };
+
   return (
     <section className="px-5 pb-28 sm:px-8">
       <div className="mx-auto max-w-[1450px]">
@@ -226,14 +243,12 @@ export function PricingExplorer() {
             return (
               <div key={section.id} className="overflow-hidden rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm">
                 <button
+                  id={`mobile-pricing-trigger-${section.id}`}
                   type="button"
                   aria-expanded={isOpen}
                   aria-controls={`mobile-pricing-${section.id}`}
-                  onClick={() => {
-                    setOpen(section.id);
-                    setSelected(null);
-                  }}
-                  className={`flex w-full cursor-pointer items-center gap-3 p-4 text-left transition ${isOpen ? "bg-zinc-950 text-white" : "bg-white text-zinc-700"}`}
+                  onClick={() => toggleMobileSection(section.id)}
+                  className={`flex w-full scroll-mt-28 cursor-pointer items-center gap-3 p-4 text-left transition ${isOpen ? "bg-zinc-950 text-white" : "bg-white text-zinc-700"}`}
                 >
                   <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${isOpen ? "bg-white text-zinc-950" : "bg-zinc-100 text-zinc-700"}`}>
                     <Icon size={18} />
