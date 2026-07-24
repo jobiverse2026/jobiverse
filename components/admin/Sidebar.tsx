@@ -29,6 +29,7 @@ import {
   CalendarDays,
   Award,
   Bot,
+  Megaphone,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,6 +45,11 @@ const menuItems = [
     title: "JobiVerse Queue",
     href: "/admin/requirements",
     icon: BriefcaseBusiness,
+  },
+  {
+    title: "Free Hiring",
+    href: "/admin/free-hiring",
+    icon: Megaphone,
   },
   {
     title: "Companies",

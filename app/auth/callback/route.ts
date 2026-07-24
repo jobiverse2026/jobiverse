@@ -114,8 +114,7 @@ export async function GET(request: Request) {
     try {
       await getEmployerCompanyAccess(user.id);
     } catch {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(`${origin}/login/employer?error=employer_access_required`);
+      return NextResponse.redirect(freshAuthRedirect(origin, "/employers/company?onboarding=1"));
     }
   }
 

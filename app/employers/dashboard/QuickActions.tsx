@@ -16,7 +16,7 @@ import {
 
 const actions = [
   {
-    title: "Create Requirement",
+    title: "Post a Job Free",
     href: "/employers/requirements/new",
     icon: Plus,
   },

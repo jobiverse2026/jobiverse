@@ -10,6 +10,7 @@ import { getEmployerDashboardData } from "@/actions/employer-dashboard";
 import ExternalApplicantsCard from "./ExternalApplicantsCard";
 import JobiverseSubmittedCard from "./JobiverseSubmittedCard";
 import HiringHealthCard from "./HiringHealthCard";
+import FreeHiringCard from "./FreeHiringCard";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,8 @@ export default async function EmployerDashboardPage() {
     <DashboardLayout>
       <div className="space-y-8">
         <DashboardHeader />
+
+        <FreeHiringCard />
 
         <StatsCards stats={data.stats} />
 

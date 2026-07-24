@@ -163,11 +163,24 @@ export async function getRequirementRecruiterAssignments(requirementId: string) 
 
 
 
+async function notifyAdminsAboutPublishedJob({ requirementId, jobTitle, companyName, actorName }: { requirementId: string; jobTitle: string; companyName?: string | null; actorName?: string | null }) {
+  const { data: admins } = await adminSupabase.from("users").select("id").eq("role", "admin").eq("is_active", true);
+  if (!admins?.length) return;
+  await adminSupabase.from("notifications").insert(admins.map((admin) => ({
+    user_id: admin.id,
+    type: "free_job_published",
+    title: "Free job published",
+    message: `${actorName || companyName || "An employer"} published ${jobTitle} for ${companyName || "their company"}. Posting fee: ₹0. Direct-hire success fee: 3% of annual CTC after joining.`,
+    href: "/admin/free-hiring?tab=jobs",
+    reference_id: requirementId,
+  })));
+}
+
 export async function createRequirement(values: unknown) {
 
   try {
 
-    const { supabase, user } = await requireRole(["employer"]);
+    const { supabase, user, profile } = await requireRole(["employer"]);
 
 
     console.log(
@@ -266,6 +279,10 @@ export async function createRequirement(values: unknown) {
 
 
 
+    if (data.is_public) {
+      await notifyAdminsAboutPublishedJob({ requirementId: data.id, jobTitle: data.job_title, companyName: company.company_name, actorName: profile.full_name || profile.email });
+    }
+
     return data;
 
 
@@ -314,6 +331,11 @@ export async function updateRequirement(
 
 
   const access = await getEmployerCompanyAccess(user.id);
+  const { data: existing } = await scopeEmployerRequirementQuery(
+    supabase.from("requirements").select("id,is_public").eq("id", id),
+    access,
+    user.id
+  ).maybeSingle();
   const {
     data,
     error,
@@ -355,6 +377,10 @@ export async function updateRequirement(
     throw new Error(error.message);
   }
 
+  if (data.is_public && !existing?.is_public) {
+    const { data: actor } = await supabase.from("users").select("full_name,email").eq("id", user.id).maybeSingle();
+    await notifyAdminsAboutPublishedJob({ requirementId: data.id, jobTitle: data.job_title, companyName: access.company.company_name, actorName: actor?.full_name || actor?.email });
+  }
 
 
   return data;

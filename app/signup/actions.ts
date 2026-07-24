@@ -35,14 +35,11 @@ export async function confirmSignupUser(userId: string, email: string, role: "ca
 
   if (!input.success) return { error: "Unable to confirm this signup. Please try logging in again." };
 
-  if (input.data.role === "employer" || input.data.role === "recruiter") {
+  if (input.data.role === "recruiter") {
     const invited = await hasPendingEmployerTeamInvite(input.data.email, input.data.role);
     if (!invited) {
       return {
-        error:
-          input.data.role === "employer"
-            ? "Employer signup is not open publicly. Please contact JobiVerse to activate company seats, or use the exact email invited by your company."
-            : "Recruiter signup is not open publicly. Please ask your employer to add this exact email to recruiter seats, or contact JobiVerse.",
+        error: "Recruiter signup is not open publicly. Please ask your employer to add this exact email to recruiter seats, or contact JobiVerse.",
       };
     }
   }
@@ -70,14 +67,11 @@ export async function confirmExistingSignupEmail(email: string, role: "candidate
 
   if (!input.success) return { error: "Unable to verify this account. Please check the email and try again." };
 
-  if (input.data.role === "employer" || input.data.role === "recruiter") {
+  if (input.data.role === "recruiter") {
     const invited = await hasPendingEmployerTeamInvite(input.data.email, input.data.role);
     if (!invited) {
       return {
-        error:
-          input.data.role === "employer"
-            ? "Employer access is not assigned to this email yet. Please contact JobiVerse to activate company seats."
-            : "Recruiter access is not assigned to this email yet. Please ask your employer to add this email first.",
+        error: "Recruiter access is not assigned to this email yet. Please ask your employer to add this email first.",
       };
     }
   }

@@ -88,7 +88,7 @@ export default async function AdminDashboardPage() {
   const launchControl = [
     { title: "JobiVerse hiring queue", value: stats.jobiverseRequirements, note: "Assigned requirements to work", href: "/admin/requirements", icon: BriefcaseBusiness },
     { title: "Candidate intelligence", value: stats.candidates, note: "Profiles tracked inside hiring ops", href: "/admin/candidates", icon: Users },
-    { title: "External applicants", value: stats.externalApplicants, note: "Direct job portal applicants to monitor", href: "/admin/candidates?source=external", icon: Sparkles },
+    { title: "Free hiring", value: stats.externalApplicants, note: "Free jobs, direct applicants and 3% success fees", href: "/admin/free-hiring", icon: Sparkles },
     { title: "Revenue operations", value: stats.activeOrders + stats.pendingRefunds + stats.pendingPayoutAccounts, note: "Orders, refunds and payouts needing control", href: "/admin/finance", icon: WalletCards },
   ];
 

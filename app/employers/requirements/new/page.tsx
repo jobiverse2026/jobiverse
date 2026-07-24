@@ -16,10 +16,10 @@ export default function NewRequirementPage() {
         <section className="mb-10 grid gap-8 overflow-hidden rounded-[2.5rem] border border-white/80 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-[0_35px_100px_-45px_rgba(0,0,0,.65)] md:grid-cols-[1fr_auto] md:p-12">
           <div className="max-w-3xl">
             <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[.18em] text-zinc-200 backdrop-blur-xl">
-              <Sparkles size={14} /> New hiring mandate
+              <Sparkles size={14} /> Free job posting
             </span>
-            <h1 className="text-4xl font-semibold tracking-[-.04em] sm:text-5xl md:text-6xl">Build your next<br /><span className="text-zinc-400">exceptional team.</span></h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">Give our recruitment team the context behind the role. A sharper brief helps us discover, assess and deliver better-matched talent faster.</p>
+            <h1 className="text-4xl font-semibold tracking-[-.04em] sm:text-5xl md:text-6xl">Post a role free.<br /><span className="text-zinc-400">Pay after a successful hire.</span></h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">Publish the opportunity to JobiVerse talent with no upfront posting fee. If a direct applicant successfully joins, the one-time employer success fee is 3% of annual CTC.</p>
           </div>
           <div className="hidden h-36 w-36 place-items-center self-center rounded-full border border-white/15 bg-white/5 md:grid">
             <div className="grid h-24 w-24 place-items-center rounded-full border border-white/20 bg-white/10"><BriefcaseBusiness size={34} /></div>
@@ -32,7 +32,7 @@ export default function NewRequirementPage() {
             <div className="rounded-[2rem] border border-black/5 bg-white/80 p-6 shadow-[0_24px_70px_-45px_rgba(0,0,0,.45)] backdrop-blur-xl">
               <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">How your requirement works</p>
               <div className="mt-6 space-y-5">
-                {["Create a private hiring requirement", "Choose optional hiring channels", "Track activity from your workspace"].map((step, index) => (
+                {["Publish your job for free", "Receive direct JobiVerse applicants", "Pay 3% only after a successful joining"].map((step, index) => (
                   <div key={step} className="flex gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-zinc-950 text-xs text-white">{index + 1}</span><p className="pt-1 text-sm font-medium text-zinc-700">{step}</p></div>
                 ))}
               </div>

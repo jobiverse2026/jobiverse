@@ -38,6 +38,7 @@ async function notifyAdminsAboutExternalApplication(application: any, title: str
 
 export async function updateExternalApplicationStatus(applicationId: string, status: string) {
   const parsed = z.enum(["Applied", "Under Review", "Shortlisted", "Interview", "Offered", "Hired", "Rejected", "Withdrawn"]).parse(status);
+  if (parsed === "Hired") throw new Error("Confirm annual CTC and joining date before marking this applicant as hired.");
   const { user, profile } = await requireRole(["employer"]);
   const { application } = await ownedApplication(applicationId, user.id);
 
@@ -50,7 +51,7 @@ export async function updateExternalApplicationStatus(applicationId: string, sta
 
   await adminSupabase
     .from("talent_introductions")
-    .update({ hiring_status: parsed === "Hired" ? "joined" : parsed === "Offered" ? "offered" : ["Rejected", "Withdrawn"].includes(parsed) ? parsed.toLowerCase() : "in_process" })
+    .update({ hiring_status: parsed === "Offered" ? "offered" : ["Rejected", "Withdrawn"].includes(parsed) ? parsed.toLowerCase() : "in_process" })
     .eq("application_id", applicationId);
 
   const requirement = Array.isArray((application as any).requirements) ? (application as any).requirements[0] : (application as any).requirements;
@@ -64,6 +65,53 @@ export async function updateExternalApplicationStatus(applicationId: string, sta
   revalidatePath(`/employers/external-applicants/${applicationId}`);
   revalidatePath("/employers/external-applicants");
   return { success: `Application moved to ${parsed}.` };
+}
+
+export async function markExternalApplicantHired(values: unknown) {
+  const parsed = z.object({
+    applicationId: z.string().uuid(),
+    annualCtc: z.coerce.number().positive().max(1000000000),
+    joiningDate: z.string().min(1),
+  }).parse(values);
+  const joiningDate = new Date(`${parsed.joiningDate}T00:00:00`);
+  if (Number.isNaN(joiningDate.getTime())) throw new Error("Enter a valid joining date.");
+
+  const { user, profile } = await requireRole(["employer"]);
+  const { application } = await ownedApplication(parsed.applicationId, user.id);
+  const successFeeAmount = Math.round(parsed.annualCtc * 0.03 * 100) / 100;
+  const { error } = await adminSupabase
+    .from("candidate_applications")
+    .update({
+      status: "Hired",
+      hired_annual_ctc: parsed.annualCtc,
+      joining_date: parsed.joiningDate,
+      success_fee_percentage: 3,
+      success_fee_amount: successFeeAmount,
+      success_fee_status: "due",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", parsed.applicationId);
+  if (error) throw new Error(error.message);
+
+  await adminSupabase.from("talent_introductions").update({ hiring_status: "joined" }).eq("application_id", parsed.applicationId);
+  const requirement = Array.isArray((application as any).requirements) ? (application as any).requirements[0] : (application as any).requirements;
+  const { data: admins } = await adminSupabase.from("users").select("id").eq("role", "admin").eq("is_active", true);
+  if (admins?.length) {
+    await adminSupabase.from("notifications").insert(admins.map((admin) => ({
+      user_id: admin.id,
+      type: "direct_hire_fee_due",
+      title: "3% direct-hire fee due",
+      message: `${profile.full_name || profile.email || "Employer"} confirmed ${application.applicant_name || "a direct applicant"} joined for ${requirement?.job_title || "a published role"}. Annual CTC: ₹${parsed.annualCtc.toLocaleString("en-IN")}; success fee: ₹${successFeeAmount.toLocaleString("en-IN")}.`,
+      href: "/admin/free-hiring?tab=fees",
+      reference_id: parsed.applicationId,
+    })));
+  }
+
+  revalidatePath("/admin/free-hiring");
+  revalidatePath("/admin/candidates");
+  revalidatePath(`/employers/external-applicants/${parsed.applicationId}`);
+  revalidatePath("/employers/external-applicants");
+  return { success: `Successful hire confirmed. JobiVerse 3% success fee is ₹${successFeeAmount.toLocaleString("en-IN")}.` };
 }
 
 export async function scheduleExternalApplicantInterview(values: unknown) {

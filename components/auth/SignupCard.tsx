@@ -29,7 +29,7 @@ const signupTitle: Record<Role, string> = {
 
 const signupSubtitle: Record<Role, string> = {
   candidate: "Join JobiVerse as a candidate",
-  employer: "Join JobiVerse as an employer",
+  employer: "Post jobs free and pay only after a successful direct hire",
   recruiter: "Join JobiVerse as a recruiter",
   admin: "Request a verified admin workspace",
   creator: "Join JobiVerse as a creator",
@@ -117,16 +117,12 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    if (role === "employer" || role === "recruiter") {
+    if (role === "recruiter") {
       setLoading(true);
       try {
         const invited = await hasPendingEmployerTeamInvite(normalizedEmail, role);
         if (!invited) {
-          setError(
-            role === "employer"
-              ? "Employer signup is not open publicly. Please contact JobiVerse to activate company seats, or use the exact email invited by your company."
-              : "Recruiter signup is not open publicly. Please ask your employer to add this exact email to recruiter seats, or contact JobiVerse."
-          );
+          setError("Recruiter signup is not open publicly. Please ask your employer to add this exact email to recruiter seats, or contact JobiVerse.");
           setLoading(false);
           return;
         }
@@ -206,7 +202,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
       return;
     }
 
-    if ((role === "employer" || role === "recruiter") && data.session?.access_token) {
+    if (role === "recruiter" && data.session?.access_token) {
       await fetch("/api/team-invites/claim", {
         method: "POST",
         headers: {
@@ -218,7 +214,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
     }
 
     // Email confirmation disabled - user is signed in immediately
-    router.push(safeNext ?? roleRedirect[role]);
+    router.push(safeNext ?? (role === "employer" ? "/employers/company?onboarding=1" : roleRedirect[role]));
     router.refresh();
   };
 
@@ -311,6 +307,13 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
             {signupSubtitle[role]}
           </p>
         </div>
+
+        {role === "employer" && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-left">
+            <p className="text-sm font-bold text-emerald-950">Free Employer Hiring Account</p>
+            <p className="mt-1 text-xs leading-5 text-emerald-800">Job posting is free. Track direct applicants, interviews and hiring from your workspace. JobiVerse charges 3% of annual CTC only when a candidate who applied through the Jobs Portal successfully joins.</p>
+          </div>
+        )}
 
         <form onSubmit={handleSignup} className="space-y-5">
           <div className="relative">
@@ -421,7 +424,9 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
           </>
         ) : (
           <p className="-mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center text-xs font-medium leading-6 text-amber-900">
-            Employer and recruiter access is invite-only. Please sign up with the exact authorized email using email and password.
+            {role === "employer"
+              ? "Employer signup is open through email and password. Create your free company workspace, post public jobs for ₹0 upfront and pay the 3% success fee only after a direct applicant joins."
+              : "Recruiter access is invite-only. Please sign up with the exact email your employer added to a recruiter seat."}
           </p>
         )}
 

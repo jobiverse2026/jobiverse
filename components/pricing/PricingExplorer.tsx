@@ -34,9 +34,10 @@ const sections: PricingSection[] = [
     id: "employers",
     title: "Employers & company workspaces",
     kicker: "Subscriptions",
-    description: "For companies that want hiring workspace access, team seats, reports and controlled recruitment operations.",
+    description: "Start with free public job posting and direct applicant tracking. Upgrade only when your company needs seats, Talent Search or advanced operations.",
     icon: BriefcaseBusiness,
     items: [
+      { name: "Free Hiring", price: "₹0 upfront", note: "Create an employer workspace, publish public roles and manage direct applicants without buying a subscription.", href: "/signup?role=employer", action: "Post a job free", details: ["Public job posting has no upfront charge.", "Direct applicant tracking and interview workflow are included.", "A one-time 3% of annual CTC fee applies only when a candidate who applied through the Jobs Portal successfully joins."] },
       { name: "Employer Starter", price: "₹2,999/month", note: "1 master employer, 2 employer seats, 2 recruiter seats, 5 active requirements, jobs portal posting, basic tracking and reports.", details: ["Best for small companies starting structured hiring.", "Includes requirement creation, applicant tracking and basic reports.", "Talent Search is not included; it remains a paid add-on."] },
       { name: "Employer Growth", price: "₹7,999/month", note: "1 master employer, 5 employer seats, 10 recruiter seats, 20 active requirements, interview calendar, hiring funnel and recruiter reports.", details: ["Best for SMEs with regular hiring volume.", "Includes wider team seats, interview calendar and recruiter performance reporting.", "Useful when multiple employers/recruiters collaborate under one company workspace."] },
       { name: "Employer Enterprise", price: "Custom", note: "Custom seats, departments, bulk hiring dashboard, dedicated JobiVerse account manager, reports, SLA and custom terms.", details: ["Best for larger teams, high-volume hiring or custom workflows.", "Commercials, seats, support SLA and reports are finalized after a JobiVerse discussion.", "Can include dedicated account ownership and custom operating process."] },
@@ -44,7 +45,7 @@ const sections: PricingSection[] = [
       { name: "Extra recruiter seat", price: "₹1,000/year/seat", note: "For assigned sourcing users who submit candidates and work on recruiter pipelines.", details: ["Used when the company needs more recruiter users.", "Recruiters can work on assigned requirements and submit candidates.", "Recruiter access stays separate from employer/admin access."] },
       { name: "Talent Search Access", price: "₹1,999/month", note: "Locked add-on. Search only Open to Work JobiVerse profiles after payment and admin approval.", details: ["Unlocks searchable open-to-work talent profiles.", "Includes filters like skills, location, experience and notice period.", "Access starts only after payment and JobiVerse admin approval."] },
     ],
-    footer: "Recruitment success fee is separate from SaaS/workspace subscriptions.",
+    footer: "Free Jobs Portal posting needs no subscription. A direct applicant joining carries a one-time 3% annual-CTC success fee; paid workspace upgrades remain optional.",
   },
   {
     id: "hiring-fees",

@@ -25,7 +25,7 @@ export async function loginWithRoleAction(email:string,password:string,expectedR
   const creatorAccess=expectedRole==="creator"&&["candidate","creator"].includes(profile.role);if(!creatorAccess&&profile.role!==expectedRole){await supabase.auth.signOut();return{error:`You are not authorized for this portal. This account belongs to the ${profile.role} portal.`}}
   if(expectedRole==="employer"){
     try{await getEmployerCompanyAccess(user.id);}
-    catch{await supabase.auth.signOut();return{error:"Employer login is available only after JobiVerse assigns company seats. Please contact JobiVerse to activate employer access."};}
+    catch{return{redirect:"/employers/company?onboarding=1"};}
   }
   if(expectedRole==="recruiter"){
     const{count,error:memberError}=await adminSupabase.from("employer_team_members").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("role","recruiter").eq("status","active");

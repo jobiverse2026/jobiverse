@@ -70,7 +70,7 @@ const [form, setForm] = useState({
 
   assign_to_jobiverse: Boolean(initialValues?.hiring_team_requested),
 
-  publish_to_jobs: Boolean(initialValues?.is_public),
+  publish_to_jobs: editing ? Boolean(initialValues?.is_public) : true,
 });
 
   function updateField(
@@ -121,6 +121,12 @@ const [form, setForm] = useState({
       className="relative space-y-8 overflow-hidden rounded-[2.5rem] border border-white bg-white/90 p-6 shadow-[0_30px_90px_-50px_rgba(0,0,0,.5)] backdrop-blur-xl sm:p-10 [&_input]:bg-zinc-50/80 [&_input]:transition [&_input]:duration-300 [&_input]:focus:border-zinc-500 [&_input]:focus:bg-white [&_input]:focus:ring-4 [&_input]:focus:ring-zinc-950/5 [&_select]:bg-zinc-50/80 [&_select]:transition [&_select]:focus:border-zinc-500 [&_select]:focus:ring-4 [&_select]:focus:ring-zinc-950/5 [&_textarea]:bg-zinc-50/80 [&_textarea]:transition [&_textarea]:focus:border-zinc-500 [&_textarea]:focus:bg-white [&_textarea]:focus:ring-4 [&_textarea]:focus:ring-zinc-950/5"
     >
       <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-zinc-200/50 blur-3xl" />
+      {!editing && (
+        <div className="relative rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6">
+          <div><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Free Jobs Portal listing</p><h2 className="mt-2 text-xl font-semibold text-emerald-950">Post today for ₹0 upfront.</h2><p className="mt-1 text-sm leading-6 text-emerald-800">A one-time 3% success fee on annual CTC applies only if a candidate who applied directly through JobiVerse successfully joins.</p></div>
+          <span className="mt-4 inline-flex shrink-0 rounded-full bg-emerald-950 px-4 py-2 text-xs font-bold text-white sm:mt-0">Selected by default</span>
+        </div>
+      )}
       <div className="relative flex items-start gap-4 border-b border-zinc-100 pb-8">
         <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-white shadow-lg"><Target size={21} /></span>
         <div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Role intelligence</p><h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-950">Tell us who you need</h2><p className="mt-2 text-sm leading-6 text-zinc-500">Clear details help our recruiters target the right talent pool from day one.</p></div>
@@ -362,7 +368,7 @@ const [form, setForm] = useState({
       <section className="border-t border-zinc-100 pt-8">
         <div className="flex items-start gap-4">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-zinc-100 text-zinc-900"><BadgeCheck size={21} /></span>
-          <div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Optional hiring channels</p><h2 className="mt-1 text-2xl font-semibold text-zinc-950">Choose additional JobiVerse support</h2><p className="mt-2 text-sm leading-6 text-zinc-500">These options are completely optional. You can select either one, both, or create a private requirement without selecting them.</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Publishing and hiring support</p><h2 className="mt-1 text-2xl font-semibold text-zinc-950">Choose how JobiVerse should support this role</h2><p className="mt-2 text-sm leading-6 text-zinc-500">Free Jobs Portal publishing is selected by default. Managed JobiVerse sourcing remains optional, and you can also keep a role private.</p></div>
         </div>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <label className={`group cursor-pointer rounded-[1.75rem] border p-6 transition ${form.assign_to_jobiverse ? "border-zinc-950 bg-zinc-950 text-white shadow-xl" : "border-zinc-200 bg-zinc-50 hover:border-zinc-400"}`}>
@@ -373,7 +379,7 @@ const [form, setForm] = useState({
           </label>
           <label className={`group cursor-pointer rounded-[1.75rem] border p-6 transition ${form.publish_to_jobs ? "border-blue-700 bg-gradient-to-br from-blue-700 to-indigo-950 text-white shadow-xl" : "border-zinc-200 bg-zinc-50 hover:border-zinc-400"}`}>
             <div className="flex items-start justify-between gap-4"><span className={`grid h-11 w-11 place-items-center rounded-xl ${form.publish_to_jobs ? "bg-white text-blue-800" : "bg-zinc-950 text-white"}`}><Globe2 size={20} /></span><input type="checkbox" checked={form.publish_to_jobs} onChange={(event) => updateField("publish_to_jobs", event.target.checked)} className="h-5 w-5 accent-blue-700" /></div>
-            <p className="mt-5 font-bold">Release on JobiVerse Jobs Portal</p>
+            <p className="mt-5 font-bold">Post Free on JobiVerse Jobs Portal</p>
             <p className={`mt-2 text-sm leading-6 ${form.publish_to_jobs ? "text-blue-100" : "text-zinc-600"}`}>The opportunity becomes visible to eligible JobiVerse candidates, who can discover the role, save it and apply directly through the platform.</p>
             <p className={`mt-4 rounded-xl p-3 text-xs font-semibold ${form.publish_to_jobs ? "bg-white/10 text-white" : "bg-white text-zinc-700"}`}>Direct applicant success fee: 3% of the selected candidate&apos;s annual CTC, charged once after successful joining.</p>
           </label>

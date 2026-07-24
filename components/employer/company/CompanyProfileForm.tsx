@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateCompany } from "@/actions/company";
 import type { Company } from "@/types/company";
 
 export default function CompanyProfileForm({
   company,
   canEdit = true,
+  isOnboarding = false,
 }: {
   company: Company | null;
   canEdit?: boolean;
+  isOnboarding?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const [form, setForm] = useState({
     company_name: company?.company_name ?? "",
@@ -57,7 +61,11 @@ export default function CompanyProfileForm({
     try {
   await updateCompany(form);
 
-  alert("Company profile saved successfully.");
+  alert(isOnboarding ? "Company workspace created. You can now post jobs for free." : "Company profile saved successfully.");
+  if (isOnboarding) {
+    router.push("/employers/dashboard?welcome=free");
+    router.refresh();
+  }
 } catch (err) {
   console.error(err);
   alert("Failed to save company profile.");
@@ -273,7 +281,7 @@ export default function CompanyProfileForm({
           disabled={loading}
           className="rounded-2xl bg-gradient-to-r from-black via-zinc-800 to-zinc-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50"
         >
-          {loading ? "Saving..." : "Save Changes"}
+          {loading ? "Saving..." : isOnboarding ? "Create Free Employer Workspace" : "Save Changes"}
         </button>
       </div>}
     </form>

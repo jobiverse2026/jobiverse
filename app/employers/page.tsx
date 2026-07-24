@@ -121,11 +121,11 @@ const portalFeatures = [
 ];
 
 const portalFlow = [
-  "JobiVerse creates or verifies your company workspace.",
-  "Your Master Employer receives controlled access and seat limits.",
-  "You invite team members by exact email and assign recruiter seats.",
-  "Create requirements, publish jobs or assign roles to JobiVerse.",
-  "Track candidates, interviews, reports and hiring outcomes securely.",
+  "Create a free Employer account and complete your company profile.",
+  "Publish jobs to JobiVerse talent for ₹0 upfront.",
+  "Receive and manage direct applicants inside your workspace.",
+  "Track interviews, offers and successful joining transparently.",
+  "Pay the 3% annual-CTC success fee only after a direct applicant joins.",
 ];
 
 
@@ -147,10 +147,7 @@ export default function EmployersPage() {
 
         title="Build Your Team With The Right Talent."
 
-        description="
-        JobiVerse helps organizations hire exceptional professionals
-        through recruitment expertise, strong networks and technology.
-        "
+        description="Start with a free Employer workspace, publish jobs at ₹0 upfront and manage direct applicants. Pay a one-time 3% of annual CTC only after a successful direct hire."
 
       />
 
@@ -172,24 +169,24 @@ export default function EmployersPage() {
                 <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-white/10" />
                 <div className="absolute -bottom-28 left-10 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-zinc-300">
-                  <LockKeyhole size={15} /> Access locked, benefits visible
+                  <BriefcaseBusiness size={15} /> Free employer hiring access
                 </span>
                 <h2 className="mt-8 text-4xl font-semibold tracking-[-.05em] sm:text-6xl">
-                  See what unlocks inside the Employer Portal.
+                  Start hiring before you buy a subscription.
                 </h2>
                 <p className="mt-6 max-w-xl text-base leading-8 text-zinc-300">
-                  Employer access is intentionally controlled so company data, candidate details and hiring activity stay protected. But the value is transparent: JobiVerse gives employers a complete hiring workspace, not just a contact form.
+                  Create your company workspace, post public jobs free and manage direct candidates from application to joining. Advanced Talent Search, team seats and premium hiring services remain optional paid upgrades.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link href="/contact" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-zinc-950">
-                    Request employer access <Sparkles size={17} />
+                  <Link href="/signup?role=employer" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-zinc-950">
+                    Post a job free <Sparkles size={17} />
                   </Link>
                   <Link href="/pricing" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-4 font-semibold text-white">
                     View access pricing
                   </Link>
                 </div>
                 <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[.06] p-6">
-                  <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">How access works</p>
+                  <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">How free hiring works</p>
                   <div className="mt-5 space-y-4">
                     {portalFlow.map((step, index) => (
                       <div key={step} className="flex gap-3 text-sm leading-6 text-zinc-300">
@@ -216,7 +213,7 @@ export default function EmployersPage() {
                 <div className="mt-5 rounded-[2rem] border border-amber-200 bg-amber-50 p-6">
                   <p className="text-sm font-semibold text-amber-950">Commercial protection note</p>
                   <p className="mt-2 text-sm leading-6 text-amber-900">
-                    Direct job-portal candidate joining is tracked with JobiVerse protection terms. Hiring through the JobiVerse team remains a separate managed recruitment partnership.
+                    Job posting is free. A one-time 3% employer success fee on annual CTC applies only when a candidate who applied directly through the JobiVerse Jobs Portal successfully joins. Hiring through the JobiVerse team remains a separate managed recruitment partnership.
                   </p>
                 </div>
               </div>
