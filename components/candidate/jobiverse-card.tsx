@@ -84,7 +84,7 @@ export function JobiVerseCard({
         <div className={`relative overflow-hidden rounded-[1.6rem] bg-[radial-gradient(circle_at_18%_0%,rgba(255,255,255,.2),transparent_11rem),linear-gradient(135deg,#18181b,#3f3f46_58%,#f4f4f5)] ${compact ? "p-4" : "p-5"} text-white`}>
           <div className="pointer-events-none absolute -right-7 -top-8 h-32 w-32 rounded-full border border-white/15" />
           <div className="pointer-events-none absolute right-4 top-1/2 grid h-20 w-20 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-white/[.08] sm:h-24 sm:w-24">
-            <img src="/images/branding/jobiverse-logo.svg" alt="" className="h-14 w-14 object-contain opacity-20 grayscale invert sm:h-16 sm:w-16" />
+            <img src="/images/branding/jobiverse-logo.svg?v=transparent-2" alt="" className="h-14 w-14 object-contain opacity-20 grayscale invert sm:h-16 sm:w-16" />
           </div>
           <div className="relative z-10 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">

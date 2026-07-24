@@ -39,7 +39,7 @@ export default function ParticleLogo() {
     context.scale(dpr, dpr);
 
     const image = new window.Image();
-    image.src = "/images/branding/jobiverse-logo.svg";
+    image.src = "/images/branding/jobiverse-logo.svg?v=transparent-2";
 
     let animationFrame = 0;
     let cancelled = false;
@@ -121,7 +121,7 @@ export default function ParticleLogo() {
         className={`absolute inset-0 transition-opacity duration-700 ${assembled ? "opacity-0" : "opacity-100"}`}
       />
       <Image
-        src="/images/branding/jobiverse-logo.svg"
+        src="/images/branding/jobiverse-logo.svg?v=transparent-2"
         alt="JobiVerse"
         width={320}
         height={320}
