@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | JobiVerse",
   },
   description:
-    "Technology-driven IT and non-IT recruitment across India. From Beginners to Bosses, We Hire All.",
+    "Technology-driven hiring, career growth and expert services across India. Every Hire. Every Career. One Universe.",
   applicationName:"JobiVerse",
   keywords:["recruitment company India","IT recruitment","non-IT hiring","career services","resume services","HR technology","Mumbai recruitment"],
   authors:[{name:"JobiVerse"}],
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
   twitter:{card:"summary",title:"JobiVerse - India's Hiring & Career Platform",description:"Every Hire. Every Career. One Universe."},
   robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    shortcut: "/icon.svg",
+    icon: [{ url: "/images/branding/jobiverse-logo.svg", type: "image/svg+xml" }],
+    shortcut: "/images/branding/jobiverse-logo.svg",
   },
 };
 

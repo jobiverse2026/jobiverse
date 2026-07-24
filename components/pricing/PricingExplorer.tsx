@@ -2,7 +2,7 @@
 
 import { useState, type ElementType } from "react";
 import Link from "next/link";
-import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
+import { ArrowRight, BadgeIndianRupee, BriefcaseBusiness, ChevronDown, CircleDollarSign, FileText, GraduationCap, Search, Sparkles, Store, UsersRound } from "lucide-react";
 import { serviceSlugForCategory } from "@/lib/marketplace/category-map";
 
 type PricingItem = {
@@ -213,13 +213,53 @@ export function PricingExplorer() {
   const [open, setOpen] = useState(sections[0].id);
   const [selected, setSelected] = useState<SelectedPrice | null>(null);
   const activeSection = sections.find((section) => section.id === open) ?? sections[0];
-  const ActiveIcon = activeSection.icon;
   const selectedAction = selected ? pricingAction(selected.sectionId, selected.item) : null;
 
   return (
     <section className="px-5 pb-28 sm:px-8">
       <div className="mx-auto max-w-[1450px]">
-        <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+        <div className="space-y-3 lg:hidden">
+          {sections.map((section) => {
+            const Icon = section.icon;
+            const isOpen = open === section.id;
+
+            return (
+              <div key={section.id} className="overflow-hidden rounded-[1.75rem] border border-zinc-200 bg-white shadow-sm">
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={`mobile-pricing-${section.id}`}
+                  onClick={() => {
+                    setOpen(section.id);
+                    setSelected(null);
+                  }}
+                  className={`flex w-full cursor-pointer items-center gap-3 p-4 text-left transition ${isOpen ? "bg-zinc-950 text-white" : "bg-white text-zinc-700"}`}
+                >
+                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${isOpen ? "bg-white text-zinc-950" : "bg-zinc-100 text-zinc-700"}`}>
+                    <Icon size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[10px] font-bold uppercase tracking-[.16em] opacity-60">{section.kicker}</span>
+                    <span className="mt-1 block text-sm font-semibold leading-5">{section.title}</span>
+                  </span>
+                  <ChevronDown size={18} className={`shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+                {isOpen && (
+                  <div id={`mobile-pricing-${section.id}`}>
+                    <PricingSectionPanel
+                      section={section}
+                      selected={selected}
+                      onSelect={(item) => setSelected({ sectionId: section.id, item })}
+                      mobile
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="hidden gap-4 lg:grid lg:grid-cols-[360px_1fr]">
           <aside className="h-fit rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-sm lg:sticky lg:top-28">
             {sections.map(({ id, title, kicker, icon: Icon }) => (
               <button
@@ -241,37 +281,11 @@ export function PricingExplorer() {
             ))}
           </aside>
 
-          <article className="overflow-hidden rounded-[2.5rem] border border-zinc-950 bg-white shadow-sm">
-            <div className="flex items-center gap-4 p-6 sm:p-8">
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-950 text-white">
-                <ActiveIcon size={22} />
-              </span>
-              <span>
-                <span className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">{activeSection.kicker}</span>
-                <span className="mt-1 block text-2xl font-bold tracking-[-.03em]">{activeSection.title}</span>
-              </span>
-            </div>
-            <div className="border-t border-zinc-100 p-6 pt-5 sm:p-8">
-              <p className="max-w-3xl text-sm leading-7 text-zinc-500">{activeSection.description}</p>
-              <div className="mt-6 grid gap-3">
-                {activeSection.items.map((item) => (
-                  <PricingRow
-                    key={`${activeSection.id}-${item.name}`}
-                    item={item}
-                    sectionId={activeSection.id}
-                    selected={selected?.sectionId === activeSection.id && selected.item.name === item.name}
-                    onSelect={() => setSelected({ sectionId: activeSection.id, item })}
-                  />
-                ))}
-              </div>
-              {activeSection.footer && (
-                <p className="mt-5 flex gap-2 rounded-2xl bg-zinc-950 p-4 text-sm leading-6 text-white">
-                  <CircleDollarSign className="mt-0.5 shrink-0" size={17} />
-                  {activeSection.footer}
-                </p>
-              )}
-            </div>
-          </article>
+          <PricingSectionPanel
+            section={activeSection}
+            selected={selected}
+            onSelect={(item) => setSelected({ sectionId: activeSection.id, item })}
+          />
         </div>
         {selected && selectedAction && (
           <div className="fixed inset-0 z-50 grid place-items-center bg-zinc-950/45 px-4 py-8 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -313,6 +327,46 @@ export function PricingExplorer() {
         )}
       </div>
     </section>
+  );
+}
+
+function PricingSectionPanel({ section, selected, onSelect, mobile = false }: { section: PricingSection; selected: SelectedPrice | null; onSelect: (item: PricingItem) => void; mobile?: boolean }) {
+  const Icon = section.icon;
+
+  return (
+    <article className={mobile ? "bg-white" : "overflow-hidden rounded-[2.5rem] border border-zinc-950 bg-white shadow-sm"}>
+      {!mobile && (
+        <div className="flex items-center gap-4 p-6 sm:p-8">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-zinc-950 text-white">
+            <Icon size={22} />
+          </span>
+          <span>
+            <span className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">{section.kicker}</span>
+            <span className="mt-1 block text-2xl font-bold tracking-[-.03em]">{section.title}</span>
+          </span>
+        </div>
+      )}
+      <div className={`${mobile ? "border-t border-zinc-200 p-4" : "border-t border-zinc-100 p-6 pt-5 sm:p-8"}`}>
+        <p className="max-w-3xl text-sm leading-7 text-zinc-500">{section.description}</p>
+        <div className="mt-5 grid gap-3 sm:mt-6">
+          {section.items.map((item) => (
+            <PricingRow
+              key={`${section.id}-${item.name}`}
+              item={item}
+              sectionId={section.id}
+              selected={selected?.sectionId === section.id && selected.item.name === item.name}
+              onSelect={() => onSelect(item)}
+            />
+          ))}
+        </div>
+        {section.footer && (
+          <p className="mt-5 flex gap-2 rounded-2xl bg-zinc-950 p-4 text-sm leading-6 text-white">
+            <CircleDollarSign className="mt-0.5 shrink-0" size={17} />
+            {section.footer}
+          </p>
+        )}
+      </div>
+    </article>
   );
 }
 

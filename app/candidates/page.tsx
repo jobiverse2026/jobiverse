@@ -72,8 +72,8 @@ export default function CandidatesPage() {
 
         eyebrow="For Candidates"
 
-        title="From Beginners To Bosses.
-Your Career Journey Starts Here."
+        title="Every Hire. Every Career.
+One Universe."
 
         description="
         JobiVerse helps professionals discover opportunities,
