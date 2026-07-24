@@ -32,10 +32,6 @@ export const metadata: Metadata = {
   openGraph:{type:"website",locale:"en_IN",siteName:"JobiVerse",url:"/",title:"JobiVerse - India's Hiring & Career Platform",description:"Recruitment expertise, career services and intelligent HR technology for employers, professionals and students."},
   twitter:{card:"summary",title:"JobiVerse - India's Hiring & Career Platform",description:"Every Hire. Every Career. One Universe."},
   robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},
-  icons: {
-    icon: [{ url: "/images/branding/jobiverse-logo.svg", type: "image/svg+xml" }],
-    shortcut: "/images/branding/jobiverse-logo.svg",
-  },
 };
 
 
