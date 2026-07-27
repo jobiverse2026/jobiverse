@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { plainTextSnippet, searchJoobleJobs, type PartnerJobSearch } from "@/lib/jobs/jooble";
+import { plainTextSnippet, searchJoobleJobs, type PartnerJob, type PartnerJobSearch } from "@/lib/jobs/jooble";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
@@ -41,7 +41,7 @@ const partnerLocationAliases = [
   { label: "Mumbai", aliases: ["mumbai", "bombay"] },
   { label: "Navi Mumbai", aliases: ["navi mumbai"] },
   { label: "Thane", aliases: ["thane"] },
-  { label: "Delhi NCR", aliases: ["delhi ncr", "new delhi", "delhi"] },
+  { label: "Delhi NCR", aliases: ["delhi ncr", "new delhi", "delhi", "noida", "gurugram", "gurgaon"] },
   { label: "Noida", aliases: ["noida"] },
   { label: "Gurugram", aliases: ["gurugram", "gurgaon"] },
   { label: "Bengaluru", aliases: ["bengaluru", "bangalore"] },
@@ -318,6 +318,7 @@ async function discoverPartnerJobs({
 
   const seenJobs = new Set<string>();
   const jobs = cityResults.flatMap(({ city, result }) => result.jobs
+    .filter((job) => partnerJobMatchesCity(job, city))
     .filter((job) => {
       if (seenJobs.has(job.id)) return false;
       seenJobs.add(job.id);
@@ -325,7 +326,7 @@ async function discoverPartnerJobs({
     })
     .map((job) => ({
       ...job,
-      displayLocation: `${city} · ${result.locationMatchedByText ? "matched from listing" : "search location"}`,
+      displayLocation: `${city} · matched from listing`,
     })));
   const errors = cityResults.map(({ result }) => result.error).filter(Boolean);
 
@@ -336,6 +337,12 @@ async function discoverPartnerJobs({
     error: jobs.length === 0 && errors.length === cityResults.length ? errors[0] : undefined,
     locationMatchedByText: cityResults.some(({ result }) => result.locationMatchedByText),
   };
+}
+
+function partnerJobMatchesCity(job: PartnerJob, city: string) {
+  const cityAliases = partnerLocationAliases.find((entry) => entry.label === city)?.aliases ?? [city.toLowerCase()];
+  const listingText = `${job.location} ${job.title} ${plainTextSnippet(job.snippet)}`.toLowerCase();
+  return cityAliases.some((alias) => listingText.includes(alias));
 }
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {
