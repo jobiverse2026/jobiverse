@@ -57,7 +57,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 
   const [partner, directResult] = await Promise.all([
     source === "jobiverse"
-      ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined })
+      ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined, locationMatchedByText: false })
       : searchJoobleJobs({ keywords: query, location, page, resultsPerPage: 20, radius, companySearch: searchIn === "company" }),
     source === "partner"
       ? Promise.resolve({ data: [], error: null })
@@ -97,7 +97,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       && (!freshness || isFreshEnough(job.updated, Number(freshness)));
   });
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
-  const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : partner.totalCount;
+  const partnerVisibleCount = hasAdvancedFilters || partner.locationMatchedByText ? partnerJobs.length : partner.totalCount;
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
 
@@ -178,6 +178,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         {source !== "jobiverse" && (
           <section className="mt-14">
             <SectionHeading eyebrow="Licensed discovery feed" title="Partner opportunities" count={partnerVisibleCount} />
+            {partner.locationMatchedByText && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">The partner feed did not provide structured city results, so these opportunities were matched from city references inside the original listing. Open the source listing to confirm the exact work location.</p>}
             {!partner.configured ? (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Globe2 className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">Partner network is being connected</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-500">JobiVerse will show licensed, attributed opportunities here after the provider connection is activated.</p></div>
             ) : partner.error ? (

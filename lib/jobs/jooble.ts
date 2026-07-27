@@ -27,6 +27,7 @@ export type PartnerJobSearch = {
   totalCount: number;
   jobs: PartnerJob[];
   error?: string;
+  locationMatchedByText?: boolean;
 };
 
 type SearchInput = {
@@ -50,10 +51,35 @@ export async function searchJoobleJobs({
   if (!apiKey) return { configured: false, totalCount: 0, jobs: [] };
 
   try {
-    const response = await fetch(`https://jooble.org/api/${encodeURIComponent(apiKey)}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
+    const request = async (body: Record<string, string | number>) => {
+      const response = await fetch(`https://jooble.org/api/${encodeURIComponent(apiKey)}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        next: { revalidate: 1800, tags: ["partner-jobs", "jooble-jobs"] },
+        signal: AbortSignal.timeout(12_000),
+      });
+
+      if (!response.ok) {
+        return {
+          configured: true,
+          totalCount: 0,
+          jobs: [],
+          error: response.status === 403
+            ? "Partner job feed credentials need attention."
+            : "Partner opportunities are temporarily unavailable.",
+        } satisfies PartnerJobSearch;
+      }
+
+      const parsed = joobleResponseSchema.safeParse(await response.json());
+      if (!parsed.success) {
+        return { configured: true, totalCount: 0, jobs: [], error: "Partner job feed returned an invalid response." } satisfies PartnerJobSearch;
+      }
+
+      return { configured: true, totalCount: parsed.data.totalCount, jobs: parsed.data.jobs } satisfies PartnerJobSearch;
+    };
+
+    const primary = await request({
         keywords: keywords.trim(),
         location: location.trim() || "India",
         page: String(Math.max(1, page)),
@@ -61,28 +87,21 @@ export async function searchJoobleJobs({
         SearchMode: "0",
         companysearch: companySearch ? "true" : "false",
         ...(radius ? { radius } : {}),
-      }),
-      next: { revalidate: 1800, tags: ["partner-jobs", "jooble-jobs"] },
-      signal: AbortSignal.timeout(12_000),
     });
 
-    if (!response.ok) {
-      return {
-        configured: true,
-        totalCount: 0,
-        jobs: [],
-        error: response.status === 403
-          ? "Partner job feed credentials need attention."
-          : "Partner opportunities are temporarily unavailable.",
-      };
+    if (!primary.error && primary.totalCount === 0 && location.trim().toLowerCase() !== "india") {
+      const fallback = await request({
+        keywords: [keywords.trim(), location.trim()].filter(Boolean).join(" "),
+        location: "India",
+        page: String(Math.max(1, page)),
+        ResultOnPage: Math.min(20, Math.max(1, resultsPerPage)),
+        SearchMode: "0",
+        companysearch: companySearch ? "true" : "false",
+      });
+      if (!fallback.error && fallback.totalCount > 0) return { ...fallback, locationMatchedByText: true };
     }
 
-    const parsed = joobleResponseSchema.safeParse(await response.json());
-    if (!parsed.success) {
-      return { configured: true, totalCount: 0, jobs: [], error: "Partner job feed returned an invalid response." };
-    }
-
-    return { configured: true, totalCount: parsed.data.totalCount, jobs: parsed.data.jobs };
+    return primary;
   } catch {
     return { configured: true, totalCount: 0, jobs: [], error: "Partner opportunities are temporarily unavailable." };
   }
