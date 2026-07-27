@@ -28,6 +28,11 @@ const urlErrorMessage: Record<string, string> = {
   recruiter_access_required: "Recruiter login is available only after your employer adds this email to recruiter seats. Please contact your employer or JobiVerse.",
 };
 
+const accessMessage: Record<string, string> = {
+  restricted: "Admin accounts cannot be created publicly. Only JobiVerse-authorized administrators can use this portal.",
+  denied: "You are not authorized to access the JobiVerse admin portal.",
+};
+
 type Props = {
   role?: Role;
 };
@@ -42,8 +47,11 @@ export default function LoginCard({ role = "candidate" }: Props) {
 
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
+  const access = searchParams.get("access");
   const verified = searchParams.get("verified") === "1";
-  const visibleError = error ?? (urlError ? urlErrorMessage[urlError] ?? "Access could not be completed. Please try again." : null);
+  const visibleError = error
+    ?? (access ? accessMessage[access] ?? null : null)
+    ?? (urlError ? urlErrorMessage[urlError] ?? "Access could not be completed. Please try again." : null);
 
   const oauthCallbackUrl = () => {
     const params = new URLSearchParams({ role });

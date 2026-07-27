@@ -9,13 +9,12 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { confirmSignupUser, hasPendingEmployerTeamInvite, requiresEmailConfirmation } from "@/app/signup/actions";
 
-type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
+type Role = "candidate" | "employer" | "recruiter" | "creator";
 
 const roleRedirect: Record<Role, string> = {
   candidate: "/candidates/dashboard",
   employer: "/employers/dashboard",
   recruiter: "/recruiter",
-  admin: "/login/admin",
   creator: "/earn-with-jobiverse/dashboard",
 };
 
@@ -23,7 +22,6 @@ const signupTitle: Record<Role, string> = {
   candidate: "Candidate Sign Up",
   employer: "Employer Sign Up",
   recruiter: "Recruiter Sign Up",
-  admin: "Admin Sign Up",
   creator: "Creator Sign Up",
 };
 
@@ -31,7 +29,6 @@ const signupSubtitle: Record<Role, string> = {
   candidate: "Join JobiVerse as a candidate",
   employer: "Post jobs free and pay only after a successful direct hire",
   recruiter: "Join JobiVerse as a recruiter",
-  admin: "Request a verified admin workspace",
   creator: "Join JobiVerse as a creator",
 };
 
@@ -103,18 +100,12 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
   const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
-  const privilegedRole = role === "admin";
-  const socialSignupAllowed = !["employer", "recruiter", "admin"].includes(role);
+  const socialSignupAllowed = !["employer", "recruiter"].includes(role);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-
-    if (role === "admin") {
-      setSuccess("Admin self-signup is not open. You are not authorized for this portal unless JobiVerse has assigned admin access.");
-      return;
-    }
 
     const normalizedEmail = email.trim().toLowerCase();
     if (role === "recruiter") {
@@ -219,10 +210,6 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   };
 
   const handleGoogleAuth = async () => {
-    if (role === "admin") {
-      setError("You are not authorized for this portal unless JobiVerse or an employer has invited this email.");
-      return;
-    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -232,10 +219,6 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
   };
 
   const handleLinkedInAuth = async () => {
-    if (role === "admin") {
-      setError("You are not authorized for this portal unless JobiVerse or an employer has invited this email.");
-      return;
-    }
     await supabase.auth.signInWithOAuth({
       provider: "linkedin_oidc",
       options: {
@@ -402,19 +385,17 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
             whileTap={{ scale: 0.97 }}
             className="group flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-zinc-950 font-semibold text-white shadow-xl shadow-black/20 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Creating account..." : privilegedRole ? "Request access" : "Create account"}
+            {loading ? "Creating account..." : "Create account"}
             <ArrowRight size={18} className="transition group-hover:translate-x-2" />
           </motion.button>
-          {!privilegedRole && (
-            <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={resending}
-              className="w-full cursor-pointer rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {resending ? "Sending confirmation email..." : "Resend confirmation code"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={handleResendCode}
+            disabled={resending}
+            className="w-full cursor-pointer rounded-2xl border border-zinc-200 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resending ? "Sending confirmation email..." : "Resend confirmation code"}
+          </button>
         </form>
 
         {socialSignupAllowed ? (

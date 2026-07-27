@@ -1,8 +1,9 @@
 import LoginShell from "@/components/auth/LoginShell";
 import SignupCard from "@/components/auth/SignupCard";
+import { redirect } from "next/navigation";
 
-type Role = "candidate" | "employer" | "recruiter" | "admin" | "creator";
-const validRoles: Role[] = ["candidate", "employer", "recruiter", "admin", "creator"];
+type Role = "candidate" | "employer" | "recruiter" | "creator";
+const validRoles: Role[] = ["candidate", "employer", "recruiter", "creator"];
 
 export default async function SignupPage({
   searchParams,
@@ -10,6 +11,10 @@ export default async function SignupPage({
   searchParams: Promise<{ role?: string; ref?: string; next?: string }>;
 }) {
   const params = await searchParams;
+  if (params.role === "admin") {
+    redirect("/login/admin?access=restricted");
+  }
+
   const role = validRoles.includes(params.role as Role)
     ? (params.role as Role)
     : "candidate";

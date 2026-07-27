@@ -27,3 +27,19 @@ export function WhatsAppIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function FacebookIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M13.5 21v-8h2.75l.41-3.2H13.5V7.76c0-.93.26-1.56 1.59-1.56h1.69V3.34c-.29-.04-1.3-.13-2.47-.13-2.44 0-4.11 1.49-4.11 4.23V9.8H7.44V13h2.76v8h3.3Z" />
+    </svg>
+  );
+}
+
+export function YouTubeIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M23.5 6.2a3 3 0 0 0-2.11-2.12C19.52 3.58 12 3.58 12 3.58s-7.52 0-9.39.5A3 3 0 0 0 .5 6.2 31.26 31.26 0 0 0 0 12a31.26 31.26 0 0 0 .5 5.8 3 3 0 0 0 2.11 2.12c1.87.5 9.39.5 9.39.5s7.52 0 9.39-.5a3 3 0 0 0 2.11-2.12A31.26 31.26 0 0 0 24 12a31.26 31.26 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.24 3.6-6.24 3.6Z" />
+    </svg>
+  );
+}

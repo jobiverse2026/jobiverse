@@ -8,7 +8,7 @@ import {
   MapPin,
   ArrowUpRight,
 } from "lucide-react";
-import { InstagramIcon, LinkedInIcon, WhatsAppIcon } from "@/components/common/social-icons";
+import { FacebookIcon, InstagramIcon, LinkedInIcon, WhatsAppIcon, YouTubeIcon } from "@/components/common/social-icons";
 
 
 
@@ -406,6 +406,26 @@ export function Footer() {
               <InstagramIcon className="h-4 w-4" />
 
 
+            </Link>
+
+            <Link
+              href="https://www.facebook.com/profile.php?id=61592181941812"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="JobiVerse on Facebook"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition hover:border-white hover:text-white"
+            >
+              <FacebookIcon className="h-4 w-4" />
+            </Link>
+
+            <Link
+              href="https://www.youtube.com/@Jobiverse2026"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="JobiVerse on YouTube"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 text-zinc-400 transition hover:border-white hover:text-white"
+            >
+              <YouTubeIcon className="h-4 w-4" />
             </Link>
 
 

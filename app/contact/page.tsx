@@ -8,7 +8,7 @@ import {
   UserRound,
   MessageCircle,
 } from "lucide-react";
-import { InstagramIcon, LinkedInIcon } from "@/components/common/social-icons";
+import { FacebookIcon, InstagramIcon, LinkedInIcon, YouTubeIcon } from "@/components/common/social-icons";
 
 
 const contactCards = [
@@ -413,7 +413,34 @@ export default function ContactPage() {
 
              <span className="text-lg">
               <InstagramIcon className="h-5 w-5" />
-</span>
+             </span>
+             Instagram
+
+
+            </a>
+
+
+
+            <a
+              href="https://www.facebook.com/profile.php?id=61592181941812"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="JobiVerse on Facebook"
+              className="inline-flex items-center gap-3 rounded-xl border border-zinc-300 px-6 py-3 transition hover:bg-black hover:text-white"
+            >
+              <FacebookIcon className="h-5 w-5" /> Facebook
+            </a>
+
+
+
+            <a
+              href="https://www.youtube.com/@Jobiverse2026"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="JobiVerse on YouTube"
+              className="inline-flex items-center gap-3 rounded-xl border border-zinc-300 px-6 py-3 transition hover:bg-black hover:text-white"
+            >
+              <YouTubeIcon className="h-5 w-5" /> YouTube
 
 
             </a>

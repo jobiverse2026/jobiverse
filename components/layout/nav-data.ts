@@ -402,5 +402,4 @@ export const signupMenu = [
   { title: "Candidate Sign Up", description: "Create a career profile and access opportunities.", href: "/signup?role=candidate", icon: Briefcase },
   { title: "Employer Sign Up", description: "Create a company account and start hiring.", href: "/signup?role=employer", icon: Building2 },
   { title: "Recruiter Sign Up", description: "Request a verified JobiVerse recruiter workspace.", href: "/signup?role=recruiter", icon: Users },
-  { title: "Admin Sign Up", description: "Request secure authorized platform access.", href: "/signup?role=admin", icon: Target },
 ];
