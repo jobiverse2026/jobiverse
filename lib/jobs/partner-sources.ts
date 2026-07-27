@@ -329,9 +329,10 @@ const himalayasSchema = z.object({
     maxSalary: z.coerce.number().nullable().optional(),
     salaryPeriod: z.string().optional().default(""),
     currency: z.string().optional().default(""),
-    locationRestrictions: z.array(z.object({
-      name: z.string().optional().default(""),
-    })).optional().default([]),
+    locationRestrictions: z.array(z.union([
+      z.string(),
+      z.object({ name: z.string().optional().default("") }),
+    ])).optional().default([]),
     pubDate: z.union([z.string(), z.number()]).optional(),
     applicationLink: z.string().url(),
   })).default([]),
@@ -364,7 +365,9 @@ export async function searchHimalayasJobs({
             .filter(Boolean)
             .join(" - ") + (job.salaryPeriod ? ` / ${job.salaryPeriod}` : "")
         : "";
-      const restrictions = job.locationRestrictions.map((item) => item.name).filter(Boolean);
+      const restrictions = job.locationRestrictions
+        .map((item) => typeof item === "string" ? item : item.name)
+        .filter(Boolean);
       return {
         id: `himalayas-${job.guid}`,
         title: plainTextSnippet(job.title),
