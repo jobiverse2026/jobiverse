@@ -73,7 +73,7 @@ const employerLinks = [
 const candidateLinks = [
   {
     name: "Find Jobs",
-    href: "/candidates",
+    href: "/jobs",
   },
   {
     name: "Career Services",

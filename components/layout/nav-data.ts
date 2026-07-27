@@ -46,6 +46,7 @@ const exploreNavigation: NavChild[] = [
 
 export const publicNavigation: NavItem[] = [
   { title: "Home", href: "/" },
+  { title: "Jobs", href: "/jobs" },
   { title: "Services", href: "/services" },
   {
     title: "Explore the Verse",
@@ -62,6 +63,7 @@ export const publicNavigation: NavItem[] = [
 
 const mainSiteMenu: NavChild[] = [
   { title: "Home", description: "Return to the JobiVerse homepage.", href: "/", icon: Sparkles },
+  { title: "Jobs", description: "Explore direct and clearly attributed partner opportunities.", href: "/jobs", icon: Briefcase },
   { title: "Services", description: "Explore services for every JobiVerse audience.", href: "/services", icon: Compass },
   { title: "Pricing", description: "Paid plans, marketplace earnings and premium unlocks.", href: "/pricing", icon: Target },
   { title: "Professionals", description: "Career opportunities and professional support.", href: "/candidates", icon: Briefcase },
@@ -85,9 +87,9 @@ export const marketplaceNavigation: NavItem[] = [
 export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "admin" | "creator", NavItem[]> = {
   candidate: [
     { title: "Dashboard", href: "/candidates/dashboard" },
-    { title: "Explore Opportunities", href: "/candidates/jobs" },
+    { title: "Explore Opportunities", href: "/jobs" },
     { title: "Career", children: [
-      { title: "Jobs", description: "Discover verified opportunities.", href: "/candidates/jobs", icon: Briefcase },
+      { title: "Jobs", description: "Discover direct and partner opportunities.", href: "/jobs", icon: Briefcase },
       { title: "Job Alerts", description: "Set role, location and work-mode alerts.", href: "/candidates/job-alerts", icon: Sparkles },
       { title: "Saved Jobs", description: "Return to opportunities saved for later.", href: "/candidates/saved-jobs", icon: Bookmark },
       { title: "Applications", description: "Track applications, interviews and offers.", href: "/candidates/applications", icon: Target },

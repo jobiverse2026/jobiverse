@@ -62,7 +62,7 @@ const worlds = [
 
 const actionCards = [
   { title: "Create a JobiVerse Card", text: "A universal career identity that can travel with every application.", href: "/login/candidate?next=%2Fcareer-passport", icon: IdCard },
-  { title: "Explore Active Jobs", text: "Browse roles, save opportunities and apply with structured details.", href: "/candidates/jobs", icon: BriefcaseBusiness },
+  { title: "Explore Active Jobs", text: "Browse direct and partner opportunities with clear source labels.", href: "/jobs", icon: BriefcaseBusiness },
   { title: "Book Career Services", text: "Resume, interview, LinkedIn, mentorship and career guidance support.", href: "/marketplace", icon: Store },
   { title: "View Pricing", text: "Transparent pricing for plans, services, templates and marketplace unlocks.", href: "/pricing", icon: BadgeIndianRupee },
   { title: "Campus Partnerships", text: "Placement readiness programs for colleges, institutes and student communities.", href: "/campus-partnerships", icon: GraduationCap },
