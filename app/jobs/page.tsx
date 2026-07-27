@@ -190,7 +190,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
-                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.location || "India"}</p>
+                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText))}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
                     <p className="mt-4 text-xs text-zinc-400">Source: {job.source || "Jooble"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
@@ -229,6 +229,19 @@ function FilterSelect({ name, label, value, options }: { name: string; label: st
 function formatDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "recently" : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }).format(date);
+}
+
+function partnerLocationLabel(jobLocation: string, searchedLocation: string, matchedByText: boolean) {
+  const providerLocation = jobLocation.trim();
+  const normalizedProviderLocation = providerLocation.toLowerCase();
+  const normalizedSearchLocation = searchedLocation.trim().toLowerCase();
+  const isGenericProviderLocation = !providerLocation || normalizedProviderLocation === "india" || normalizedProviderLocation === "not specified";
+
+  if (normalizedSearchLocation !== "india" && isGenericProviderLocation) {
+    return `${searchedLocation} · ${matchedByText ? "matched from listing" : "search location"}`;
+  }
+
+  return providerLocation || "India";
 }
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {
