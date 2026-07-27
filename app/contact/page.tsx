@@ -341,11 +341,6 @@ export default function ContactPage() {
 
             >
 
-              <span className="font-bold">
-                in
-              </span>
-
-
               <LinkedInIcon className="h-5 w-5" /> LinkedIn
 
 
