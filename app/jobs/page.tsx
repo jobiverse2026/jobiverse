@@ -16,7 +16,19 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { plainTextSnippet, searchJoobleJobs, type PartnerJobSearch } from "@/lib/jobs/jooble";
+import {
+  plainTextSnippet,
+  searchJoobleJobs,
+  type PartnerJob,
+  type PartnerJobSearch,
+} from "@/lib/jobs/jooble";
+import {
+  searchAdzunaJobs,
+  searchArbeitnowJobs,
+  searchJobicyJobs,
+  searchMuseJobs,
+  searchRemotiveJobs,
+} from "@/lib/jobs/partner-sources";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
@@ -79,7 +91,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 
   const [partner, directResult] = await Promise.all([
     source === "jobiverse"
-      ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined, locationMatchedByText: false, nationalFeed: false })
+      ? Promise.resolve<PartnerJobSearch>({ configured: true, totalCount: 0, jobs: [], nationalFeed: false })
       : discoverPartnerJobs({ keywords: query, location, page, radius, companySearch: searchIn === "company" }),
     source === "partner"
       ? Promise.resolve({ data: [], error: null })
@@ -120,7 +132,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   });
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
   const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : partner.totalCount;
-  const partnerHasNextPage = !hasAdvancedFilters && partner.totalCount > page * 20;
+  const partnerHasNextPage = !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
 
@@ -176,7 +188,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           <div className="flex items-start gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"><BadgeCheck className="mt-0.5 shrink-0" /><div><h2 className="font-bold">JobiVerse Direct</h2><p className="mt-1 text-sm leading-6">Published by an employer inside JobiVerse. Sign in to view, save and apply through the protected JobiVerse workflow.</p></div></div>
-          <div className="flex items-start gap-4 rounded-3xl border border-violet-200 bg-violet-50 p-5 text-violet-950"><Globe2 className="mt-0.5 shrink-0" /><div><h2 className="font-bold">Partner Opportunity</h2><p className="mt-1 text-sm leading-6">Supplied by a licensed job-search partner. Application happens on the original destination; JobiVerse does not charge a placement fee for it.</p></div></div>
+          <div className="flex items-start gap-4 rounded-3xl border border-violet-200 bg-violet-50 p-5 text-violet-950"><Globe2 className="mt-0.5 shrink-0" /><div><h2 className="font-bold">Partner Opportunity</h2><p className="mt-1 text-sm leading-6">Supplied by a connected public or licensed API source. Application happens on the original destination; JobiVerse does not charge a placement fee for it.</p></div></div>
         </section>
 
         {source !== "partner" && directJobs.length > 0 && (
@@ -201,8 +213,8 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 
         {source !== "jobiverse" && (
           <section className="mt-14">
-            <SectionHeading eyebrow="Licensed discovery feed" title="Partner opportunities" count={partnerVisibleCount} />
-            {partner.nationalFeed && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. City tags are supplied through the partner&apos;s city-matched discovery feed; open the source listing to confirm the exact workplace.</p>}
+            <SectionHeading eyebrow="Connected discovery feeds" title="Partner opportunities" count={partnerVisibleCount} />
+            {partner.nationalFeed && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} listings on this page from {partner.totalCount.toLocaleString("en-IN")} provider-reported opportunities. Locations come from each source or the city-matched discovery feed; always confirm the exact workplace on the original listing.</p>}
             {!partner.configured ? (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Globe2 className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">Partner network is being connected</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-500">JobiVerse will show licensed, attributed opportunities here after the provider connection is activated.</p></div>
             ) : partner.error ? (
@@ -210,18 +222,24 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             ) : partnerJobs.length ? (
               <>
                 <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {partnerJobs.map((job) => <article key={`jooble-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                  {partnerJobs.map((job) => <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
                     <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
-                    <p className="mt-4 text-xs text-zinc-400">Source: {job.source || "Jooble"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
+                    <p className="mt-4 text-xs text-zinc-400">Source: {job.provider || job.source || "Partner feed"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
                     <a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">View original listing <ExternalLink size={16} /></a>
                   </article>)}
                 </div>
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4"><a href="https://jooble.org" target="_blank" rel="nofollow sponsored noreferrer" className="text-sm font-bold text-violet-800">Jobs powered by Jooble <ExternalLink className="ml-1 inline" size={13} /></a><div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div></div>
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Connected sources</span>
+                    {(partner.providers ?? []).map((provider) => <a key={provider.name} href={provider.href} target="_blank" rel="nofollow sponsored noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-800">{provider.name}<span className="text-violet-500">{provider.totalCount.toLocaleString("en-IN")}</span><ExternalLink size={11} /></a>)}
+                  </div>
+                  <div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div>
+                </div>
               </>
             ) : (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Search className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">No partner jobs matched this search</h3><p className="mt-2 text-zinc-500">Try a broader role keyword or use India as the location.</p></div>
@@ -282,7 +300,7 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
   return providerLocation || "India";
 }
 
-async function discoverPartnerJobs({
+async function discoverJoobleJobs({
   keywords,
   location,
   page,
@@ -350,7 +368,88 @@ async function discoverPartnerJobs({
     totalCount: totalResult.totalCount || pageResult.totalCount,
     jobs: [...cityJobs, ...fallbackJobs].slice(0, 20),
     nationalFeed: true,
+    hasNextPage: (totalResult.totalCount || pageResult.totalCount) > page * 20,
   };
+}
+
+const providerLinks: Record<NonNullable<PartnerJob["provider"]>, string> = {
+  Jooble: "https://jooble.org",
+  Adzuna: "https://www.adzuna.co.in",
+  Remotive: "https://remotive.com",
+  Arbeitnow: "https://www.arbeitnow.com",
+  Jobicy: "https://jobicy.com",
+  "The Muse": "https://www.themuse.com",
+};
+
+async function discoverPartnerJobs({
+  keywords,
+  location,
+  page,
+  radius,
+  companySearch,
+}: {
+  keywords: string;
+  location: string;
+  page: number;
+  radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
+  companySearch: boolean;
+}): Promise<PartnerJobSearch> {
+  const sourceNames = ["Jooble", "Adzuna", "Remotive", "Arbeitnow", "Jobicy", "The Muse"] as const;
+  const results = await Promise.all([
+    discoverJoobleJobs({ keywords, location, page, radius, companySearch }),
+    searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+  ]);
+  const configuredResults = results.filter((result) => result.configured);
+  const jobs = interleavePartnerJobs(results, 20);
+  const providers = sourceNames
+    .map((name, index) => ({
+      name,
+      configured: results[index].configured,
+      totalCount: results[index].totalCount,
+      href: providerLinks[name],
+    }))
+    .filter((provider) => provider.configured);
+  const allConfiguredSourcesFailed = configuredResults.length > 0
+    && configuredResults.every((result) => Boolean(result.error));
+
+  return {
+    configured: configuredResults.length > 0,
+    totalCount: configuredResults.reduce((sum, result) => sum + result.totalCount, 0),
+    jobs,
+    nationalFeed: location.toLowerCase() === "india",
+    hasNextPage: configuredResults.some((result) => result.hasNextPage ?? result.totalCount > page * 20),
+    providers,
+    error: jobs.length === 0 && allConfiguredSourcesFailed
+      ? "Connected job feeds are temporarily unavailable."
+      : undefined,
+  };
+}
+
+function interleavePartnerJobs(results: PartnerJobSearch[], limit: number) {
+  const queues = results.map((result) => [...result.jobs]);
+  const seen = new Set<string>();
+  const jobs: PartnerJob[] = [];
+
+  while (jobs.length < limit && queues.some((queue) => queue.length > 0)) {
+    for (const queue of queues) {
+      const job = queue.shift();
+      if (!job) continue;
+      const key = `${job.title}|${job.company}|${job.location}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      jobs.push(job);
+      if (jobs.length >= limit) break;
+    }
+  }
+
+  return jobs;
 }
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {

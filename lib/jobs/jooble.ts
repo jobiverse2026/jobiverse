@@ -22,6 +22,14 @@ const joobleResponseSchema = z.object({
 
 export type PartnerJob = z.infer<typeof joobleJobSchema> & {
   displayLocation?: string;
+  provider?: "Jooble" | "Adzuna" | "Remotive" | "Arbeitnow" | "Jobicy" | "The Muse";
+};
+
+export type PartnerProviderSummary = {
+  name: NonNullable<PartnerJob["provider"]>;
+  configured: boolean;
+  totalCount: number;
+  href: string;
 };
 
 export type PartnerJobSearch = {
@@ -31,6 +39,8 @@ export type PartnerJobSearch = {
   error?: string;
   locationMatchedByText?: boolean;
   nationalFeed?: boolean;
+  hasNextPage?: boolean;
+  providers?: PartnerProviderSummary[];
 };
 
 type SearchInput = {
@@ -79,7 +89,11 @@ export async function searchJoobleJobs({
         return { configured: true, totalCount: 0, jobs: [], error: "Partner job feed returned an invalid response." } satisfies PartnerJobSearch;
       }
 
-      return { configured: true, totalCount: parsed.data.totalCount, jobs: parsed.data.jobs } satisfies PartnerJobSearch;
+      return {
+        configured: true,
+        totalCount: parsed.data.totalCount,
+        jobs: parsed.data.jobs.map((job) => ({ ...job, provider: "Jooble" as const })),
+      } satisfies PartnerJobSearch;
     };
 
     const primary = await request({
