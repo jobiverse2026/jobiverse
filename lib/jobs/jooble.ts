@@ -34,6 +34,8 @@ type SearchInput = {
   location?: string;
   page?: number;
   resultsPerPage?: number;
+  radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
+  companySearch?: boolean;
 };
 
 export async function searchJoobleJobs({
@@ -41,6 +43,8 @@ export async function searchJoobleJobs({
   location = "India",
   page = 1,
   resultsPerPage = 20,
+  radius,
+  companySearch = false,
 }: SearchInput): Promise<PartnerJobSearch> {
   const apiKey = process.env.JOOBLE_API_KEY?.trim();
   if (!apiKey) return { configured: false, totalCount: 0, jobs: [] };
@@ -54,8 +58,9 @@ export async function searchJoobleJobs({
         location: location.trim() || "India",
         page: String(Math.max(1, page)),
         ResultOnPage: Math.min(20, Math.max(1, resultsPerPage)),
-        SearchMode: "1",
-        companysearch: "false",
+        SearchMode: "0",
+        companysearch: companySearch ? "true" : "false",
+        ...(radius ? { radius } : {}),
       }),
       next: { revalidate: 1800, tags: ["partner-jobs", "jooble-jobs"] },
       signal: AbortSignal.timeout(12_000),
@@ -93,4 +98,3 @@ export function plainTextSnippet(value: string) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
