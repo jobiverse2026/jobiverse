@@ -300,17 +300,16 @@ async function discoverPartnerJobs({
     return searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
   }
 
-  const nationalResult = await searchJoobleJobs({
-    keywords,
-    location: "India",
-    page,
-    resultsPerPage: 20,
-    companySearch,
-  });
+  const [totalResult, pageResult] = await Promise.all([
+    searchJoobleJobs({ keywords, location: "India", page: 1, resultsPerPage: 1, companySearch }),
+    searchJoobleJobs({ keywords, location: "India", page, resultsPerPage: 20, companySearch }),
+  ]);
 
   return {
-    ...nationalResult,
-    jobs: nationalResult.jobs.map((job) => ({
+    ...pageResult,
+    configured: totalResult.configured || pageResult.configured,
+    totalCount: totalResult.totalCount || pageResult.totalCount,
+    jobs: pageResult.jobs.map((job) => ({
       ...job,
       displayLocation: partnerLocationLabel(
         job.location,
