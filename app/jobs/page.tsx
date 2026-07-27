@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { plainTextSnippet, searchJoobleJobs } from "@/lib/jobs/jooble";
+import { plainTextSnippet, searchJoobleJobs, type PartnerJobSearch } from "@/lib/jobs/jooble";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
@@ -80,7 +80,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const [partner, directResult] = await Promise.all([
     source === "jobiverse"
       ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined, locationMatchedByText: false })
-      : searchJoobleJobs({ keywords: query, location, page, resultsPerPage: 20, radius, companySearch: searchIn === "company" }),
+      : discoverPartnerJobs({ keywords: query, location, page, radius, companySearch: searchIn === "company" }),
     source === "partner"
       ? Promise.resolve({ data: [], error: null })
       : adminSupabase
@@ -120,6 +120,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   });
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
   const partnerVisibleCount = hasAdvancedFilters || partner.locationMatchedByText ? partnerJobs.length : partner.totalCount;
+  const partnerHasNextPage = location.toLowerCase() === "india" ? partnerJobs.length > 0 : partner.jobs.length === 20;
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
 
@@ -213,14 +214,14 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
-                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
+                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
                     <p className="mt-4 text-xs text-zinc-400">Source: {job.source || "Jooble"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
                     <a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">View original listing <ExternalLink size={16} /></a>
                   </article>)}
                 </div>
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4"><a href="https://jooble.org" target="_blank" rel="nofollow sponsored noreferrer" className="text-sm font-bold text-violet-800">Jobs powered by Jooble <ExternalLink className="ml-1 inline" size={13} /></a><div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partner.jobs.length === 20 && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div></div>
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4"><a href="https://jooble.org" target="_blank" rel="nofollow sponsored noreferrer" className="text-sm font-bold text-violet-800">Jobs powered by Jooble <ExternalLink className="ml-1 inline" size={13} /></a><div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div></div>
               </>
             ) : (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Search className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">No partner jobs matched this search</h3><p className="mt-2 text-zinc-500">Try a broader role keyword or use India as the location.</p></div>
@@ -279,6 +280,62 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
   }
 
   return providerLocation || "India";
+}
+
+async function discoverPartnerJobs({
+  keywords,
+  location,
+  page,
+  radius,
+  companySearch,
+}: {
+  keywords: string;
+  location: string;
+  page: number;
+  radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
+  companySearch: boolean;
+}): Promise<PartnerJobSearch> {
+  if (location.toLowerCase() !== "india") {
+    return searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
+  }
+
+  const batchSize = 4;
+  const batchCount = Math.ceil(popularCities.length / batchSize);
+  const batchIndex = (page - 1) % batchCount;
+  const providerPage = Math.floor((page - 1) / batchCount) + 1;
+  const cities = popularCities.slice(batchIndex * batchSize, (batchIndex + 1) * batchSize);
+  const cityResults = await Promise.all(cities.map(async (city) => ({
+    city,
+    result: await searchJoobleJobs({
+      keywords,
+      location: city,
+      page: providerPage,
+      resultsPerPage: 5,
+      radius: "40",
+      companySearch,
+    }),
+  })));
+
+  const seenJobs = new Set<string>();
+  const jobs = cityResults.flatMap(({ city, result }) => result.jobs
+    .filter((job) => {
+      if (seenJobs.has(job.id)) return false;
+      seenJobs.add(job.id);
+      return true;
+    })
+    .map((job) => ({
+      ...job,
+      displayLocation: `${city} · ${result.locationMatchedByText ? "matched from listing" : "search location"}`,
+    })));
+  const errors = cityResults.map(({ result }) => result.error).filter(Boolean);
+
+  return {
+    configured: cityResults.some(({ result }) => result.configured),
+    totalCount: jobs.length,
+    jobs,
+    error: jobs.length === 0 && errors.length === cityResults.length ? errors[0] : undefined,
+    locationMatchedByText: cityResults.some(({ result }) => result.locationMatchedByText),
+  };
 }
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {

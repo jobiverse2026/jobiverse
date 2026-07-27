@@ -20,7 +20,9 @@ const joobleResponseSchema = z.object({
   jobs: z.array(joobleJobSchema).default([]),
 });
 
-export type PartnerJob = z.infer<typeof joobleJobSchema>;
+export type PartnerJob = z.infer<typeof joobleJobSchema> & {
+  displayLocation?: string;
+};
 
 export type PartnerJobSearch = {
   configured: boolean;
