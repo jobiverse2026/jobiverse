@@ -202,7 +202,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         {source !== "jobiverse" && (
           <section className="mt-14">
             <SectionHeading eyebrow="Licensed discovery feed" title="Partner opportunities" count={partnerVisibleCount} />
-            {partner.nationalFeed && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. City names are shown only when the source listing contains clear location evidence; otherwise the location is marked as not specified.</p>}
+            {partner.nationalFeed && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. City tags are supplied through the partner&apos;s city-matched discovery feed; open the source listing to confirm the exact workplace.</p>}
             {!partner.configured ? (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Globe2 className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">Partner network is being connected</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-500">JobiVerse will show licensed, attributed opportunities here after the provider connection is activated.</p></div>
             ) : partner.error ? (
@@ -277,7 +277,6 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
 
     if (detectedCities.length) return `${detectedCities.join(" / ")} · matched from listing`;
     if (searchableListing.includes(" remote ") || searchableListing.includes(" work from home ")) return "Remote · matched from listing";
-    return "Location not specified";
   }
 
   return providerLocation || "India";
@@ -300,16 +299,42 @@ async function discoverPartnerJobs({
     return searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
   }
 
-  const [totalResult, pageResult] = await Promise.all([
+  const cityPool = popularCities.slice(0, 8);
+  const batchSize = 4;
+  const batchCount = Math.ceil(cityPool.length / batchSize);
+  const batchIndex = (page - 1) % batchCount;
+  const providerPage = Math.floor((page - 1) / batchCount) + 1;
+  const cities = cityPool.slice(batchIndex * batchSize, (batchIndex + 1) * batchSize);
+  const [totalResult, pageResult, cityResults] = await Promise.all([
     searchJoobleJobs({ keywords, location: "India", page: 1, resultsPerPage: 1, companySearch }),
     searchJoobleJobs({ keywords, location: "India", page, resultsPerPage: 20, companySearch }),
+    Promise.all(cities.map(async (city) => ({
+      city,
+      result: await searchJoobleJobs({
+        keywords: [keywords, city].filter(Boolean).join(" "),
+        location: "India",
+        page: providerPage,
+        resultsPerPage: 5,
+        companySearch,
+      }),
+    }))),
   ]);
 
-  return {
-    ...pageResult,
-    configured: totalResult.configured || pageResult.configured,
-    totalCount: totalResult.totalCount || pageResult.totalCount,
-    jobs: pageResult.jobs.map((job) => ({
+  const seenJobs = new Set<string>();
+  const cityJobs = cityResults.flatMap(({ city, result }) => result.jobs
+    .filter((job) => {
+      if (seenJobs.has(job.id)) return false;
+      seenJobs.add(job.id);
+      return true;
+    })
+    .map((job) => ({ ...job, displayLocation: `${city} · partner city match` })));
+  const fallbackJobs = pageResult.jobs
+    .filter((job) => {
+      if (seenJobs.has(job.id)) return false;
+      seenJobs.add(job.id);
+      return true;
+    })
+    .map((job) => ({
       ...job,
       displayLocation: partnerLocationLabel(
         job.location,
@@ -317,7 +342,13 @@ async function discoverPartnerJobs({
         false,
         `${job.title} ${plainTextSnippet(job.snippet)}`,
       ),
-    })),
+    }));
+
+  return {
+    ...pageResult,
+    configured: totalResult.configured || pageResult.configured || cityResults.some(({ result }) => result.configured),
+    totalCount: totalResult.totalCount || pageResult.totalCount,
+    jobs: [...cityJobs, ...fallbackJobs].slice(0, 20),
     nationalFeed: true,
   };
 }
