@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { plainTextSnippet, searchJoobleJobs, type PartnerJob, type PartnerJobSearch } from "@/lib/jobs/jooble";
+import { plainTextSnippet, searchJoobleJobs, type PartnerJobSearch } from "@/lib/jobs/jooble";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
@@ -79,7 +79,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 
   const [partner, directResult] = await Promise.all([
     source === "jobiverse"
-      ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined, locationMatchedByText: false })
+      ? Promise.resolve({ configured: Boolean(process.env.JOOBLE_API_KEY), totalCount: 0, jobs: [], error: undefined, locationMatchedByText: false, nationalFeed: false })
       : discoverPartnerJobs({ keywords: query, location, page, radius, companySearch: searchIn === "company" }),
     source === "partner"
       ? Promise.resolve({ data: [], error: null })
@@ -202,7 +202,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         {source !== "jobiverse" && (
           <section className="mt-14">
             <SectionHeading eyebrow="Licensed discovery feed" title="Partner opportunities" count={partnerVisibleCount} />
-            {partner.locationMatchedByText && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} city-matched listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. Open the source listing to confirm the exact work location.</p>}
+            {partner.nationalFeed && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. City names are shown only when the source listing contains clear location evidence; otherwise the location is marked as not specified.</p>}
             {!partner.configured ? (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Globe2 className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">Partner network is being connected</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-500">JobiVerse will show licensed, attributed opportunities here after the provider connection is activated.</p></div>
             ) : partner.error ? (
@@ -277,6 +277,7 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
 
     if (detectedCities.length) return `${detectedCities.join(" / ")} · matched from listing`;
     if (searchableListing.includes(" remote ") || searchableListing.includes(" work from home ")) return "Remote · matched from listing";
+    return "Location not specified";
   }
 
   return providerLocation || "India";
@@ -299,52 +300,27 @@ async function discoverPartnerJobs({
     return searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
   }
 
-  const batchSize = 4;
-  const batchCount = Math.ceil(popularCities.length / batchSize);
-  const batchIndex = (page - 1) % batchCount;
-  const providerPage = Math.floor((page - 1) / batchCount) + 1;
-  const cities = popularCities.slice(batchIndex * batchSize, (batchIndex + 1) * batchSize);
-  const [nationalResult, cityResults] = await Promise.all([
-    searchJoobleJobs({ keywords, location: "India", page: 1, resultsPerPage: 1, companySearch }),
-    Promise.all(cities.map(async (city) => ({
-      city,
-      result: await searchJoobleJobs({
-        keywords: [keywords, city].filter(Boolean).join(" "),
-        location: "India",
-        page: providerPage,
-        resultsPerPage: 5,
-        companySearch,
-      }),
-    }))),
-  ]);
-
-  const seenJobs = new Set<string>();
-  const jobs = cityResults.flatMap(({ city, result }) => result.jobs
-    .filter((job) => partnerJobMatchesCity(job, city))
-    .filter((job) => {
-      if (seenJobs.has(job.id)) return false;
-      seenJobs.add(job.id);
-      return true;
-    })
-    .map((job) => ({
-      ...job,
-      displayLocation: `${city} · matched from listing`,
-    })));
-  const errors = cityResults.map(({ result }) => result.error).filter(Boolean);
+  const nationalResult = await searchJoobleJobs({
+    keywords,
+    location: "India",
+    page,
+    resultsPerPage: 20,
+    companySearch,
+  });
 
   return {
-    configured: nationalResult.configured || cityResults.some(({ result }) => result.configured),
-    totalCount: nationalResult.totalCount,
-    jobs,
-    error: jobs.length === 0 && errors.length === cityResults.length ? errors[0] : undefined,
-    locationMatchedByText: true,
+    ...nationalResult,
+    jobs: nationalResult.jobs.map((job) => ({
+      ...job,
+      displayLocation: partnerLocationLabel(
+        job.location,
+        "India",
+        false,
+        `${job.title} ${plainTextSnippet(job.snippet)}`,
+      ),
+    })),
+    nationalFeed: true,
   };
-}
-
-function partnerJobMatchesCity(job: PartnerJob, city: string) {
-  const cityAliases = partnerLocationAliases.find((entry) => entry.label === city)?.aliases ?? [city.toLowerCase()];
-  const listingText = `${job.location} ${job.title} ${plainTextSnippet(job.snippet)}`.toLowerCase();
-  return cityAliases.some((alias) => listingText.includes(alias));
 }
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {

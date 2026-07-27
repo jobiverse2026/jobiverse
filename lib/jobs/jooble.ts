@@ -30,6 +30,7 @@ export type PartnerJobSearch = {
   jobs: PartnerJob[];
   error?: string;
   locationMatchedByText?: boolean;
+  nationalFeed?: boolean;
 };
 
 type SearchInput = {
