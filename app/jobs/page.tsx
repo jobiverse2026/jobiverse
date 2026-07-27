@@ -37,6 +37,28 @@ type SearchParams = Promise<{
 }>;
 
 const popularCities = ["Mumbai", "Delhi NCR", "Bengaluru", "Hyderabad", "Pune", "Chennai", "Kolkata", "Ahmedabad", "Noida", "Gurugram"];
+const partnerLocationAliases = [
+  { label: "Mumbai", aliases: ["mumbai", "bombay"] },
+  { label: "Navi Mumbai", aliases: ["navi mumbai"] },
+  { label: "Thane", aliases: ["thane"] },
+  { label: "Delhi NCR", aliases: ["delhi ncr", "new delhi", "delhi"] },
+  { label: "Noida", aliases: ["noida"] },
+  { label: "Gurugram", aliases: ["gurugram", "gurgaon"] },
+  { label: "Bengaluru", aliases: ["bengaluru", "bangalore"] },
+  { label: "Hyderabad", aliases: ["hyderabad"] },
+  { label: "Pune", aliases: ["pune"] },
+  { label: "Chennai", aliases: ["chennai"] },
+  { label: "Kolkata", aliases: ["kolkata", "calcutta"] },
+  { label: "Ahmedabad", aliases: ["ahmedabad"] },
+  { label: "Jaipur", aliases: ["jaipur"] },
+  { label: "Kochi", aliases: ["kochi", "cochin"] },
+  { label: "Chandigarh", aliases: ["chandigarh"] },
+  { label: "Indore", aliases: ["indore"] },
+  { label: "Lucknow", aliases: ["lucknow"] },
+  { label: "Bhubaneswar", aliases: ["bhubaneswar"] },
+  { label: "Nagpur", aliases: ["nagpur"] },
+  { label: "Coimbatore", aliases: ["coimbatore"] },
+] as const;
 const allowedRadii = new Set(["0", "4", "8", "16", "26", "40", "80"]);
 const allowedJobTypes = new Set(["full-time", "part-time", "contract", "internship"]);
 const allowedWorkModes = new Set(["remote", "hybrid", "on-site"]);
@@ -147,6 +169,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
             <span className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Popular cities</span>
             {popularCities.map((city) => <Link key={city} href={locationHref(filters, city)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${location.toLowerCase() === city.toLowerCase() ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"}`}>{city}</Link>)}
+            <Link href="/jobs" className="ml-auto inline-flex min-h-9 items-center justify-center rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-700 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white">Clear filters</Link>
           </div>
         </form>
 
@@ -190,7 +213,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
-                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText))}</p>
+                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
                     <p className="mt-4 text-xs text-zinc-400">Source: {job.source || "Jooble"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
@@ -231,7 +254,7 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? "recently" : new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }).format(date);
 }
 
-function partnerLocationLabel(jobLocation: string, searchedLocation: string, matchedByText: boolean) {
+function partnerLocationLabel(jobLocation: string, searchedLocation: string, matchedByText: boolean, listingText: string) {
   const providerLocation = jobLocation.trim();
   const normalizedProviderLocation = providerLocation.toLowerCase();
   const normalizedSearchLocation = searchedLocation.trim().toLowerCase();
@@ -239,6 +262,20 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
 
   if (normalizedSearchLocation !== "india" && isGenericProviderLocation) {
     return `${searchedLocation} · ${matchedByText ? "matched from listing" : "search location"}`;
+  }
+
+  if (isGenericProviderLocation) {
+    const searchableListing = ` ${listingText.toLowerCase().replace(/[^a-z0-9]+/g, " ")} `;
+    const uniqueCities = partnerLocationAliases
+      .filter(({ aliases }) => aliases.some((alias) => searchableListing.includes(` ${alias} `)))
+      .map(({ label }) => label)
+      .filter((label, index, labels) => labels.indexOf(label) === index);
+    const detectedCities = uniqueCities
+      .filter((label) => label !== "Mumbai" || !uniqueCities.includes("Navi Mumbai"))
+      .slice(0, 2);
+
+    if (detectedCities.length) return `${detectedCities.join(" / ")} · matched from listing`;
+    if (searchableListing.includes(" remote ") || searchableListing.includes(" work from home ")) return "Remote · matched from listing";
   }
 
   return providerLocation || "India";
