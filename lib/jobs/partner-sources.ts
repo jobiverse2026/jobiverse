@@ -328,7 +328,7 @@ const himalayasSchema = z.object({
     minSalary: z.coerce.number().nullable().optional(),
     maxSalary: z.coerce.number().nullable().optional(),
     salaryPeriod: z.string().optional().default(""),
-    currency: z.string().optional().default(""),
+    currency: z.string().nullable().optional().transform((value) => value ?? ""),
     locationRestrictions: z.array(z.union([
       z.string(),
       z.object({ name: z.string().optional().default("") }),
