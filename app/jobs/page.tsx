@@ -119,8 +119,8 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       && (!freshness || isFreshEnough(job.updated, Number(freshness)));
   });
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
-  const partnerVisibleCount = hasAdvancedFilters || partner.locationMatchedByText ? partnerJobs.length : partner.totalCount;
-  const partnerHasNextPage = location.toLowerCase() === "india" ? partnerJobs.length > 0 : partner.jobs.length === 20;
+  const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : partner.totalCount;
+  const partnerHasNextPage = !hasAdvancedFilters && partner.totalCount > page * 20;
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
 
@@ -202,7 +202,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         {source !== "jobiverse" && (
           <section className="mt-14">
             <SectionHeading eyebrow="Licensed discovery feed" title="Partner opportunities" count={partnerVisibleCount} />
-            {partner.locationMatchedByText && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">The partner feed did not provide structured city results, so these opportunities were matched from city references inside the original listing. Open the source listing to confirm the exact work location.</p>}
+            {partner.locationMatchedByText && <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Showing {partnerJobs.length.toLocaleString("en-IN")} city-matched listings on this page from {partner.totalCount.toLocaleString("en-IN")} total partner opportunities. Open the source listing to confirm the exact work location.</p>}
             {!partner.configured ? (
               <div className="mt-6 rounded-[2rem] border border-dashed border-zinc-300 bg-white p-10 text-center"><Globe2 className="mx-auto text-zinc-400" /><h3 className="mt-4 text-2xl font-semibold">Partner network is being connected</h3><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-zinc-500">JobiVerse will show licensed, attributed opportunities here after the provider connection is activated.</p></div>
             ) : partner.error ? (
@@ -304,17 +304,19 @@ async function discoverPartnerJobs({
   const batchIndex = (page - 1) % batchCount;
   const providerPage = Math.floor((page - 1) / batchCount) + 1;
   const cities = popularCities.slice(batchIndex * batchSize, (batchIndex + 1) * batchSize);
-  const cityResults = await Promise.all(cities.map(async (city) => ({
-    city,
-    result: await searchJoobleJobs({
-      keywords,
-      location: city,
-      page: providerPage,
-      resultsPerPage: 5,
-      radius: "40",
-      companySearch,
-    }),
-  })));
+  const [nationalResult, cityResults] = await Promise.all([
+    searchJoobleJobs({ keywords, location: "India", page: 1, resultsPerPage: 1, companySearch }),
+    Promise.all(cities.map(async (city) => ({
+      city,
+      result: await searchJoobleJobs({
+        keywords: [keywords, city].filter(Boolean).join(" "),
+        location: "India",
+        page: providerPage,
+        resultsPerPage: 5,
+        companySearch,
+      }),
+    }))),
+  ]);
 
   const seenJobs = new Set<string>();
   const jobs = cityResults.flatMap(({ city, result }) => result.jobs
@@ -331,11 +333,11 @@ async function discoverPartnerJobs({
   const errors = cityResults.map(({ result }) => result.error).filter(Boolean);
 
   return {
-    configured: cityResults.some(({ result }) => result.configured),
-    totalCount: jobs.length,
+    configured: nationalResult.configured || cityResults.some(({ result }) => result.configured),
+    totalCount: nationalResult.totalCount,
     jobs,
     error: jobs.length === 0 && errors.length === cityResults.length ? errors[0] : undefined,
-    locationMatchedByText: cityResults.some(({ result }) => result.locationMatchedByText),
+    locationMatchedByText: true,
   };
 }
 
