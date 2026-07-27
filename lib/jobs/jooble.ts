@@ -22,7 +22,7 @@ const joobleResponseSchema = z.object({
 
 export type PartnerJob = z.infer<typeof joobleJobSchema> & {
   displayLocation?: string;
-  provider?: "Jooble" | "Adzuna" | "Remotive" | "Arbeitnow" | "Jobicy" | "The Muse";
+  provider?: "Jooble" | "Adzuna" | "Remotive" | "Arbeitnow" | "Jobicy" | "Himalayas" | "The Muse";
 };
 
 export type PartnerProviderSummary = {

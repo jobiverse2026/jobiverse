@@ -25,6 +25,7 @@ import {
 import {
   searchAdzunaJobs,
   searchArbeitnowJobs,
+  searchHimalayasJobs,
   searchJobicyJobs,
   searchMuseJobs,
   searchRemotiveJobs,
@@ -378,6 +379,7 @@ const providerLinks: Record<NonNullable<PartnerJob["provider"]>, string> = {
   Remotive: "https://remotive.com",
   Arbeitnow: "https://www.arbeitnow.com",
   Jobicy: "https://jobicy.com",
+  Himalayas: "https://himalayas.app",
   "The Muse": "https://www.themuse.com",
 };
 
@@ -394,13 +396,14 @@ async function discoverPartnerJobs({
   radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
   companySearch: boolean;
 }): Promise<PartnerJobSearch> {
-  const sourceNames = ["Jooble", "Adzuna", "Remotive", "Arbeitnow", "Jobicy", "The Muse"] as const;
+  const sourceNames = ["Jooble", "Adzuna", "Remotive", "Arbeitnow", "Jobicy", "Himalayas", "The Muse"] as const;
   const results = await Promise.all([
     discoverJoobleJobs({ keywords, location, page, radius, companySearch }),
     searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
     searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
     searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
     searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
     searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
   ]);
   const configuredResults = results.filter((result) => result.configured);

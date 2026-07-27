@@ -314,6 +314,82 @@ export async function searchJobicyJobs({
   }
 }
 
+const himalayasSchema = z.object({
+  totalCount: z.coerce.number().int().nonnegative().default(0),
+  jobs: z.array(z.object({
+    guid: z.string().min(1),
+    title: z.string().min(1),
+    excerpt: z.string().optional().default(""),
+    description: z.string().optional().default(""),
+    companyName: z.string().optional().default("Company not disclosed"),
+    employmentType: z.string().optional().default(""),
+    seniority: z.array(z.string()).optional().default([]),
+    categories: z.array(z.string()).optional().default([]),
+    minSalary: z.coerce.number().nullable().optional(),
+    maxSalary: z.coerce.number().nullable().optional(),
+    salaryPeriod: z.string().optional().default(""),
+    currency: z.string().optional().default(""),
+    locationRestrictions: z.array(z.object({
+      name: z.string().optional().default(""),
+    })).optional().default([]),
+    pubDate: z.union([z.string(), z.number()]).optional(),
+    applicationLink: z.string().url(),
+  })).default([]),
+});
+
+export async function searchHimalayasJobs({
+  keywords = "",
+  location = "India",
+  page = 1,
+  resultsPerPage = 20,
+}: SearchInput): Promise<PartnerJobSearch> {
+  try {
+    const params = new URLSearchParams({
+      country: "India",
+      sort: "recent",
+      page: String(Math.max(1, page)),
+    });
+    if (keywords.trim()) params.set("q", keywords.trim());
+    const response = await fetch(`https://himalayas.app/jobs/api/search?${params}`, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 86_400, tags: ["partner-jobs", "himalayas-jobs"] },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Himalayas opportunities are temporarily unavailable." };
+    const parsed = himalayasSchema.safeParse(await response.json());
+    if (!parsed.success) return { configured: true, totalCount: 0, jobs: [], error: "Himalayas returned an invalid response." };
+    const jobs = parsed.data.jobs.slice(0, resultsPerPage).map((job): PartnerJob => {
+      const salary = job.minSalary || job.maxSalary
+        ? [sourceMoney(job.minSalary, job.currency), sourceMoney(job.maxSalary, job.currency)]
+            .filter(Boolean)
+            .join(" - ") + (job.salaryPeriod ? ` / ${job.salaryPeriod}` : "")
+        : "";
+      const restrictions = job.locationRestrictions.map((item) => item.name).filter(Boolean);
+      return {
+        id: `himalayas-${job.guid}`,
+        title: plainTextSnippet(job.title),
+        location: restrictions.length ? `${restrictions.join(" / ")} · Remote` : "Worldwide · Remote",
+        snippet: plainTextSnippet(job.excerpt || job.description),
+        salary,
+        source: "Himalayas",
+        provider: "Himalayas",
+        type: [job.employmentType, ...job.seniority.slice(0, 1), ...job.categories.slice(0, 1)].filter(Boolean).join(" · "),
+        link: job.applicationLink,
+        company: job.companyName,
+        updated: typeof job.pubDate === "number" ? new Date(job.pubDate).toISOString() : job.pubDate || "",
+      };
+    });
+    return {
+      configured: true,
+      totalCount: parsed.data.totalCount,
+      jobs,
+      hasNextPage: parsed.data.totalCount > Math.max(1, page) * Math.max(1, resultsPerPage),
+    };
+  } catch {
+    return { configured: true, totalCount: 0, jobs: [], error: "Himalayas opportunities are temporarily unavailable." };
+  }
+}
+
 const museSchema = z.object({
   page_count: z.coerce.number().int().nonnegative().default(0),
   page: z.coerce.number().int().nonnegative().default(0),
