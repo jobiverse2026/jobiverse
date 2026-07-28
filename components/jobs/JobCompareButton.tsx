@@ -23,7 +23,18 @@ export type ComparedJob = {
 export const COMPARE_STORAGE_KEY = "jobiverse-job-comparison-v1";
 
 export function readComparedJobs(): ComparedJob[] {
-  try { return JSON.parse(localStorage.getItem(COMPARE_STORAGE_KEY) || "[]").slice(0, 3); } catch { return []; }
+  try {
+    // Comparisons are intentionally temporary. Also remove selections saved by
+    // the older implementation so they cannot reappear in a future session.
+    localStorage.removeItem(COMPARE_STORAGE_KEY);
+    return JSON.parse(sessionStorage.getItem(COMPARE_STORAGE_KEY) || "[]").slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+export function writeComparedJobs(jobs: ComparedJob[]) {
+  sessionStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(jobs.slice(0, 3)));
 }
 
 export function JobCompareButton({ job }: { job: ComparedJob }) {
@@ -34,7 +45,7 @@ export function JobCompareButton({ job }: { job: ComparedJob }) {
     const current = readComparedJobs();
     const exists = current.some((item) => item.key === job.key);
     const next = exists ? current.filter((item) => item.key !== job.key) : [...current, job].slice(-3);
-    localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(next));
+    writeComparedJobs(next);
     setSelected(!exists);
     window.dispatchEvent(new CustomEvent("jobiverse:compare-change"));
   }

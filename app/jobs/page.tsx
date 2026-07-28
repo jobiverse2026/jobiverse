@@ -306,8 +306,17 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <div className="mt-auto grid grid-cols-2 gap-2 border-t border-zinc-100 pt-5"><a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-3 py-3 text-xs font-semibold text-white">Original listing <ExternalLink size={14} /></a><Link href={trackHref} className="flex items-center justify-center rounded-xl border border-violet-200 px-3 py-3 text-center text-xs font-semibold text-violet-800">Track application</Link></div>
                   </article>})}
                 </div>
-                <div className="mt-8 flex justify-end gap-2 rounded-2xl border border-zinc-200 bg-white p-4">
-                  {page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}
+                <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="grid gap-x-6 gap-y-2 text-[11px] leading-5 text-zinc-500 sm:grid-cols-2 xl:grid-cols-3">
+                    <p><strong className="text-zinc-800">JobiVerse Direct:</strong> Employer-published role managed inside JobiVerse.</p>
+                    <p><strong className="text-zinc-800">Partner Job:</strong> Attributed listing that opens on its original source.</p>
+                    <p><strong className="text-zinc-800">Trust Score:</strong> Listing quality signal, not an employer guarantee.</p>
+                    <p><strong className="text-zinc-800">Salary Estimate:</strong> Indicative market range, not an offered salary.</p>
+                    <p><strong className="text-zinc-800">Track Application:</strong> Save and monitor an external application in JobiVerse.</p>
+                  </div>
+                  <div className="flex shrink-0 justify-end gap-2">
+                    {page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}
+                  </div>
                 </div>
               </>
             ) : (

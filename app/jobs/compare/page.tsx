@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ExternalLink, GitCompareArrows, IndianRupee, ShieldCheck, Trash2 } from "lucide-react";
-import { COMPARE_STORAGE_KEY, readComparedJobs, type ComparedJob } from "@/components/jobs/JobCompareButton";
+import { readComparedJobs, writeComparedJobs, type ComparedJob } from "@/components/jobs/JobCompareButton";
 
 export default function CompareJobsPage() {
   const [jobs, setJobs] = useState<ComparedJob[]>([]);
   useEffect(() => setJobs(readComparedJobs()), []);
-  const remove = (key: string) => { const next = jobs.filter((job) => job.key !== key); localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(next)); setJobs(next); window.dispatchEvent(new CustomEvent("jobiverse:compare-change")); };
+  const remove = (key: string) => { const next = jobs.filter((job) => job.key !== key); writeComparedJobs(next); setJobs(next); window.dispatchEvent(new CustomEvent("jobiverse:compare-change")); };
   return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-7xl">
     <Link href="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16}/>Back to jobs</Link>
     <section className="mt-7 rounded-[2.75rem] bg-[radial-gradient(circle_at_80%_20%,rgba(139,92,246,.35),transparent_24rem),linear-gradient(135deg,#09090b,#27272a)] p-8 text-white sm:p-12"><GitCompareArrows/><p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-violet-300">Decision workspace</p><h1 className="mt-3 text-4xl font-semibold sm:text-6xl">Compare opportunities clearly.</h1><p className="mt-4 max-w-3xl text-zinc-300">Review up to three roles side by side. Trust and salary signals are guidance—not a hiring guarantee or employer offer.</p></section>
