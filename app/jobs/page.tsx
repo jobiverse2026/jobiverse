@@ -31,6 +31,7 @@ import {
   searchRemotiveJobs,
 } from "@/lib/jobs/partner-sources";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Jobs in India | JobiVerse",
@@ -90,7 +91,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const requestedRadius = allowedRadii.has(filters.radius ?? "") ? filters.radius! as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined;
   const radius = filters.radius === "all" ? undefined : requestedRadius ?? (location.toLowerCase() === "india" ? undefined : "40");
 
-  const [partner, directResult] = await Promise.all([
+  const [partner, directResult, viewer] = await Promise.all([
     source === "jobiverse"
       ? Promise.resolve<PartnerJobSearch>({ configured: true, totalCount: 0, jobs: [], nationalFeed: false })
       : discoverPartnerJobs({ keywords: query, location, page, radius, companySearch: searchIn === "company" }),
@@ -103,6 +104,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           .not("status", "in", '("Closed","Cancelled")')
           .order("published_at", { ascending: false })
           .limit(30),
+    getJobsViewer(),
   ]);
 
   const directRows = directResult.data ?? [];
@@ -140,7 +142,10 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
       <div className="mx-auto max-w-[1450px]">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16} />Main site</Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link href={viewer.isCandidate ? "/candidates/dashboard" : "/"} className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16} />{viewer.isCandidate ? "Candidate dashboard" : "Main site"}</Link>
+          {viewer.isCandidate && <Link href="/candidates/applications" className="rounded-full bg-zinc-950 px-5 py-2 text-sm font-semibold text-white">Career Activity</Link>}
+        </div>
 
         <section className="relative mt-7 overflow-hidden rounded-[3rem] bg-[radial-gradient(circle_at_78%_18%,rgba(99,102,241,.34),transparent_28rem),linear-gradient(135deg,#09090b,#18181b_58%,#3f3f46)] px-7 py-12 text-white shadow-[0_35px_100px_-48px_rgba(0,0,0,.85)] sm:px-12 sm:py-16">
           <div aria-hidden="true" className="absolute -right-24 -top-32 h-[440px] w-[620px] rounded-[50%] border border-white/10" />
@@ -205,7 +210,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                   <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.location || company?.location || "India"}</p>
                   <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Experience" value={job.experience || "Open"} /><Essential label="Work mode" value={job.work_mode || "Flexible"} /></div>
                   <p className="mt-5 line-clamp-2 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{job.primary_skills || "Open the role to review its complete requirements."}</p>
-                  <Link href={`/login/candidate?next=${encodeURIComponent(`/candidates/jobs/${job.id}`)}`} className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">Sign in to view & apply <ArrowRight size={16} /></Link>
+                  <Link href={viewer.isCandidate ? `/candidates/jobs/${job.id}` : `/login/candidate?next=${encodeURIComponent(`/candidates/jobs/${job.id}`)}`} className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">{viewer.isCandidate ? "View & apply" : "Sign in to view & apply"} <ArrowRight size={16} /></Link>
                 </article>;
               })}
             </div>
@@ -255,6 +260,20 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       </div>
     </main>
   );
+}
+
+async function getJobsViewer() {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { isCandidate: false };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role,is_active")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return { isCandidate: profile?.role === "candidate" && profile.is_active !== false };
 }
 
 function SectionHeading({ eyebrow, title, count }: { eyebrow: string; title: string; count: number }) {
