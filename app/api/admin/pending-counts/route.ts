@@ -27,6 +27,7 @@ export async function GET() {
       credentialReviews,
       support,
       emailFailures,
+      feedback,
     ] = await Promise.all([
       supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
@@ -49,6 +50,7 @@ export async function GET() {
       adminSupabase.from("career_passport_items").select("id", { count: "exact", head: true }).eq("item_type", "credential").in("verification_status", ["self_declared", "pending"]).not("evidence_url", "is", null),
       supabase.from("support_conversations").select("unread_for_admin"),
       adminSupabase.from("transactional_email_outbox").select("id", { count: "exact", head: true }).eq("status", "failed"),
+      adminSupabase.from("user_feedback").select("id", { count: "exact", head: true }).in("status", ["new", "reviewing", "planned"]),
     ]);
     return Response.json({
       "/admin": unreadNotifications.count ?? 0,
@@ -71,6 +73,8 @@ export async function GET() {
       "/admin/privacy-requests": privacyRequests.count ?? 0,
       "/admin/support": (support.data ?? []).reduce((sum, item) => sum + item.unread_for_admin, 0),
       "/admin/email-delivery": emailFailures.count ?? 0,
+      "/admin/feedback": feedback.count ?? 0,
+      "/admin/business-health": (feedback.count ?? 0) + (emailFailures.count ?? 0),
       "/admin/settings": getLaunchReadiness().missing,
     });
   } catch {

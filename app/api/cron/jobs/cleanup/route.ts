@@ -1,4 +1,5 @@
 import { adminSupabase } from "@/lib/supabase/admin";
+import { runLifecycleAutomations } from "@/lib/lifecycle/run";
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -22,5 +23,6 @@ export async function GET(request: Request) {
   ]);
 
   if (roleError || promotionError) return Response.json({ error: roleError?.message ?? promotionError?.message }, { status: 500 });
-  return Response.json({ ok: true, expiredRoles: expiredRoles?.length ?? 0, expiredPromotions: expiredPromotions?.length ?? 0, ranAt: now });
+  const lifecycle = await runLifecycleAutomations();
+  return Response.json({ ok: true, expiredRoles: expiredRoles?.length ?? 0, expiredPromotions: expiredPromotions?.length ?? 0, lifecycle, ranAt: now });
 }

@@ -151,7 +151,7 @@ export default function EmployersPage() {
 
       />
 
-      <PageSectionIndex items={[{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Portal preview",href:"#employer-portal-preview"},{label:"Talent Search",href:"#talent-search"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
+      <PageSectionIndex items={[{label:"Interactive demo",href:"/employers/demo"},{label:"Recruitment services",href:"#employer-recruitment-services"},{label:"Portal preview",href:"#employer-portal-preview"},{label:"Talent Search",href:"#talent-search"},{label:"Hiring advantages",href:"#hiring-advantages"},{label:"Hiring process",href:"#recruitment-solutions"},{label:"Submit requirement",href:"#submit-requirement"},{label:"Hiring consultation",href:"/consultations"},{label:"Employer plans",href:"/plans"}]}/>
 
       <section id="employer-recruitment-services" className="bg-[#f6f6f3] py-20">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -178,6 +178,9 @@ export default function EmployersPage() {
                   Create your company workspace, post public jobs free and manage direct candidates from application to joining. Advanced Talent Search, team seats and premium hiring services remain optional paid upgrades.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
+                  <Link href="/employers/demo" className="inline-flex items-center gap-2 rounded-2xl bg-violet-600 px-6 py-4 font-bold text-white">
+                    Try interactive demo <Sparkles size={17} />
+                  </Link>
                   <Link href="/signup?role=employer" className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-zinc-950">
                     Post a job free <Sparkles size={17} />
                   </Link>

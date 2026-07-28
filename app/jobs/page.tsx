@@ -43,6 +43,7 @@ import { JobCompareButton } from "@/components/jobs/JobCompareButton";
 import { JobCompareTray } from "@/components/jobs/JobCompareTray";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { JOB_CITY_LANDINGS, JOB_ROLE_LANDINGS } from "@/lib/jobs/seo-landings";
 
 export const metadata: Metadata = {
   title: "Jobs in India | JobiVerse",
@@ -247,6 +248,11 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             </div>
           </div>
         </form>
+
+        <section className="mt-7 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-[2rem] border border-zinc-200 bg-white p-6"><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-700">Jobs by city</p><h2 className="mt-2 text-2xl font-bold">Explore local opportunity hubs.</h2><div className="mt-4 flex flex-wrap gap-2">{JOB_CITY_LANDINGS.map(item=><Link key={item.slug} href={`/jobs/in/${item.slug}`} className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold hover:bg-zinc-950 hover:text-white">{item.name}</Link>)}</div></div>
+          <div className="rounded-[2rem] border border-zinc-200 bg-white p-6"><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-700">Jobs by career</p><h2 className="mt-2 text-2xl font-bold">Begin with the work you want.</h2><div className="mt-4 flex flex-wrap gap-2">{JOB_ROLE_LANDINGS.map(item=><Link key={item.slug} href={`/jobs/role/${item.slug}`} className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold hover:bg-zinc-950 hover:text-white">{item.name}</Link>)}</div></div>
+        </section>
 
         <section className="mt-7">
           <div className="flex flex-wrap items-end justify-between gap-3">

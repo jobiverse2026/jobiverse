@@ -49,6 +49,10 @@ const companyLinks = [
     name: "Contact",
     href: "/contact",
   },
+  {
+    name: "Feedback Centre",
+    href: "/feedback",
+  },
 ];
 
 

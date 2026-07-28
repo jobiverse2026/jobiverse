@@ -11,6 +11,7 @@ import {
   Users,
   Siren,
   WalletCards,
+  Activity,
 } from "lucide-react";
 
 import { getDashboardData } from "@/actions/admin";
@@ -86,6 +87,7 @@ export default async function AdminDashboardPage() {
     },
   ];
   const launchControl = [
+    { title: "Business health", value: stats.activeOrders + stats.openRequirements, note: "Growth, retention and attention signals", href: "/admin/business-health", icon: Activity },
     { title: "JobiVerse hiring queue", value: stats.jobiverseRequirements, note: "Assigned requirements to work", href: "/admin/requirements", icon: BriefcaseBusiness },
     { title: "Candidate intelligence", value: stats.candidates, note: "Profiles tracked inside hiring ops", href: "/admin/candidates", icon: Users },
     { title: "Free hiring", value: stats.externalApplicants, note: "Free jobs, direct applicants and 3% success fees", href: "/admin/free-hiring", icon: Sparkles },

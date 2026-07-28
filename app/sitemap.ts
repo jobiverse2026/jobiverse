@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { marketplaceServices } from "@/lib/marketplace/service-catalog";
 import { JOB_SECTORS } from "@/lib/jobs/sectors";
+import { JOB_CITY_LANDINGS, JOB_ROLE_LANDINGS } from "@/lib/jobs/seo-landings";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export const revalidate = 3600;
@@ -13,6 +14,8 @@ export default async function sitemap():Promise<MetadataRoute.Sitemap>{
   return[
     ...pages.map(([path,priority,changeFrequency])=>({url:`${base}${path}`,lastModified:now,changeFrequency,priority})),
     ...JOB_SECTORS.map(sector=>({url:`${base}/jobs/sector/${sector.value}`,lastModified:now,changeFrequency:"daily" as const,priority:.8})),
+    ...JOB_CITY_LANDINGS.map(item=>({url:`${base}/jobs/in/${item.slug}`,lastModified:now,changeFrequency:"daily" as const,priority:.8})),
+    ...JOB_ROLE_LANDINGS.map(item=>({url:`${base}/jobs/role/${item.slug}`,lastModified:now,changeFrequency:"daily" as const,priority:.8})),
     ...(directJobs??[]).map(job=>({url:`${base}/jobs/${job.id}`,lastModified:new Date(job.updated_at||job.published_at||now),changeFrequency:"daily" as const,priority:.9})),
     ...marketplaceServices.map(service=>({url:`${base}/marketplace/services/${service.slug}`,lastModified:now,changeFrequency:"weekly" as const,priority:.7}))
   ];

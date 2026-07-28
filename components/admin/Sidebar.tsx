@@ -32,6 +32,8 @@ import {
   Megaphone,
   RadioTower,
   ClipboardCheck,
+  Activity,
+  MessageSquareText,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -67,6 +69,16 @@ const menuItems = [
     title: "Company Reports",
     href: "/admin/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Business Health",
+    href: "/admin/business-health",
+    icon: Activity,
+  },
+  {
+    title: "User Feedback",
+    href: "/admin/feedback",
+    icon: MessageSquareText,
   },
   {
     title: "Protection Audit",
