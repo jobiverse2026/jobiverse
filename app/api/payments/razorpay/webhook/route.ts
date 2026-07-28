@@ -71,6 +71,27 @@ export async function POST(request: Request) {
         }
       }
 
+      if (attempt.target_type === "job_promotion") {
+        const until = new Date(Date.now() + 30 * 86400000).toISOString();
+        const { data: role } = await adminSupabase
+          .from("requirements")
+          .update({ is_promoted: true, promoted_until: until, promotion_tier: "spotlight_30", promotion_payment_attempt_id: attempt.id })
+          .eq("id", attempt.target_id)
+          .select("id,job_title")
+          .maybeSingle();
+
+        if (role) {
+          await adminSupabase.from("notifications").insert({
+            user_id: attempt.user_id,
+            type: "job_promoted",
+            title: "Spotlight role activated",
+            message: `Your role "${role.job_title}" will receive priority visibility for 30 days.`,
+            href: `/employers/requirements/${role.id}`,
+            reference_id: role.id,
+          });
+        }
+      }
+
       await notifyAdminsAboutCapturedPayment({
         attemptId: attempt.id,
         userId: attempt.user_id,
@@ -109,4 +130,3 @@ export async function POST(request: Request) {
 
   return Response.json({ ok: true });
 }
-

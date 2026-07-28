@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, CheckCircle2, ExternalLink, Radar } from "lucide-react";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { trackPartnerApplication } from "./actions";
+import { CareerServiceNudge } from "@/components/candidate/CareerServiceNudge";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -30,6 +31,7 @@ export default async function TrackPartnerJobPage({ searchParams }: { searchPara
       <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-600">{payload.provider}</p><h2 className="mt-2 text-3xl font-bold">{payload.title}</h2><p className="mt-2 text-zinc-500">{payload.company || "Company not disclosed"} · {payload.location || "Location not specified"}</p></div><a href={payload.url} target="_blank" rel="nofollow sponsored noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold">Open original <ExternalLink size={15}/></a></div>
       <div className="mt-7 grid gap-5 sm:grid-cols-2"><label className="text-sm font-semibold">Your current stage<select name="status" defaultValue="Applied" className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-white px-4"><option>Saved</option><option>Applied</option><option>Response awaited</option></select></label><label className="text-sm font-semibold">Private note<input name="notes" maxLength={1500} placeholder="Follow-up date, contact or reminder" className="mt-2 h-12 w-full rounded-xl border border-zinc-200 px-4"/></label></div>
       <div className="mt-7 rounded-2xl bg-emerald-50 p-4 text-sm leading-6 text-emerald-800"><CheckCircle2 className="mr-2 inline" size={17}/>Only you can see and update external application records.</div>
+      <CareerServiceNudge type="apply" compact />
       <button className="mt-6 w-full cursor-pointer rounded-xl bg-zinc-950 px-6 py-4 font-semibold text-white">Add to Career Activity</button>
     </form>
   </div></main>;

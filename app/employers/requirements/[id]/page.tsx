@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Clock3,
   GraduationCap,
+  Gem,
   MapPin,
   Users,
   WalletCards,
@@ -15,6 +16,7 @@ import {
 import { getAssignableRequirementRecruiters, getRequirement, getRequirementRecruiterAssignments } from "@/actions/requirements";
 import RequirementControls from "@/components/employer/requirements/RequirementControls";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { RazorpayPaymentButton } from "@/components/payments/razorpay-payment-button";
 
 export default async function EmployerRequirementDetailPage({
   params,
@@ -74,6 +76,8 @@ export default async function EmployerRequirementDetailPage({
     { label: "Education", value: requirement.education, icon: GraduationCap },
     { label: "Work mode", value: requirement.work_mode, icon: Building2 },
   ];
+  const promotionActive = isPromotionActive(requirement);
+  const promotionPrice = Number(process.env.JOB_PROMOTION_PRICE_INR || "499");
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -133,7 +137,7 @@ export default async function EmployerRequirementDetailPage({
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
           <RequirementControls requirement={requirement} recruiters={recruiters} assignedRecruiterIds={assignedRecruiterIds} />
-          <section className="rounded-[2.25rem] border border-amber-200 bg-amber-50 p-6">
+          <div className="space-y-5"><section className="rounded-[2.25rem] border border-amber-200 bg-amber-50 p-6">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-amber-700">Hiring channel</p>
             <h2 className="mt-2 text-xl font-semibold text-amber-950">
               {requirement.hiring_team_requested ? "JobiVerse hiring support is requested" : "Self-managed requirement"}
@@ -144,6 +148,13 @@ export default async function EmployerRequirementDetailPage({
                 : "You can publish this role to the candidate marketplace anytime or manage it privately with your team."}
             </p>
           </section>
+          <section className="overflow-hidden rounded-[2.25rem] border border-violet-200 bg-[radial-gradient(circle_at_90%_10%,rgba(139,92,246,.18),transparent_12rem),white] p-6">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-700 text-white"><Gem size={19}/></span>
+            <p className="mt-5 text-xs font-bold uppercase tracking-[.18em] text-violet-700">Optional promotion</p>
+            <h2 className="mt-2 text-xl font-semibold text-zinc-950">{promotionActive ? "Spotlight visibility is active" : "Put this role in the Spotlight"}</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-600">Publishing a job is free. Spotlight is an optional 30-day promotion that gives the role priority placement and a premium badge in JobiVerse Jobs.</p>
+            {promotionActive ? <p className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Active until {new Date(requirement.promoted_until).toLocaleDateString("en-IN", { dateStyle: "medium" })}</p> : requirement.is_public ? <div className="mt-5"><p className="mb-3 text-sm font-bold text-zinc-950">₹{promotionPrice.toLocaleString("en-IN")} / 30 days</p><RazorpayPaymentButton targetType="job_promotion" targetId={requirement.id} label="Promote this role"/></div> : <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Publish the role to JobiVerse Jobs first to unlock Spotlight.</p>}
+          </section></div>
         </div>
 
         <section className="mt-8 rounded-[2.25rem] border border-white bg-white/90 p-7 shadow-[0_30px_80px_-50px_rgba(0,0,0,.45)] backdrop-blur-xl sm:p-10">
@@ -206,4 +217,8 @@ function SourceBadge({ source }: { source: string }) {
       ? "bg-violet-50 text-violet-700"
       : "bg-blue-50 text-blue-700";
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone}`}>{source}</span>;
+}
+
+function isPromotionActive(requirement: { is_promoted?: boolean | null; promoted_until?: string | null }) {
+  return Boolean(requirement.is_promoted && requirement.promoted_until && new Date(requirement.promoted_until).getTime() > Date.now());
 }

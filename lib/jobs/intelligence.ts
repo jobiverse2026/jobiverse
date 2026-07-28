@@ -181,6 +181,20 @@ export function isStaleListing(value?: string | null, maxDays = 60) {
   return Number.isFinite(time) && time < Date.now() - maxDays * 86_400_000;
 }
 
+export function isExpiredListing(value?: string | null, maxDays = 45) {
+  if (!value) return false;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && time < Date.now() - maxDays * 86_400_000;
+}
+
 export function listingKey(title: string, company: string, location: string) {
-  return `${title}|${company}|${location}`.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const normalize = (value: string) => value
+    .toLowerCase()
+    .replace(/\b(?:pvt|private|limited|ltd|inc|llp|corporation|corp|company|co)\b/g, " ")
+    .replace(/\b(?:senior|sr|junior|jr)\b/g, " ")
+    .replace(/[^a-z0-9+#]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const city = normalize(location).split(" ").slice(0, 3).join(" ");
+  return `${normalize(title)}|${normalize(company)}|${city}`;
 }

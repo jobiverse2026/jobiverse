@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Globe2,
   Flame,
+  Gem,
   Layers3,
   MapPin,
   Search,
@@ -36,7 +37,8 @@ import {
   searchRemotiveJobs,
 } from "@/lib/jobs/partner-sources";
 import { getJobSector, JOB_SECTORS, matchesJobSector, sectorSearchKeywords } from "@/lib/jobs/sectors";
-import { calculateListingMatch, calculateOpportunityTrust, estimateSalaryRange, freshnessLabel, isStaleListing, listingKey } from "@/lib/jobs/intelligence";
+import { getJobCollection, JOB_COLLECTIONS, matchesJobCollection } from "@/lib/jobs/collections";
+import { calculateListingMatch, calculateOpportunityTrust, estimateSalaryRange, freshnessLabel, isExpiredListing, listingKey } from "@/lib/jobs/intelligence";
 import { JobCompareButton } from "@/components/jobs/JobCompareButton";
 import { JobCompareTray } from "@/components/jobs/JobCompareTray";
 import { adminSupabase } from "@/lib/supabase/admin";
@@ -58,6 +60,7 @@ type SearchParams = Promise<{
   workMode?: string;
   freshness?: string;
   sector?: string;
+  collection?: string;
 }>;
 
 const popularCities = ["Mumbai", "Delhi NCR", "Bengaluru", "Hyderabad", "Pune", "Chennai", "Kolkata", "Ahmedabad", "Noida", "Gurugram"];
@@ -99,6 +102,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const workMode = allowedWorkModes.has(filters.workMode ?? "") ? filters.workMode! : "";
   const freshness = allowedFreshness.has(filters.freshness ?? "") ? filters.freshness! : "";
   const sector = getJobSector(filters.sector)?.value ?? "";
+  const collection = getJobCollection(filters.collection)?.value ?? "";
   const partnerKeywords = searchIn === "company" ? query : sectorSearchKeywords(query, sector);
   const requestedRadius = allowedRadii.has(filters.radius ?? "") ? filters.radius! as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined;
   const radius = filters.radius === "all" ? undefined : requestedRadius ?? (location.toLowerCase() === "india" ? undefined : "40");
@@ -111,7 +115,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       ? Promise.resolve({ data: [], error: null })
       : adminSupabase
           .from("requirements")
-          .select("id,job_title,department,employment_type,work_mode,experience,vacancies,location,primary_skills,job_description,budget_ctc,published_at,company_id,employer_id,companies(company_name,is_verified,industry,location)")
+          .select("id,job_title,department,employment_type,work_mode,experience,vacancies,location,primary_skills,job_description,budget_ctc,published_at,expires_at,is_promoted,promoted_until,company_id,employer_id,companies(company_name,is_verified,industry,location)")
           .eq("is_public", true)
           .not("status", "in", '("Closed","Cancelled")')
           .order("published_at", { ascending: false })
@@ -133,10 +137,12 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
     const jobLocation = (job.location || company?.location || "India").toLowerCase();
     return (!query || searchable.includes(query.toLowerCase()))
       && matchesJobSector(`${job.job_title} ${job.department ?? ""} ${job.primary_skills ?? ""} ${company?.industry ?? ""}`, sector)
+      && matchesJobCollection({ title: job.job_title, description: `${job.job_description ?? ""} ${job.primary_skills ?? ""}`, type: job.employment_type, experience: job.experience, workMode: job.work_mode, updated: job.published_at }, collection)
       && (location.toLowerCase() === "india" || jobLocation.includes(location.toLowerCase()))
       && (!jobType || matchesType(job.employment_type ?? "", jobType))
       && (!workMode || matchesWorkMode(job.work_mode ?? "", workMode))
-      && (!freshness || isFreshEnough(job.published_at, Number(freshness)));
+      && (!freshness || isFreshEnough(job.published_at, Number(freshness)))
+      && !isPastDate(job.expires_at);
   });
 
   const directKeys = new Set(directJobsFiltered.map((job) => {
@@ -147,21 +153,22 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
     const searchable = searchIn === "company" ? job.company : `${job.title} ${job.snippet}`;
     return (!query || searchable.toLowerCase().includes(query.toLowerCase()))
       && matchesJobSector(`${job.title} ${job.type} ${job.snippet} ${job.company}`, sector)
+      && matchesJobCollection({ title: job.title, description: job.snippet, type: job.type, workMode: job.type, updated: job.updated }, collection)
       && (!jobType || matchesType(job.type, jobType))
       && (!workMode || matchesWorkMode(`${job.type} ${job.snippet}`, workMode))
       && (!freshness || isFreshEnough(job.updated, Number(freshness)))
-      && !isStaleListing(job.updated)
+      && !isExpiredListing(job.updated)
       && !directKeys.has(listingKey(job.title, job.company, job.location));
   });
   const directJobs = directJobsFiltered.map((job) => ({ job, match: calculateListingMatch(viewer.profile, {
     title: job.job_title, skills: job.primary_skills, location: job.location, workMode: job.work_mode,
     employmentType: job.employment_type, experience: job.experience,
-  })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
+  })})).sort((a,b) => Number(isPromotionActive(b.job)) - Number(isPromotionActive(a.job)) || (b.match?.score ?? 0) - (a.match?.score ?? 0));
   const partnerJobs = partnerJobsFiltered.map((job) => ({ job, match: calculateListingMatch(viewer.profile, {
     title: job.title, skills: job.snippet, location: job.location, workMode: job.type,
     employmentType: job.type, description: job.snippet,
   })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
-  const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
+  const hasAdvancedFilters = Boolean(jobType || workMode || freshness || collection);
   const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : Math.max(partnerJobs.length, partner.totalCount);
   const partnerHasNextPage = !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
   const visibleCount = directJobs.length + partnerVisibleCount;
@@ -241,6 +248,16 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           </div>
         </form>
 
+        <section className="mt-7">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-600">Curated collections</p><h2 className="mt-2 text-2xl font-bold">Start with the way you want to work.</h2></div>
+            {collection && <Link href={collectionHref(filters, "")} className="text-sm font-semibold text-violet-700">View every opportunity</Link>}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {JOB_COLLECTIONS.map((item) => <Link prefetch={false} key={item.value} href={collectionHref(filters, item.value)} className={`rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-md ${collection === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-white text-zinc-950"}`}><p className="text-sm font-bold">{item.label}</p><p className={`mt-2 text-xs leading-5 ${collection === item.value ? "text-violet-100" : "text-zinc-500"}`}>{item.description}</p></Link>)}
+          </div>
+        </section>
+
         {viewer.isCandidate && (
           <SaveSearchControl
             filters={{ query, location, sector, source, jobType, workMode, freshness, searchIn, radius: filters.radius ?? "" }}
@@ -267,7 +284,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                 const trust = calculateOpportunityTrust({ title: job.job_title, company: company?.company_name, location: job.location || company?.location, description: job.job_description, skills: job.primary_skills, salary: job.budget_ctc, workMode: job.work_mode, employmentType: job.employment_type, experience: job.experience, postedAt: job.published_at, direct: true, verifiedCompany: company?.is_verified, applyUrl: `https://www.jobiverse.in/jobs/${job.id}` });
                 const salary = estimateSalaryRange({ title: job.job_title, location: job.location || company?.location, description: job.job_description, skills: job.primary_skills, salary: job.budget_ctc, experience: job.experience, direct: true });
                 return <article key={job.id} className="flex flex-col rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span><FreshnessBadge value={job.published_at}/></div></div>
+                  <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><div className="flex flex-col items-end gap-2">{isPromotionActive(job) && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold uppercase text-amber-800"><Gem size={11}/>Spotlight role</span>}<span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span><FreshnessBadge value={job.published_at}/></div></div>
                   <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{company?.company_name || "JobiVerse hiring partner"}{company?.is_verified && <BadgeCheck size={15} className="text-emerald-600" />}</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.job_title}</h2>
                   {match && <div className="mt-3"><JobMatchBadge score={match.score} recommended={match.recommended} compact/></div>}
@@ -302,7 +319,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{displayLocation}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label={job.salary ? "Listed salary" : "JobiVerse estimate"} value={job.salary || salaryEstimateLabel(salary)} />{job.salary && <Essential label="JobiVerse estimate" value={salaryEstimateLabel(salary)} />}</div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
-                    <p className="mt-4 text-xs text-zinc-400">Source: {job.provider || job.source || "Partner feed"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
+                    <p className="mt-4 text-xs text-zinc-400">Source: {job.provider || job.source || "Partner feed"}{job.alternateSources?.length ? ` + ${job.alternateSources.length} duplicate source${job.alternateSources.length === 1 ? "" : "s"} merged` : ""}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
                     <div className="mt-auto grid grid-cols-2 gap-2 border-t border-zinc-100 pt-5"><a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-3 py-3 text-xs font-semibold text-white">Original listing <ExternalLink size={14} /></a><Link href={trackHref} className="flex items-center justify-center rounded-xl border border-violet-200 px-3 py-3 text-center text-xs font-semibold text-violet-800">Track application</Link></div>
                   </article>})}
                 </div>
@@ -558,19 +575,28 @@ async function withPartnerDeadline(request: Promise<PartnerJobSearch>) {
 
 function interleavePartnerJobs(results: PartnerJobSearch[], limit: number) {
   const queues = results.map((result) => [...result.jobs]);
-  const seen = new Set<string>();
+  const indexes = new Map<string, number>();
   const jobs: PartnerJob[] = [];
 
   while (jobs.length < limit && queues.some((queue) => queue.length > 0)) {
     for (const queue of queues) {
       const job = queue.shift();
       if (!job) continue;
-      const key = `${job.title}|${job.company}|${job.location}`
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
+      const key = listingKey(job.title, job.company, job.location);
+      if (!key) continue;
+      const existingIndex = indexes.get(key);
+      if (existingIndex !== undefined) {
+        const existing = jobs[existingIndex];
+        const source = job.provider || job.source || "Partner";
+        if (source !== (existing.provider || existing.source) && !existing.alternateSources?.some((item) => item.provider === source)) {
+          existing.alternateSources = [...(existing.alternateSources ?? []), { provider: source, link: job.link }];
+        }
+        if ((job.snippet?.length ?? 0) > (existing.snippet?.length ?? 0) && newerThan(job.updated, existing.updated)) {
+          jobs[existingIndex] = { ...job, alternateSources: [{ provider: existing.provider || existing.source || "Partner", link: existing.link }, ...(existing.alternateSources ?? [])] };
+        }
+        continue;
+      }
+      indexes.set(key, jobs.length);
       jobs.push(job);
       if (jobs.length >= limit) break;
     }
@@ -579,9 +605,15 @@ function interleavePartnerJobs(results: PartnerJobSearch[], limit: number) {
   return jobs;
 }
 
+function newerThan(left?: string, right?: string) {
+  const leftTime = new Date(left ?? "").getTime();
+  const rightTime = new Date(right ?? "").getTime();
+  return !Number.isFinite(rightTime) || (Number.isFinite(leftTime) && leftTime >= rightTime);
+}
+
 function pageHref(filters: Awaited<SearchParams>, page: number) {
   const params = new URLSearchParams();
-  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness", "sector"] as const) {
+  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness", "sector", "collection"] as const) {
     if (filters[key]) params.set(key, filters[key]!);
   }
   params.set("page", String(page));
@@ -590,7 +622,7 @@ function pageHref(filters: Awaited<SearchParams>, page: number) {
 
 function locationHref(filters: Awaited<SearchParams>, city: string) {
   const params = new URLSearchParams();
-  for (const key of ["q", "source", "searchIn", "jobType", "workMode", "freshness", "sector"] as const) {
+  for (const key of ["q", "source", "searchIn", "jobType", "workMode", "freshness", "sector", "collection"] as const) {
     if (filters[key]) params.set(key, filters[key]!);
   }
   params.set("location", city);
@@ -600,11 +632,28 @@ function locationHref(filters: Awaited<SearchParams>, city: string) {
 
 function sectorHref(filters: Awaited<SearchParams>, sector: string) {
   const params = new URLSearchParams();
-  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness"] as const) {
+  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness", "collection"] as const) {
     if (filters[key]) params.set(key, filters[key]!);
   }
   params.set("sector", sector);
   return `/jobs?${params.toString()}`;
+}
+
+function collectionHref(filters: Awaited<SearchParams>, collection: string) {
+  const params = new URLSearchParams();
+  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness", "sector"] as const) {
+    if (filters[key]) params.set(key, filters[key]!);
+  }
+  if (collection) params.set("collection", collection);
+  return `/jobs?${params.toString()}`;
+}
+
+function isPromotionActive(job: { is_promoted?: boolean | null; promoted_until?: string | null }) {
+  return Boolean(job.is_promoted && job.promoted_until && new Date(job.promoted_until).getTime() > Date.now());
+}
+
+function isPastDate(value?: string | null) {
+  return Boolean(value && new Date(value).getTime() <= Date.now());
 }
 
 function normalizeFilterValue(value: string) {
