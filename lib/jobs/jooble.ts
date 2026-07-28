@@ -71,7 +71,7 @@ export async function searchJoobleJobs({
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
         next: { revalidate: 1800, tags: ["partner-jobs", "jooble-jobs"] },
-        signal: AbortSignal.timeout(12_000),
+        signal: AbortSignal.timeout(6_000),
       });
 
       if (!response.ok) {

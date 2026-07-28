@@ -202,7 +202,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           <div className="mt-4 border-t border-zinc-100 px-1 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Explore sectors</span>
-              {JOB_SECTORS.map((item) => <Link key={item.value} href={sectorHref(filters, item.value)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${sector === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800"}`}>{item.label}</Link>)}
+              {JOB_SECTORS.map((item) => <Link prefetch={false} key={item.value} href={sectorHref(filters, item.value)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${sector === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800"}`}>{item.label}</Link>)}
             </div>
           </div>
         </form>

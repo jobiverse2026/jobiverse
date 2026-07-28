@@ -199,7 +199,7 @@ export function UniverseHome() {
               <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Choose a sector</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {JOB_SECTORS.map((sector) => (
-                  <Link key={sector.value} href={`/jobs?sector=${sector.value}`} className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[.06] px-4 py-3 text-sm font-semibold text-zinc-200 backdrop-blur transition hover:border-white/25 hover:bg-white/15 hover:text-white">
+                  <Link prefetch={false} key={sector.value} href={`/jobs?sector=${sector.value}`} className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[.06] px-4 py-3 text-sm font-semibold text-zinc-200 backdrop-blur transition hover:border-white/25 hover:bg-white/15 hover:text-white">
                     {sector.label}<ArrowRight size={14} className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-white" />
                   </Link>
                 ))}

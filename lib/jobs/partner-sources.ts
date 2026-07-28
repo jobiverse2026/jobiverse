@@ -85,7 +85,7 @@ export async function searchAdzunaJobs({
     const response = await fetch(`https://api.adzuna.com/v1/api/jobs/in/search/${Math.max(1, page)}?${params}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 1800, tags: ["partner-jobs", "adzuna-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) {
       const error = response.status === 401 || response.status === 403
@@ -156,7 +156,7 @@ export async function searchRemotiveJobs({
     const response = await fetch(`https://remotive.com/api/remote-jobs?${params}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 21_600, tags: ["partner-jobs", "remotive-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Remotive opportunities are temporarily unavailable." };
     const parsed = remotiveSchema.safeParse(await response.json());
@@ -218,7 +218,7 @@ export async function searchArbeitnowJobs({
     const response = await fetch(`https://www.arbeitnow.com/api/job-board-api?page=${Math.max(1, page)}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 3600, tags: ["partner-jobs", "arbeitnow-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Arbeitnow opportunities are temporarily unavailable." };
     const parsed = arbeitnowSchema.safeParse(await response.json());
@@ -283,7 +283,7 @@ export async function searchJobicyJobs({
     const response = await fetch(`https://jobicy.com/api/v2/remote-jobs?${params}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 3600, tags: ["partner-jobs", "jobicy-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Jobicy opportunities are temporarily unavailable." };
     const parsed = jobicySchema.safeParse(await response.json());
@@ -361,7 +361,7 @@ export async function searchHimalayasJobs({
     const response = await fetch(`https://himalayas.app/jobs/api/search?${params}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 86_400, tags: ["partner-jobs", "himalayas-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Himalayas opportunities are temporarily unavailable." };
     const parsed = himalayasSchema.safeParse(await response.json());
@@ -432,7 +432,7 @@ export async function searchMuseJobs({
     const response = await fetch(`https://www.themuse.com/api/public/jobs?${params}`, {
       headers: { accept: "application/json" },
       next: { revalidate: 3600, tags: ["partner-jobs", "muse-jobs"] },
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(6_000),
     });
     if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "The Muse opportunities are temporarily unavailable." };
     const parsed = museSchema.safeParse(await response.json());
