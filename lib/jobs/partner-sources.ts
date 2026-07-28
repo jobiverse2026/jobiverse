@@ -87,7 +87,14 @@ export async function searchAdzunaJobs({
       next: { revalidate: 1800, tags: ["partner-jobs", "adzuna-jobs"] },
       signal: AbortSignal.timeout(12_000),
     });
-    if (!response.ok) return { configured: true, totalCount: 0, jobs: [], error: "Adzuna opportunities are temporarily unavailable." };
+    if (!response.ok) {
+      const error = response.status === 401 || response.status === 403
+        ? "Adzuna rejected the Application ID or Application Key."
+        : response.status === 429
+          ? "Adzuna API quota has been reached."
+          : `Adzuna API is temporarily unavailable (HTTP ${response.status}).`;
+      return { configured: true, totalCount: 0, jobs: [], error };
+    }
     const parsed = adzunaSchema.safeParse(await response.json());
     if (!parsed.success) return { configured: true, totalCount: 0, jobs: [], error: "Adzuna returned an invalid response." };
 

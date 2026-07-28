@@ -30,6 +30,7 @@ export type PartnerProviderSummary = {
   configured: boolean;
   totalCount: number;
   href: string;
+  error?: string;
 };
 
 export type PartnerJobSearch = {

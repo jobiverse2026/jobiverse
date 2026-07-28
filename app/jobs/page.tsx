@@ -242,7 +242,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                 <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Connected sources</span>
-                    {(partner.providers ?? []).map((provider) => <a key={provider.name} href={provider.href} target="_blank" rel="nofollow sponsored noreferrer" className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-800">{provider.name}<span className="text-violet-500">{provider.totalCount.toLocaleString("en-IN")}</span><ExternalLink size={11} /></a>)}
+                    {(partner.providers ?? []).map((provider) => <a key={provider.name} href={provider.href} target="_blank" rel="nofollow sponsored noreferrer" title={provider.error || `${provider.totalCount.toLocaleString("en-IN")} opportunities reported`} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${provider.error ? "border-amber-200 bg-amber-50 text-amber-800" : "border-violet-100 bg-violet-50 text-violet-800"}`}>{provider.name}<span className={provider.error ? "text-amber-600" : "text-violet-500"}>{provider.error ? "Needs attention" : provider.totalCount.toLocaleString("en-IN")}</span><ExternalLink size={11} /></a>)}
                   </div>
                   <div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div>
                 </div>
@@ -394,7 +394,7 @@ async function discoverJoobleJobs({
 
 const providerLinks: Record<NonNullable<PartnerJob["provider"]>, string> = {
   Jooble: "https://jooble.org",
-  Adzuna: "https://www.adzuna.co.in",
+  Adzuna: "https://www.adzuna.in",
   Remotive: "https://remotive.com",
   Arbeitnow: "https://www.arbeitnow.com",
   Jobicy: "https://jobicy.com",
@@ -433,6 +433,7 @@ async function discoverPartnerJobs({
       configured: results[index].configured,
       totalCount: results[index].totalCount,
       href: providerLinks[name],
+      error: results[index].error,
     }))
     .filter((provider) => provider.configured);
   const allConfiguredSourcesFailed = configuredResults.length > 0
