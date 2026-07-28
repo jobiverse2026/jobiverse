@@ -37,24 +37,39 @@ export type OpportunitySignals = {
 };
 
 export function calculateOpportunityTrust(job: OpportunitySignals) {
-  let score = job.direct ? 58 : 38;
+  let score = job.direct ? 54 : 32;
   const reasons: string[] = [];
   const warnings: string[] = [];
 
   if (job.direct) reasons.push("Published inside the JobiVerse employer workflow");
-  else reasons.push(`Attributed to ${job.provider || "a connected partner source"}`);
+  else if (job.provider) { score += 5; reasons.push(`Attributed to ${job.provider}`); }
+  else warnings.push("Source attribution is limited");
   if (job.verifiedCompany) { score += 14; reasons.push("Verified company profile"); }
   if (job.company && !/not disclosed|confidential|unknown/i.test(job.company)) { score += 8; reasons.push("Company name disclosed"); }
   else warnings.push("Company identity is limited");
-  if ((job.description?.trim().length ?? 0) >= 180) { score += 7; reasons.push("Detailed role information available"); }
+  const descriptionLength = job.description?.trim().length ?? 0;
+  if (descriptionLength >= 500) { score += 9; reasons.push("Comprehensive role information available"); }
+  else if (descriptionLength >= 250) { score += 7; reasons.push("Detailed role information available"); }
+  else if (descriptionLength >= 120) score += 4;
   else warnings.push("Role description is brief");
-  if (job.location && !/not specified|unknown/i.test(job.location)) score += 4;
+  if (job.location && !/not specified|unknown/i.test(job.location)) {
+    score += /worldwide|anywhere|global|india/i.test(job.location) ? 2 : 4;
+  }
   else warnings.push("Location needs confirmation");
-  if (job.employmentType || job.workMode) score += 3;
+  if (job.employmentType || job.workMode) {
+    score += /full.?time|part.?time|contract|intern|remote|hybrid|on.?site/i.test(`${job.employmentType ?? ""} ${job.workMode ?? ""}`) ? 3 : 1;
+  }
   if (job.skills) score += 3;
+  if (job.salary && !/not disclosed|not specified|competitive/i.test(job.salary)) { score += 5; reasons.push("Compensation information disclosed"); }
   if (job.applyUrl && /^https:\/\//i.test(job.applyUrl)) score += 4;
-  if (job.postedAt && !isStaleListing(job.postedAt, 30)) { score += 5; reasons.push("Recently published or updated"); }
-  else if (job.postedAt && isStaleListing(job.postedAt, 60)) warnings.push("Listing may be older than 60 days");
+  if (job.title.trim().length >= 6 && !/multiple openings|various roles|urgent hiring/i.test(job.title)) score += 2;
+  if (job.postedAt) {
+    const age = listingAgeInDays(job.postedAt);
+    if (age !== null && age <= 3) { score += 8; reasons.push("Published or updated within 3 days"); }
+    else if (age !== null && age <= 14) { score += 6; reasons.push("Recently published or updated"); }
+    else if (age !== null && age <= 30) score += 3;
+    else if (age !== null && age > 60) { score -= 5; warnings.push("Listing may be older than 60 days"); }
+  } else warnings.push("Publication date is unavailable");
 
   score = Math.max(20, Math.min(98, score));
   return {
@@ -63,6 +78,11 @@ export function calculateOpportunityTrust(job: OpportunitySignals) {
     reasons: reasons.slice(0, 4),
     warnings: warnings.slice(0, 3),
   };
+}
+
+function listingAgeInDays(value: string) {
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? Math.max(0, Math.floor((Date.now() - time) / 86_400_000)) : null;
 }
 
 const salaryBases: Record<string, [number, number]> = {
