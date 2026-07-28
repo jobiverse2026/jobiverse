@@ -14,6 +14,7 @@ import {
   IdCard,
   Layers3,
   MessageSquareText,
+  MapPinned,
   Orbit,
   Palette,
   Search,
@@ -24,6 +25,8 @@ import {
   UsersRound,
   WalletCards,
 } from "lucide-react";
+
+import { JOB_SECTORS } from "@/lib/jobs/sectors";
 
 const worlds = [
   {
@@ -177,6 +180,31 @@ export function UniverseHome() {
                 </Link>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#f6f6f3] px-5 py-12 sm:px-8">
+        <div className="relative mx-auto max-w-[1450px] overflow-hidden rounded-[3rem] bg-[radial-gradient(circle_at_82%_15%,rgba(124,58,237,.34),transparent_26rem),linear-gradient(135deg,#09090b,#18181b_62%,#27272a)] p-7 text-white shadow-[0_35px_90px_-50px_rgba(0,0,0,.9)] sm:p-12">
+          <div aria-hidden="true" className="absolute -right-24 -top-32 h-96 w-96 rounded-full border border-white/10" />
+          <div className="relative grid gap-10 lg:grid-cols-[.72fr_1.28fr] lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-zinc-200"><MapPinned size={15} />Opportunity map</span>
+              <p className="mt-8 text-6xl font-semibold tracking-[-.06em] sm:text-8xl">2 lakh+</p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-[-.04em] sm:text-4xl">live opportunities to explore.</h2>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-zinc-300">Discover direct JobiVerse roles and clearly attributed partner opportunities across India—now organised by sector, city, work mode, experience and freshness.</p>
+              <Link href="/jobs" className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-zinc-950 transition hover:-translate-y-0.5 hover:shadow-xl">Explore all jobs <ArrowRight size={17} /></Link>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Choose a sector</p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {JOB_SECTORS.map((sector) => (
+                  <Link key={sector.value} href={`/jobs?sector=${sector.value}`} className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[.06] px-4 py-3 text-sm font-semibold text-zinc-200 backdrop-blur transition hover:border-white/25 hover:bg-white/15 hover:text-white">
+                    {sector.label}<ArrowRight size={14} className="text-zinc-500 transition group-hover:translate-x-1 group-hover:text-white" />
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

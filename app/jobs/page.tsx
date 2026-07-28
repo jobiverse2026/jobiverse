@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ExternalLink,
   Globe2,
+  Layers3,
   MapPin,
   Search,
   ShieldCheck,
@@ -30,6 +31,7 @@ import {
   searchMuseJobs,
   searchRemotiveJobs,
 } from "@/lib/jobs/partner-sources";
+import { getJobSector, JOB_SECTORS, matchesJobSector, sectorSearchKeywords } from "@/lib/jobs/sectors";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -48,6 +50,7 @@ type SearchParams = Promise<{
   jobType?: string;
   workMode?: string;
   freshness?: string;
+  sector?: string;
 }>;
 
 const popularCities = ["Mumbai", "Delhi NCR", "Bengaluru", "Hyderabad", "Pune", "Chennai", "Kolkata", "Ahmedabad", "Noida", "Gurugram"];
@@ -88,13 +91,15 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const jobType = allowedJobTypes.has(filters.jobType ?? "") ? filters.jobType! : "";
   const workMode = allowedWorkModes.has(filters.workMode ?? "") ? filters.workMode! : "";
   const freshness = allowedFreshness.has(filters.freshness ?? "") ? filters.freshness! : "";
+  const sector = getJobSector(filters.sector)?.value ?? "";
+  const partnerKeywords = searchIn === "company" ? query : sectorSearchKeywords(query, sector);
   const requestedRadius = allowedRadii.has(filters.radius ?? "") ? filters.radius! as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined;
   const radius = filters.radius === "all" ? undefined : requestedRadius ?? (location.toLowerCase() === "india" ? undefined : "40");
 
   const [partner, directResult, viewer] = await Promise.all([
     source === "jobiverse"
       ? Promise.resolve<PartnerJobSearch>({ configured: true, totalCount: 0, jobs: [], nationalFeed: false })
-      : discoverPartnerJobs({ keywords: query, location, page, radius, companySearch: searchIn === "company" }),
+      : discoverPartnerJobs({ keywords: partnerKeywords, location, page, radius, companySearch: searchIn === "company" }),
     source === "partner"
       ? Promise.resolve({ data: [], error: null })
       : adminSupabase
@@ -120,6 +125,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       : [job.job_title, job.department, job.primary_skills].filter(Boolean).join(" ").toLowerCase();
     const jobLocation = (job.location || company?.location || "India").toLowerCase();
     return (!query || searchable.includes(query.toLowerCase()))
+      && matchesJobSector(`${job.job_title} ${job.department ?? ""} ${job.primary_skills ?? ""} ${company?.industry ?? ""}`, sector)
       && (location.toLowerCase() === "india" || jobLocation.includes(location.toLowerCase()))
       && (!jobType || matchesType(job.employment_type ?? "", jobType))
       && (!workMode || matchesWorkMode(job.work_mode ?? "", workMode))
@@ -129,6 +135,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const partnerJobs = partner.jobs.filter((job) => {
     const searchable = searchIn === "company" ? job.company : `${job.title} ${job.snippet}`;
     return (!query || searchable.toLowerCase().includes(query.toLowerCase()))
+      && matchesJobSector(`${job.title} ${job.type} ${job.snippet} ${job.company}`, sector)
       && (!jobType || matchesType(job.type, jobType))
       && (!workMode || matchesWorkMode(`${job.type} ${job.snippet}`, workMode))
       && (!freshness || isFreshEnough(job.updated, Number(freshness)));
@@ -164,8 +171,9 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         </section>
 
         <form action="/jobs" className="relative -mt-5 mx-auto max-w-6xl rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-xl">
-          <div className="grid gap-3 md:grid-cols-[1fr_260px_190px_auto]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_230px_240px_190px_auto]">
             <label className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">Search roles</span><input name="q" defaultValue={query} placeholder={searchIn === "company" ? "Search company" : "Role or skill"} className="h-13 w-full rounded-xl border border-zinc-200 pl-12 pr-4 outline-none focus:border-zinc-500" /></label>
+            <label className="relative"><Layers3 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">Job sector</span><select name="sector" defaultValue={sector} className="h-13 w-full cursor-pointer appearance-none rounded-xl border border-zinc-200 bg-white pl-12 pr-4 outline-none focus:border-zinc-500"><option value="">All sectors</option>{JOB_SECTORS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
             <label className="relative"><MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">City or location</span><input name="location" list="job-cities" defaultValue={location} placeholder="City or location" className="h-13 w-full rounded-xl border border-zinc-200 pl-12 pr-4 outline-none focus:border-zinc-500" /><datalist id="job-cities">{popularCities.map((city) => <option key={city} value={city} />)}</datalist></label>
             <label><span className="sr-only">Job source</span><select name="source" defaultValue={source} className="h-13 w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 outline-none"><option value="all">All opportunities</option><option value="jobiverse">JobiVerse direct</option><option value="partner">Partner jobs</option></select></label>
             <button className="h-13 cursor-pointer rounded-xl bg-zinc-950 px-7 font-semibold text-white">Search jobs</button>
@@ -189,6 +197,13 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             <span className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Popular cities</span>
             {popularCities.map((city) => <Link key={city} href={locationHref(filters, city)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${location.toLowerCase() === city.toLowerCase() ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"}`}>{city}</Link>)}
             <Link href="/jobs" className="ml-auto inline-flex min-h-9 items-center justify-center rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-700 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white">Clear filters</Link>
+          </div>
+
+          <div className="mt-4 border-t border-zinc-100 px-1 pt-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Explore sectors</span>
+              {JOB_SECTORS.map((item) => <Link key={item.value} href={sectorHref(filters, item.value)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${sector === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800"}`}>{item.label}</Link>)}
+            </div>
           </div>
         </form>
 
@@ -239,12 +254,8 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                     <a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">View original listing <ExternalLink size={16} /></a>
                   </article>)}
                 </div>
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Connected sources</span>
-                    {(partner.providers ?? []).map((provider) => <a key={provider.name} href={provider.href} target="_blank" rel="nofollow sponsored noreferrer" title={provider.error || `${provider.totalCount.toLocaleString("en-IN")} opportunities reported`} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${provider.error ? "border-amber-200 bg-amber-50 text-amber-800" : "border-violet-100 bg-violet-50 text-violet-800"}`}>{provider.name}<span className={provider.error ? "text-amber-600" : "text-violet-500"}>{provider.error ? "Needs attention" : provider.totalCount.toLocaleString("en-IN")}</span><ExternalLink size={11} /></a>)}
-                  </div>
-                  <div className="flex gap-2">{page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}</div>
+                <div className="mt-8 flex justify-end gap-2 rounded-2xl border border-zinc-200 bg-white p-4">
+                  {page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}
                 </div>
               </>
             ) : (
@@ -477,7 +488,7 @@ function interleavePartnerJobs(results: PartnerJobSearch[], limit: number) {
 
 function pageHref(filters: Awaited<SearchParams>, page: number) {
   const params = new URLSearchParams();
-  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness"] as const) {
+  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness", "sector"] as const) {
     if (filters[key]) params.set(key, filters[key]!);
   }
   params.set("page", String(page));
@@ -486,11 +497,20 @@ function pageHref(filters: Awaited<SearchParams>, page: number) {
 
 function locationHref(filters: Awaited<SearchParams>, city: string) {
   const params = new URLSearchParams();
-  for (const key of ["q", "source", "searchIn", "jobType", "workMode", "freshness"] as const) {
+  for (const key of ["q", "source", "searchIn", "jobType", "workMode", "freshness", "sector"] as const) {
     if (filters[key]) params.set(key, filters[key]!);
   }
   params.set("location", city);
   params.set("radius", "40");
+  return `/jobs?${params.toString()}`;
+}
+
+function sectorHref(filters: Awaited<SearchParams>, sector: string) {
+  const params = new URLSearchParams();
+  for (const key of ["q", "location", "source", "radius", "searchIn", "jobType", "workMode", "freshness"] as const) {
+    if (filters[key]) params.set(key, filters[key]!);
+  }
+  params.set("sector", sector);
   return `/jobs?${params.toString()}`;
 }
 
