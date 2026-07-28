@@ -7,7 +7,10 @@ import { readComparedJobs, writeComparedJobs, type ComparedJob } from "@/compone
 
 export default function CompareJobsPage() {
   const [jobs, setJobs] = useState<ComparedJob[]>([]);
-  useEffect(() => setJobs(readComparedJobs()), []);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setJobs(readComparedJobs()));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const remove = (key: string) => { const next = jobs.filter((job) => job.key !== key); writeComparedJobs(next); setJobs(next); window.dispatchEvent(new CustomEvent("jobiverse:compare-change")); };
   return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-7xl">
     <Link href="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16}/>Back to jobs</Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GitCompareArrows } from "lucide-react";
+import { GitCompareArrows, X } from "lucide-react";
 
 export type ComparedJob = {
   key: string;
@@ -39,7 +39,12 @@ export function writeComparedJobs(jobs: ComparedJob[]) {
 
 export function JobCompareButton({ job }: { job: ComparedJob }) {
   const [selected, setSelected] = useState(false);
-  useEffect(() => setSelected(readComparedJobs().some((item) => item.key === job.key)), [job.key]);
+  useEffect(() => {
+    const refresh = () => setSelected(readComparedJobs().some((item) => item.key === job.key));
+    refresh();
+    window.addEventListener("jobiverse:compare-change", refresh);
+    return () => window.removeEventListener("jobiverse:compare-change", refresh);
+  }, [job.key]);
 
   function toggle() {
     const current = readComparedJobs();
@@ -50,5 +55,5 @@ export function JobCompareButton({ job }: { job: ComparedJob }) {
     window.dispatchEvent(new CustomEvent("jobiverse:compare-change"));
   }
 
-  return <button type="button" onClick={toggle} className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${selected ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-violet-400"}`}><GitCompareArrows size={13}/>{selected ? "Added" : "Compare"}</button>;
+  return <button type="button" onClick={toggle} aria-pressed={selected} aria-label={selected ? `Remove ${job.title} from comparison` : `Add ${job.title} to comparison`} className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${selected ? "border-violet-700 bg-violet-700 text-white hover:border-red-600 hover:bg-red-600" : "border-zinc-200 bg-white text-zinc-600 hover:border-violet-400"}`}>{selected ? <X size={13}/> : <GitCompareArrows size={13}/>} {selected ? "Remove" : "Compare"}</button>;
 }
