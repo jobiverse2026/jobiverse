@@ -428,13 +428,13 @@ async function discoverPartnerJobs({
 }): Promise<PartnerJobSearch> {
   const sourceNames = ["Jooble", "Adzuna", "Remotive", "Arbeitnow", "Jobicy", "Himalayas", "The Muse"] as const;
   const results = await Promise.all([
-    discoverJoobleJobs({ keywords, location, page, radius, companySearch }),
-    searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
-    searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
-    searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
-    searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
-    searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
-    searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }),
+    withPartnerDeadline(discoverJoobleJobs({ keywords, location, page, radius, companySearch })),
+    withPartnerDeadline(searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
+    withPartnerDeadline(searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
+    withPartnerDeadline(searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
+    withPartnerDeadline(searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
+    withPartnerDeadline(searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
+    withPartnerDeadline(searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
   ]);
   const configuredResults = results.filter((result) => result.configured);
   const jobs = interleavePartnerJobs(results, 20);
@@ -461,6 +461,19 @@ async function discoverPartnerJobs({
       ? "Connected job feeds are temporarily unavailable."
       : undefined,
   };
+}
+
+async function withPartnerDeadline(request: Promise<PartnerJobSearch>) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<PartnerJobSearch>((resolve) => {
+    timeout = setTimeout(() => resolve({ configured: false, totalCount: 0, jobs: [] }), 4_500);
+  });
+
+  try {
+    return await Promise.race([request, deadline]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
 }
 
 function interleavePartnerJobs(results: PartnerJobSearch[], limit: number) {
