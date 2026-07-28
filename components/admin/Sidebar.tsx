@@ -31,6 +31,7 @@ import {
   Bot,
   Megaphone,
   RadioTower,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -86,6 +87,11 @@ const menuItems = [
     title: "Job Source Health",
     href: "/admin/job-sources",
     icon: RadioTower,
+  },
+  {
+    title: "Job Quality Report",
+    href: "/admin/job-quality",
+    icon: ClipboardCheck,
   },
   {
     title: "Campus Partnerships",

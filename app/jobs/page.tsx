@@ -36,7 +36,9 @@ import {
   searchRemotiveJobs,
 } from "@/lib/jobs/partner-sources";
 import { getJobSector, JOB_SECTORS, matchesJobSector, sectorSearchKeywords } from "@/lib/jobs/sectors";
-import { calculateListingMatch, freshnessLabel, isStaleListing, listingKey } from "@/lib/jobs/intelligence";
+import { calculateListingMatch, calculateOpportunityTrust, estimateSalaryRange, freshnessLabel, isStaleListing, listingKey } from "@/lib/jobs/intelligence";
+import { JobCompareButton } from "@/components/jobs/JobCompareButton";
+import { JobCompareTray } from "@/components/jobs/JobCompareTray";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -262,15 +264,18 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {directJobs.map(({job,match}) => {
                 const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
+                const trust = calculateOpportunityTrust({ title: job.job_title, company: company?.company_name, location: job.location || company?.location, skills: job.primary_skills, workMode: job.work_mode, employmentType: job.employment_type, experience: job.experience, postedAt: job.published_at, direct: true, verifiedCompany: company?.is_verified, applyUrl: `https://www.jobiverse.in/jobs/${job.id}` });
+                const salary = estimateSalaryRange({ title: job.job_title, location: job.location || company?.location, skills: job.primary_skills, experience: job.experience, direct: true });
                 return <article key={job.id} className="flex flex-col rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span><FreshnessBadge value={job.published_at}/></div></div>
                   <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{company?.company_name || "JobiVerse hiring partner"}{company?.is_verified && <BadgeCheck size={15} className="text-emerald-600" />}</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.job_title}</h2>
                   {match && <div className="mt-3"><JobMatchBadge score={match.score} recommended={match.recommended} compact/></div>}
+                  <div className="mt-3 flex flex-wrap items-center gap-2"><TrustBadge score={trust.score} label={trust.label}/><JobCompareButton job={{key:`direct:${job.id}`,title:job.job_title,company:company?.company_name||"JobiVerse hiring partner",location:job.location||company?.location||"India",workMode:job.work_mode||"Flexible",employmentType:job.employment_type||"Not specified",salary:"Not disclosed",estimatedMin:salary.min,estimatedMax:salary.max,trustScore:trust.score,trustLabel:trust.label,source:"JobiVerse Direct",href:`/jobs/${job.id}`,external:false}}/></div>
                   <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.location || company?.location || "India"}</p>
                   <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Experience" value={job.experience || "Open"} /><Essential label="Work mode" value={job.work_mode || "Flexible"} /></div>
                   <p className="mt-5 line-clamp-2 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{job.primary_skills || "Open the role to review its complete requirements."}</p>
-                  <Link href={viewer.isCandidate ? `/candidates/jobs/${job.id}` : `/login/candidate?next=${encodeURIComponent(`/candidates/jobs/${job.id}`)}`} className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">{viewer.isCandidate ? "View & apply" : "Sign in to view & apply"} <ArrowRight size={16} /></Link>
+                  <Link href={`/jobs/${job.id}`} className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">View complete role <ArrowRight size={16} /></Link>
                 </article>;
               })}
             </div>
@@ -288,17 +293,18 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             ) : partnerJobs.length ? (
               <>
                 <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {partnerJobs.map(({job,match}) => <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                  {partnerJobs.map(({job,match}) => {const displayLocation=job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`);const trust=calculateOpportunityTrust({title:job.title,company:job.company,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,postedAt:job.updated,applyUrl:job.link,provider:job.provider||job.source,direct:false});const salary=estimateSalaryRange({title:job.title,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,direct:false});const trackHref=`/jobs/track?${new URLSearchParams({id:job.id,provider:job.provider||job.source||"Partner",title:job.title,company:job.company,location:displayLocation,url:job.link}).toString()}`;return <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span><FreshnessBadge value={job.updated}/></div></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
                     {match && <div className="mt-3"><JobMatchBadge score={match.score} recommended={match.recommended} compact/></div>}
-                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2"><TrustBadge score={trust.score} label={trust.label}/><JobCompareButton job={{key:`${job.provider||"partner"}:${job.id}`,title:job.title,company:job.company,location:displayLocation,workMode:job.type||"Not specified",employmentType:job.type||"Not specified",salary:job.salary||"Not disclosed",estimatedMin:salary.min,estimatedMax:salary.max,trustScore:trust.score,trustLabel:trust.label,source:job.provider||job.source||"Partner",href:job.link,external:true}}/></div>
+                    <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{displayLocation}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
                     <p className="mt-4 text-xs text-zinc-400">Source: {job.provider || job.source || "Partner feed"}{job.updated ? ` · Updated ${formatDate(job.updated)}` : ""}</p>
-                    <a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-5 text-sm font-semibold">View original listing <ExternalLink size={16} /></a>
-                  </article>)}
+                    <div className="mt-auto grid grid-cols-2 gap-2 border-t border-zinc-100 pt-5"><a href={job.link} target="_blank" rel="nofollow sponsored noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-zinc-950 px-3 py-3 text-xs font-semibold text-white">Original listing <ExternalLink size={14} /></a><Link href={trackHref} className="flex items-center justify-center rounded-xl border border-violet-200 px-3 py-3 text-center text-xs font-semibold text-violet-800">Track application</Link></div>
+                  </article>})}
                 </div>
                 <div className="mt-8 flex justify-end gap-2 rounded-2xl border border-zinc-200 bg-white p-4">
                   {page > 1 && <Link href={pageHref(filters, page - 1)} className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-semibold">Previous</Link>}{partnerHasNextPage && <Link href={pageHref(filters, page + 1)} className="rounded-xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white">Next page</Link>}
@@ -321,9 +327,12 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           <Link href="/signup?role=candidate" className="inline-flex min-h-13 items-center justify-center rounded-xl bg-white px-6 font-semibold text-zinc-950">Build your free JobiVerse profile</Link>
         </section>
       </div>
+      <JobCompareTray />
     </main>
   );
 }
+
+function TrustBadge({score,label}:{score:number;label:string}){const tone=score>=80?"bg-emerald-50 text-emerald-700":score>=60?"bg-amber-50 text-amber-700":"bg-red-50 text-red-700";return <span title="Opportunity Trust Score uses listing completeness, freshness, attribution and JobiVerse verification signals." className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold ${tone}`}><ShieldCheck size={13}/>{score} · {label}</span>}
 
 async function getJobsViewer() {
   const supabase = await createServerSupabaseClient();

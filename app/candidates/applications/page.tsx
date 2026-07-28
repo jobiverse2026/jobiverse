@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { ArrowLeft, Bookmark, BriefcaseBusiness, CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, Bookmark, BriefcaseBusiness, CalendarDays, ExternalLink, Globe2, MapPin, Sparkles } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { SaveJobButton } from "@/components/candidate/SaveJobButton";
 import { applicationHealth, jobiverseApplicationFeedback } from "@/lib/candidate/intelligence";
 import { CareerServiceNudge } from "@/components/candidate/CareerServiceNudge";
+import { updateTrackedApplication } from "@/app/jobs/track/actions";
 
-export default async function CandidateCareerActivityPage() {
+type SearchParams = Promise<{ tracked?: string; updated?: string }>;
+
+export default async function CandidateCareerActivityPage({ searchParams }: { searchParams: SearchParams }) {
+  const query = await searchParams;
   const { supabase, user } = await requireRole(["candidate"]);
-  const [{ data: applications }, { data: savedJobs }] = await Promise.all([
+  const [{ data: applications }, { data: savedJobs }, trackedResult] = await Promise.all([
     supabase
       .from("candidate_applications")
       .select("id,status,applied_at,updated_at,requirement_id,requirements(job_title,location,work_mode,status,companies(company_name))")
@@ -19,7 +23,12 @@ export default async function CandidateCareerActivityPage() {
       .select("id,requirement_id,created_at,requirements(job_title,location,work_mode,status,is_public,companies(company_name))")
       .eq("candidate_user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase.from("candidate_tracked_applications").select("id,provider,job_title,company_name,location,apply_url,status,applied_at,updated_at,notes").eq("candidate_user_id", user.id).order("updated_at", { ascending: false }),
   ]);
+  const trackerUnavailable = trackedResult.error && ["42P01", "PGRST205"].includes(trackedResult.error.code);
+  const trackedApplications = trackerUnavailable ? [] : trackedResult.data ?? [];
+  if (trackedResult.error && !trackerUnavailable) throw new Error(trackedResult.error.message);
+  const totalApplications = (applications?.length ?? 0) + trackedApplications.length;
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -27,12 +36,14 @@ export default async function CandidateCareerActivityPage() {
         <Link href="/candidates/dashboard" className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm">
           <ArrowLeft size={16} />Dashboard
         </Link>
+        {query.tracked === "1" && <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">Application added to your career activity.</div>}
+        {query.updated === "1" && <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">Application stage updated successfully.</div>}
         <section className="relative my-8 overflow-hidden rounded-[2.5rem] bg-zinc-950 p-9 text-white sm:p-12">
           <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full border border-white/10" />
           <BriefcaseBusiness />
           <p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Application health tracker</p>
           <h1 className="mt-3 text-4xl font-semibold sm:text-6xl">Career activity.</h1>
-          <p className="mt-4 text-zinc-300">Track every application stage clearly with JobiVerse feedback, not a black hole.</p>
+          <p className="mt-4 text-zinc-300">Track JobiVerse applications and opportunities applied on partner websites in one private career timeline.</p>
         </section>
 
         <div className="grid gap-7 xl:grid-cols-2">
@@ -40,7 +51,7 @@ export default async function CandidateCareerActivityPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Application history</p>
-                <h2 className="mt-2 text-2xl font-bold">{applications?.length ?? 0} applications</h2>
+                <h2 className="mt-2 text-2xl font-bold">{totalApplications} applications</h2>
               </div>
               <BriefcaseBusiness className="text-zinc-400" />
             </div>
@@ -69,7 +80,14 @@ export default async function CandidateCareerActivityPage() {
                     </p>
                   </article>
                 );
-              }) : <Empty title="No applications yet" text="Explore opportunities and submit your first application." />}
+              }) : null}
+              {trackedApplications.map((application) => <article key={application.id} className="rounded-2xl border border-violet-100 bg-violet-50/60 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="flex items-center gap-1 text-xs font-semibold text-violet-700"><Globe2 size={13}/>{application.provider || "Partner source"}</p><h3 className="mt-1 font-bold">{application.job_title}</h3><p className="mt-1 text-xs text-zinc-500">{application.company_name || "Company not disclosed"}</p></div><Status status={application.status}/></div>
+                <p className="mt-3 flex items-center gap-2 text-xs text-zinc-500"><MapPin size={13}/>{application.location || "Location not specified"}</p>
+                <form action={updateTrackedApplication} className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]"><input type="hidden" name="id" value={application.id}/><select name="status" defaultValue={application.status} className="h-11 rounded-xl border border-violet-200 bg-white px-3 text-sm"><option>Saved</option><option>Applied</option><option>Response awaited</option><option>Interview</option><option>Offer</option><option>Rejected</option><option>Withdrawn</option><option>Joined</option></select><button className="cursor-pointer rounded-xl bg-violet-700 px-4 text-sm font-semibold text-white">Update stage</button></form>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-violet-100 pt-4"><span className="text-[11px] text-zinc-400">Tracked {new Date(application.applied_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}</span>{application.apply_url&&<a href={application.apply_url} target="_blank" rel="nofollow sponsored noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700">Original listing <ExternalLink size={12}/></a>}</div>
+              </article>)}
+              {!totalApplications && <Empty title="No applications yet" text="Explore direct and partner opportunities, then track every application here." />}
             </div>
           </section>
 

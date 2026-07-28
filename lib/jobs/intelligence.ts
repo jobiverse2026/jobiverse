@@ -19,6 +19,93 @@ export type MatchableJob = {
   description?: string | null;
 };
 
+export type OpportunitySignals = {
+  title: string;
+  company?: string | null;
+  location?: string | null;
+  description?: string | null;
+  skills?: string | null;
+  salary?: string | null;
+  workMode?: string | null;
+  employmentType?: string | null;
+  experience?: string | null;
+  postedAt?: string | null;
+  applyUrl?: string | null;
+  direct?: boolean;
+  verifiedCompany?: boolean;
+  provider?: string | null;
+};
+
+export function calculateOpportunityTrust(job: OpportunitySignals) {
+  let score = job.direct ? 58 : 38;
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+
+  if (job.direct) reasons.push("Published inside the JobiVerse employer workflow");
+  else reasons.push(`Attributed to ${job.provider || "a connected partner source"}`);
+  if (job.verifiedCompany) { score += 14; reasons.push("Verified company profile"); }
+  if (job.company && !/not disclosed|confidential|unknown/i.test(job.company)) { score += 8; reasons.push("Company name disclosed"); }
+  else warnings.push("Company identity is limited");
+  if ((job.description?.trim().length ?? 0) >= 180) { score += 7; reasons.push("Detailed role information available"); }
+  else warnings.push("Role description is brief");
+  if (job.location && !/not specified|unknown/i.test(job.location)) score += 4;
+  else warnings.push("Location needs confirmation");
+  if (job.employmentType || job.workMode) score += 3;
+  if (job.skills) score += 3;
+  if (job.applyUrl && /^https:\/\//i.test(job.applyUrl)) score += 4;
+  if (job.postedAt && !isStaleListing(job.postedAt, 30)) { score += 5; reasons.push("Recently published or updated"); }
+  else if (job.postedAt && isStaleListing(job.postedAt, 60)) warnings.push("Listing may be older than 60 days");
+
+  score = Math.max(20, Math.min(98, score));
+  return {
+    score,
+    label: score >= 85 ? "Strong signals" : score >= 70 ? "Good signals" : score >= 55 ? "Review details" : "Use caution",
+    reasons: reasons.slice(0, 4),
+    warnings: warnings.slice(0, 3),
+  };
+}
+
+const salaryBases: Record<string, [number, number]> = {
+  technology: [5.5, 10.5],
+  data: [6.5, 12.5],
+  product: [7, 14],
+  finance: [4.5, 9],
+  sales: [3.5, 7.5],
+  marketing: [3.5, 8],
+  healthcare: [4, 9],
+  operations: [3.5, 7],
+  hr: [3.5, 7.5],
+  default: [3.5, 8],
+};
+
+export function estimateSalaryRange(job: OpportunitySignals) {
+  const text = `${job.title} ${job.skills ?? ""} ${job.description ?? ""}`.toLowerCase();
+  const family = /data|machine learning|artificial intelligence|analytics/.test(text) ? "data"
+    : /software|developer|engineer|devops|cloud|cyber|technology|technical/.test(text) ? "technology"
+      : /product manager|product owner/.test(text) ? "product"
+        : /finance|account|audit|bank|investment/.test(text) ? "finance"
+          : /sales|business development|account executive/.test(text) ? "sales"
+            : /marketing|content|seo|brand/.test(text) ? "marketing"
+              : /health|medical|doctor|nurse|pharma/.test(text) ? "healthcare"
+                : /human resource|recruit|talent acquisition|\bhr\b/.test(text) ? "hr"
+                  : /operation|supply chain|logistics|procurement/.test(text) ? "operations" : "default";
+  const years = Number.parseFloat(String(job.experience ?? "").match(/\d+(?:\.\d+)?/)?.[0] ?? "0");
+  const experienceMultiplier = years >= 10 ? 2.2 : years >= 7 ? 1.8 : years >= 4 ? 1.45 : years >= 2 ? 1.2 : 1;
+  const location = String(job.location ?? "").toLowerCase();
+  const locationMultiplier = /bengaluru|bangalore|mumbai|gurugram|gurgaon|hyderabad|pune|delhi|noida/.test(location) ? 1.12 : 1;
+  const [baseMin, baseMax] = salaryBases[family];
+  const min = Math.round(baseMin * experienceMultiplier * locationMultiplier * 10) / 10;
+  const max = Math.round(baseMax * experienceMultiplier * locationMultiplier * 10) / 10;
+  return {
+    min,
+    max,
+    unit: "LPA",
+    family,
+    confidence: job.experience && job.location ? "medium" : "directional",
+    disclaimer: "JobiVerse market estimate, not an employer-offered salary. Confirm compensation with the hiring company.",
+  };
+}
+
 function tokens(value?: string | null) {
   return String(value ?? "").toLowerCase().split(/[^a-z0-9+#.]+/).filter((token) => token.length > 1);
 }

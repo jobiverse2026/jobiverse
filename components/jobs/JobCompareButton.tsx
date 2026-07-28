@@ -1,0 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { GitCompareArrows } from "lucide-react";
+
+export type ComparedJob = {
+  key: string;
+  title: string;
+  company: string;
+  location: string;
+  workMode: string;
+  employmentType: string;
+  salary: string;
+  estimatedMin: number;
+  estimatedMax: number;
+  trustScore: number;
+  trustLabel: string;
+  source: string;
+  href: string;
+  external: boolean;
+};
+
+export const COMPARE_STORAGE_KEY = "jobiverse-job-comparison-v1";
+
+export function readComparedJobs(): ComparedJob[] {
+  try { return JSON.parse(localStorage.getItem(COMPARE_STORAGE_KEY) || "[]").slice(0, 3); } catch { return []; }
+}
+
+export function JobCompareButton({ job }: { job: ComparedJob }) {
+  const [selected, setSelected] = useState(false);
+  useEffect(() => setSelected(readComparedJobs().some((item) => item.key === job.key)), [job.key]);
+
+  function toggle() {
+    const current = readComparedJobs();
+    const exists = current.some((item) => item.key === job.key);
+    const next = exists ? current.filter((item) => item.key !== job.key) : [...current, job].slice(-3);
+    localStorage.setItem(COMPARE_STORAGE_KEY, JSON.stringify(next));
+    setSelected(!exists);
+    window.dispatchEvent(new CustomEvent("jobiverse:compare-change"));
+  }
+
+  return <button type="button" onClick={toggle} className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${selected ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-violet-400"}`}><GitCompareArrows size={13}/>{selected ? "Added" : "Compare"}</button>;
+}
