@@ -77,7 +77,7 @@ export async function searchAdzunaJobs({
       app_id: appId,
       app_key: appKey,
       results_per_page: String(Math.min(50, Math.max(1, resultsPerPage))),
-      content_type: "application/json",
+      "content-type": "application/json",
       sort_by: "date",
       ...(keywords.trim() ? { [companySearch ? "company" : "what"]: keywords.trim() } : {}),
       ...(location.trim() && location.trim().toLowerCase() !== "india" ? { where: location.trim() } : {}),
