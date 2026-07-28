@@ -4,11 +4,13 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
+  BellRing,
   BriefcaseBusiness,
   Building2,
   ChevronDown,
   ExternalLink,
   Globe2,
+  Flame,
   Layers3,
   MapPin,
   Search,
@@ -16,6 +18,8 @@ import {
   SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
+import { JobMatchBadge } from "@/components/candidate/JobMatchBadge";
+import { SaveSearchControl } from "@/components/candidate/SaveSearchControl";
 
 import {
   plainTextSnippet,
@@ -32,6 +36,7 @@ import {
   searchRemotiveJobs,
 } from "@/lib/jobs/partner-sources";
 import { getJobSector, JOB_SECTORS, matchesJobSector, sectorSearchKeywords } from "@/lib/jobs/sectors";
+import { calculateListingMatch, freshnessLabel, isStaleListing, listingKey } from "@/lib/jobs/intelligence";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -118,7 +123,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
     ? await adminSupabase.from("companies").select("owner_id,company_name,is_verified,industry,location").in("owner_id", ownerIds)
     : { data: [] };
   const ownerCompanyMap = new Map((ownerCompanies ?? []).map((company) => [company.owner_id, company]));
-  const directJobs = directRows.filter((job) => {
+  const directJobsFiltered = directRows.filter((job) => {
     const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
     const searchable = searchIn === "company"
       ? [company?.company_name, company?.industry].filter(Boolean).join(" ").toLowerCase()
@@ -132,19 +137,46 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
       && (!freshness || isFreshEnough(job.published_at, Number(freshness)));
   });
 
-  const partnerJobs = partner.jobs.filter((job) => {
+  const directKeys = new Set(directJobsFiltered.map((job) => {
+    const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
+    return listingKey(job.job_title, company?.company_name ?? "", job.location ?? company?.location ?? "India");
+  }));
+  const partnerJobsFiltered = partner.jobs.filter((job) => {
     const searchable = searchIn === "company" ? job.company : `${job.title} ${job.snippet}`;
     return (!query || searchable.toLowerCase().includes(query.toLowerCase()))
       && matchesJobSector(`${job.title} ${job.type} ${job.snippet} ${job.company}`, sector)
       && (!jobType || matchesType(job.type, jobType))
       && (!workMode || matchesWorkMode(`${job.type} ${job.snippet}`, workMode))
-      && (!freshness || isFreshEnough(job.updated, Number(freshness)));
+      && (!freshness || isFreshEnough(job.updated, Number(freshness)))
+      && !isStaleListing(job.updated)
+      && !directKeys.has(listingKey(job.title, job.company, job.location));
   });
+  const directJobs = directJobsFiltered.map((job) => ({ job, match: calculateListingMatch(viewer.profile, {
+    title: job.job_title, skills: job.primary_skills, location: job.location, workMode: job.work_mode,
+    employmentType: job.employment_type, experience: job.experience,
+  })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
+  const partnerJobs = partnerJobsFiltered.map((job) => ({ job, match: calculateListingMatch(viewer.profile, {
+    title: job.title, skills: job.snippet, location: job.location, workMode: job.type,
+    employmentType: job.type, description: job.snippet,
+  })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness);
-  const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : partner.totalCount;
+  const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : Math.max(partnerJobs.length, partner.totalCount);
   const partnerHasNextPage = !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
+  const savedSearches = viewer.savedSearches.map((item) => ({
+    id: item.id,
+    name: item.name,
+    href: savedSearchHref(item),
+    isAlertEnabled: item.is_alert_enabled,
+  }));
+  const liveTrendJobs = [
+    ...directJobs.map(({job}) => ({ title: job.job_title, location: job.location || "India", sector: sectorForText(`${job.job_title} ${job.department ?? ""} ${job.primary_skills ?? ""}`) })),
+    ...partnerJobs.map(({job}) => ({ title: job.title, location: job.displayLocation || job.location || "India", sector: sectorForText(`${job.title} ${job.type} ${job.snippet}`) })),
+  ];
+  const trendRoles = topCounts(liveTrendJobs.map((item) => item.title), 4);
+  const trendLocations = topCounts(liveTrendJobs.map((item) => item.location.replace(/ ·.*$/, "")), 4);
+  const trendSectors = topCounts(liveTrendJobs.map((item) => item.sector), 4);
 
   return (
     <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8">
@@ -207,6 +239,18 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           </div>
         </form>
 
+        {viewer.isCandidate && (
+          <SaveSearchControl
+            filters={{ query, location, sector, source, jobType, workMode, freshness, searchIn, radius: filters.radius ?? "" }}
+            searches={savedSearches}
+          />
+        )}
+
+        {viewer.isCandidate && viewer.profile && <section className="mt-6 grid gap-4 rounded-[2rem] border border-violet-200 bg-violet-50 p-6 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-600">Personalized opportunity feed</p><h2 className="mt-2 text-2xl font-bold">Best profile matches appear first.</h2><p className="mt-2 text-sm leading-6 text-violet-800">Scores use your preferred roles, skills, locations and work mode. They are guidance—not a hiring decision.</p></div>
+          <div className="flex flex-wrap gap-2"><Link href="/candidates/profile" className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-violet-900">Improve matching profile</Link><Link href="/candidates/job-alerts" className="inline-flex items-center gap-2 rounded-xl bg-violet-700 px-5 py-3 text-sm font-semibold text-white"><BellRing size={16}/>Manage alerts</Link></div>
+        </section>}
+
         <section className="mt-8 grid gap-4 md:grid-cols-2">
           <div className="flex items-start gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950"><BadgeCheck className="mt-0.5 shrink-0" /><div><h2 className="font-bold">JobiVerse Direct</h2><p className="mt-1 text-sm leading-6">Published by an employer inside JobiVerse. Sign in to view, save and apply through the protected JobiVerse workflow.</p></div></div>
           <div className="flex items-start gap-4 rounded-3xl border border-violet-200 bg-violet-50 p-5 text-violet-950"><Globe2 className="mt-0.5 shrink-0" /><div><h2 className="font-bold">Partner Opportunity</h2><p className="mt-1 text-sm leading-6">Supplied by a connected public or licensed API source. Application happens on the original destination; JobiVerse does not charge a placement fee for it.</p></div></div>
@@ -216,12 +260,13 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           <section className="mt-12">
             <SectionHeading eyebrow="Direct employer roles" title="Apply through JobiVerse" count={directJobs.length} />
             <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {directJobs.map((job) => {
+              {directJobs.map(({job,match}) => {
                 const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
                 return <article key={job.id} className="flex flex-col rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span></div>
+                  <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span><FreshnessBadge value={job.published_at}/></div></div>
                   <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{company?.company_name || "JobiVerse hiring partner"}{company?.is_verified && <BadgeCheck size={15} className="text-emerald-600" />}</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.job_title}</h2>
+                  {match && <div className="mt-3"><JobMatchBadge score={match.score} recommended={match.recommended} compact/></div>}
                   <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.location || company?.location || "India"}</p>
                   <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Experience" value={job.experience || "Open"} /><Essential label="Work mode" value={job.work_mode || "Flexible"} /></div>
                   <p className="mt-5 line-clamp-2 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{job.primary_skills || "Open the role to review its complete requirements."}</p>
@@ -243,10 +288,11 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             ) : partnerJobs.length ? (
               <>
                 <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {partnerJobs.map((job) => <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                    <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span></div>
+                  {partnerJobs.map(({job,match}) => <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                    <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span><FreshnessBadge value={job.updated}/></div></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
+                    {match && <div className="mt-3"><JobMatchBadge score={match.score} recommended={match.recommended} compact/></div>}
                     <p className="mt-4 flex items-center gap-2 text-sm text-zinc-500"><MapPin size={15} />{job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`)}</p>
                     <div className="mt-5 grid grid-cols-2 gap-2 text-xs"><Essential label="Type" value={job.type || "Not specified"} /><Essential label="Salary" value={job.salary || "Not disclosed"} /></div>
                     <p className="mt-5 line-clamp-3 rounded-xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-600">{plainTextSnippet(job.snippet) || "Open the original listing to review complete role details."}</p>
@@ -264,6 +310,12 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
           </section>
         )}
 
+        {!!liveTrendJobs.length && <section className="mt-14 rounded-[2.5rem] border border-zinc-200 bg-white p-8 sm:p-10">
+          <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-2xl bg-orange-100 text-orange-700"><Flame size={20}/></span><div><p className="text-xs font-bold uppercase tracking-[.18em] text-zinc-400">Current live feed</p><h2 className="text-3xl font-bold">Trending opportunities.</h2></div></div>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-500">Calculated from the opportunities currently returned by JobiVerse and connected partners—no fabricated trend counts.</p>
+          <div className="mt-7 grid gap-5 md:grid-cols-3"><TrendGroup title="Roles" items={trendRoles}/><TrendGroup title="Locations" items={trendLocations}/><TrendGroup title="Sectors" items={trendSectors}/></div>
+        </section>}
+
         <section className="mt-14 grid gap-5 rounded-[2.5rem] bg-zinc-950 p-8 text-white lg:grid-cols-[1fr_auto] lg:items-center sm:p-10">
           <div className="flex items-start gap-4"><ShieldCheck className="mt-1 shrink-0 text-emerald-300" /><div><h2 className="text-2xl font-semibold">Safe opportunity discovery</h2><p className="mt-2 max-w-4xl text-sm leading-7 text-zinc-400">Never pay anyone to apply or interview. Verify the employer and destination before sharing personal data. Partner listings belong to their original publishers and may change or expire outside JobiVerse.</p></div></div>
           <Link href="/signup?role=candidate" className="inline-flex min-h-13 items-center justify-center rounded-xl bg-white px-6 font-semibold text-zinc-950">Build your free JobiVerse profile</Link>
@@ -276,7 +328,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
 async function getJobsViewer() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { isCandidate: false };
+  if (!user) return { isCandidate: false, profile: null, savedSearches: [] as SavedSearchRow[] };
 
   const { data: profile } = await supabase
     .from("users")
@@ -284,8 +336,16 @@ async function getJobsViewer() {
     .eq("id", user.id)
     .maybeSingle();
 
-  return { isCandidate: profile?.role === "candidate" && profile.is_active !== false };
+  const isCandidate = profile?.role === "candidate" && profile.is_active !== false;
+  if (!isCandidate) return { isCandidate: false, profile: null, savedSearches: [] as SavedSearchRow[] };
+  const [{data:candidateProfile},{data:savedSearches,error:savedSearchError}] = await Promise.all([
+    supabase.from("candidate_profiles").select("primary_skills,preferred_roles,preferred_locations,work_mode,employment_type,total_experience,resume_path,interview_availability").eq("user_id",user.id).maybeSingle(),
+    supabase.from("candidate_saved_searches").select("id,name,query,location,sector,source,job_type,work_mode,freshness,search_in,radius,is_alert_enabled").eq("user_id",user.id).order("updated_at",{ascending:false}).limit(6),
+  ]);
+  return { isCandidate: true, profile: candidateProfile, savedSearches: savedSearchError ? [] as SavedSearchRow[] : (savedSearches ?? []) as SavedSearchRow[] };
 }
+
+type SavedSearchRow = {id:string;name:string;query:string|null;location:string|null;sector:string|null;source:string;job_type:string|null;work_mode:string|null;freshness:string|null;search_in:string|null;radius:string|null;is_alert_enabled:boolean};
 
 function SectionHeading({ eyebrow, title, count }: { eyebrow: string; title: string; count: number }) {
   return <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">{eyebrow}</p><h2 className="mt-2 text-3xl font-semibold tracking-[-.035em] sm:text-4xl">{title}</h2></div><span className="rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm">{count.toLocaleString("en-IN")} available</span></div>;
@@ -548,4 +608,31 @@ function isFreshEnough(value: string | null | undefined, days: number) {
   if (!value) return false;
   const postedAt = new Date(value).getTime();
   return Number.isFinite(postedAt) && postedAt >= Date.now() - days * 86_400_000;
+}
+
+function FreshnessBadge({value}:{value?:string|null}) {
+  const freshness=freshnessLabel(value);
+  const tone=freshness.tone==="emerald"?"bg-emerald-50 text-emerald-700":freshness.tone==="violet"?"bg-violet-50 text-violet-700":"bg-zinc-100 text-zinc-600";
+  return <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${tone}`}>{freshness.label}</span>;
+}
+
+function TrendGroup({title,items}:{title:string;items:Array<[string,number]>}) {
+  return <article className="rounded-3xl bg-zinc-50 p-5"><p className="text-xs font-bold uppercase tracking-[.15em] text-zinc-400">{title}</p><div className="mt-4 space-y-2">{items.map(([label,count],index)=><div key={`${title}-${label}`} className="flex items-center justify-between rounded-xl bg-white px-4 py-3 text-sm"><span className="font-semibold"><span className="mr-2 text-zinc-300">{index+1}</span>{label}</span><span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-bold">{count}</span></div>)}</div></article>;
+}
+
+function topCounts(values:string[],limit:number):Array<[string,number]> {
+  const counts=new Map<string,number>();
+  for(const value of values){const label=value.trim();if(label)counts.set(label,(counts.get(label)??0)+1)}
+  return [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,limit);
+}
+
+function sectorForText(value:string) {
+  return JOB_SECTORS.find((item)=>matchesJobSector(value,item.value))?.label??"Other opportunities";
+}
+
+function savedSearchHref(search:SavedSearchRow) {
+  const params=new URLSearchParams();
+  const values:Record<string,string|null|undefined>={q:search.query,location:search.location,sector:search.sector,source:search.source,jobType:search.job_type,workMode:search.work_mode,freshness:search.freshness,searchIn:search.search_in,radius:search.radius};
+  for(const[key,value]of Object.entries(values))if(value)params.set(key,value);
+  return `/jobs?${params.toString()}`;
 }

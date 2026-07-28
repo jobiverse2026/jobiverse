@@ -30,6 +30,7 @@ import {
   Award,
   Bot,
   Megaphone,
+  RadioTower,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -80,6 +81,11 @@ const menuItems = [
     title: "Growth Analytics",
     href: "/admin/growth",
     icon: TrendingUp,
+  },
+  {
+    title: "Job Source Health",
+    href: "/admin/job-sources",
+    icon: RadioTower,
   },
   {
     title: "Campus Partnerships",
