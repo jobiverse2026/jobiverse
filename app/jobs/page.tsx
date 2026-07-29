@@ -622,7 +622,7 @@ const getCachedPartnerJobs = unstable_cache(
     radius: allowedRadii.has(radius) ? radius as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined,
     companySearch,
   }),
-  ["jobiverse-partner-catalog-v2-lightweight"],
+  ["jobiverse-partner-catalog-v3-cloudflare-secrets"],
   { revalidate: 1_800, tags: ["partner-jobs"] },
 );
 
