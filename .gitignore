@@ -42,6 +42,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# cloudflare
+/.open-next/
+/.wrangler/
+
 # local editor
 /.vscode/
 
