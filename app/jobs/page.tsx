@@ -575,16 +575,13 @@ async function discoverPartnerJobs({
     sources.push({ name: "The Muse", request: () => searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) });
   }
 
-  // Keep each request within Cloudflare Workers Free CPU limits. Source pairs
-  // rotate with pagination so the catalogue stays varied without parsing every
-  // partner feed on every page request.
-  const startIndex = (page - 1) % sources.length;
-  const selectedSources = [sources[startIndex], sources[(startIndex + 1) % sources.length]]
-    .filter((source, index, selected) => selected.findIndex((item) => item.name === source.name) === index);
-  const results = await Promise.all(selectedSources.map((source) => withPartnerDeadline(source.request())));
+  // Fetch every connected source concurrently. Only 20 cards are rendered,
+  // while totalCount represents the complete partner catalogue across all
+  // providers instead of a rotating subset of two sources.
+  const results = await Promise.all(sources.map((source) => withPartnerDeadline(source.request())));
   const configuredResults = results.filter((result) => result.configured);
   const jobs = interleavePartnerJobs(results, 20);
-  const providers = selectedSources
+  const providers = sources
     .map((source, index) => ({
       name: source.name,
       configured: results[index].configured,
@@ -623,7 +620,7 @@ const getCachedPartnerJobs = unstable_cache(
     radius: allowedRadii.has(radius) ? radius as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined,
     companySearch,
   }),
-  ["jobiverse-partner-catalog-v3-cloudflare-secrets"],
+  ["jobiverse-partner-catalog-v4-full-source-totals"],
   { revalidate: 1_800, tags: ["partner-jobs"] },
 );
 
@@ -661,7 +658,7 @@ const getCachedPublicDirectJobs = unstable_cache(
 async function withPartnerDeadline(request: Promise<PartnerJobSearch>) {
   let timeout: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<PartnerJobSearch>((resolve) => {
-    timeout = setTimeout(() => resolve({ configured: false, totalCount: 0, jobs: [] }), 4_500);
+    timeout = setTimeout(() => resolve({ configured: false, totalCount: 0, jobs: [] }), 8_000);
   });
 
   try {
