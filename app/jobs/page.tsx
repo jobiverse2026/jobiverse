@@ -431,7 +431,7 @@ function partnerLocationLabel(jobLocation: string, searchedLocation: string, mat
   return providerLocation || "India";
 }
 
-async function discoverJoobleJobs({
+async function legacyDiscoverJoobleJobs({
   keywords,
   location,
   page,
@@ -503,6 +503,37 @@ async function discoverJoobleJobs({
   };
 }
 
+async function discoverJoobleJobs({
+  keywords,
+  location,
+  page,
+  radius,
+  companySearch,
+}: {
+  keywords: string;
+  location: string;
+  page: number;
+  radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
+  companySearch: boolean;
+}): Promise<PartnerJobSearch> {
+  const result = await searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
+  if (location.toLowerCase() !== "india") return result;
+
+  return {
+    ...result,
+    jobs: result.jobs.map((job) => ({
+      ...job,
+      displayLocation: partnerLocationLabel(
+        job.location,
+        "India",
+        false,
+        `${job.title} ${plainTextSnippet(job.snippet)}`,
+      ),
+    })),
+    nationalFeed: true,
+  };
+}
+
 const providerLinks: Record<NonNullable<PartnerJob["provider"]>, string> = {
   Jooble: "https://jooble.org",
   Adzuna: "https://www.adzuna.in",
@@ -526,24 +557,38 @@ async function discoverPartnerJobs({
   radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
   companySearch: boolean;
 }): Promise<PartnerJobSearch> {
-  const sourceNames = ["Jooble", "Adzuna", "Remotive", "Arbeitnow", "Jobicy", "Himalayas", "The Muse"] as const;
-  const results = await Promise.all([
-    withPartnerDeadline(discoverJoobleJobs({ keywords, location, page, radius, companySearch })),
-    withPartnerDeadline(searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-    withPartnerDeadline(searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-    withPartnerDeadline(searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-    withPartnerDeadline(searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-    withPartnerDeadline(searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-    withPartnerDeadline(searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch })),
-  ]);
+  const sources: Array<{ name: NonNullable<PartnerJob["provider"]>; request: () => Promise<PartnerJobSearch> }> = [];
+  if (process.env.JOOBLE_API_KEY) {
+    sources.push({ name: "Jooble", request: () => discoverJoobleJobs({ keywords, location, page, radius, companySearch }) });
+  }
+  if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY) {
+    sources.push({ name: "Adzuna", request: () => searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) });
+  }
+  sources.push(
+    { name: "Himalayas", request: () => searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
+    { name: "Arbeitnow", request: () => searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
+    { name: "Remotive", request: () => searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
+    { name: "Jobicy", request: () => searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
+  );
+  if (process.env.THE_MUSE_API_KEY) {
+    sources.push({ name: "The Muse", request: () => searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) });
+  }
+
+  // Keep each request within Cloudflare Workers Free CPU limits. Source pairs
+  // rotate with pagination so the catalogue stays varied without parsing every
+  // partner feed on every page request.
+  const startIndex = (page - 1) % sources.length;
+  const selectedSources = [sources[startIndex], sources[(startIndex + 1) % sources.length]]
+    .filter((source, index, selected) => selected.findIndex((item) => item.name === source.name) === index);
+  const results = await Promise.all(selectedSources.map((source) => withPartnerDeadline(source.request())));
   const configuredResults = results.filter((result) => result.configured);
   const jobs = interleavePartnerJobs(results, 20);
-  const providers = sourceNames
-    .map((name, index) => ({
-      name,
+  const providers = selectedSources
+    .map((source, index) => ({
+      name: source.name,
       configured: results[index].configured,
       totalCount: results[index].totalCount,
-      href: providerLinks[name],
+      href: providerLinks[source.name],
       error: results[index].error,
     }))
     .filter((provider) => provider.configured);
@@ -577,7 +622,7 @@ const getCachedPartnerJobs = unstable_cache(
     radius: allowedRadii.has(radius) ? radius as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined,
     companySearch,
   }),
-  ["jobiverse-partner-catalog-v1"],
+  ["jobiverse-partner-catalog-v2-lightweight"],
   { revalidate: 1_800, tags: ["partner-jobs"] },
 );
 

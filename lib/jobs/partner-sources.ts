@@ -150,7 +150,7 @@ export async function searchRemotiveJobs({
   companySearch = false,
 }: SearchInput): Promise<PartnerJobSearch> {
   try {
-    const params = new URLSearchParams({ limit: "500" });
+    const params = new URLSearchParams({ limit: "50" });
     if (keywords.trim() && !companySearch) params.set("search", keywords.trim());
     if (keywords.trim() && companySearch) params.set("company_name", keywords.trim());
     const response = await fetch(`https://remotive.com/api/remote-jobs?${params}`, {
@@ -278,7 +278,7 @@ export async function searchJobicyJobs({
   companySearch = false,
 }: SearchInput): Promise<PartnerJobSearch> {
   try {
-    const params = new URLSearchParams({ count: "100" });
+    const params = new URLSearchParams({ count: "40" });
     if (keywords.trim().length >= 3 && !companySearch) params.set("tag", keywords.trim().slice(0, 50));
     const response = await fetch(`https://jobicy.com/api/v2/remote-jobs?${params}`, {
       headers: { accept: "application/json" },
