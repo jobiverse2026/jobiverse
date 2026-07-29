@@ -114,11 +114,12 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const [partner, directCatalog, viewer] = await Promise.all([
     source === "jobiverse"
       ? Promise.resolve<PartnerJobSearch>({ configured: true, totalCount: 0, jobs: [], nationalFeed: false })
-      : getCachedPartnerJobs(partnerKeywords, location, page, radius ?? "", searchIn === "company"),
+      : getCachedPartnerJobs(partnerKeywords, location, page, radius ?? "", searchIn === "company")
+          .catch(() => ({ configured: false, totalCount: 0, jobs: [], nationalFeed: false } as PartnerJobSearch)),
     source === "partner"
       ? Promise.resolve({ jobs: [], ownerCompanies: [] })
-      : getCachedPublicDirectJobs(),
-    getJobsViewer(),
+      : getCachedPublicDirectJobs().catch(() => ({ jobs: [], ownerCompanies: [] })),
+    getJobsViewer().catch(() => ({ isCandidate: false, profile: null, savedSearches: [] as SavedSearchRow[] })),
   ]);
 
   const directRows = directCatalog.jobs;
@@ -664,7 +665,9 @@ async function withPartnerDeadline(request: Promise<PartnerJobSearch>) {
   });
 
   try {
-    return await Promise.race([request, deadline]);
+    return await Promise.race([request, deadline]).catch(
+      (): PartnerJobSearch => ({ configured: false, totalCount: 0, jobs: [] }),
+    );
   } finally {
     if (timeout) clearTimeout(timeout);
   }
