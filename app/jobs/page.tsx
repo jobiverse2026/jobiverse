@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
+import { cookies } from "next/headers";
 import {
   ArrowLeft,
   ArrowRight,
@@ -91,12 +93,13 @@ const allowedRadii = new Set(["0", "4", "8", "16", "26", "40", "80"]);
 const allowedJobTypes = new Set(["full-time", "part-time", "contract", "internship"]);
 const allowedWorkModes = new Set(["remote", "hybrid", "on-site"]);
 const allowedFreshness = new Set(["1", "3", "7", "30"]);
+const MAX_BROWSABLE_PARTNER_PAGES = 100;
 
 export default async function PublicJobsPage({ searchParams }: { searchParams: SearchParams }) {
   const filters = await searchParams;
   const query = (filters.q ?? "").trim();
   const location = (filters.location ?? "India").trim() || "India";
-  const page = Math.max(1, Number.parseInt(filters.page ?? "1", 10) || 1);
+  const page = Math.min(MAX_BROWSABLE_PARTNER_PAGES, Math.max(1, Number.parseInt(filters.page ?? "1", 10) || 1));
   const source = filters.source === "jobiverse" ? "jobiverse" : filters.source === "partner" ? "partner" : "all";
   const searchIn = filters.searchIn === "company" ? "company" : "role";
   const jobType = allowedJobTypes.has(filters.jobType ?? "") ? filters.jobType! : "";
@@ -108,28 +111,18 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   const requestedRadius = allowedRadii.has(filters.radius ?? "") ? filters.radius! as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined;
   const radius = filters.radius === "all" ? undefined : requestedRadius ?? (location.toLowerCase() === "india" ? undefined : "40");
 
-  const [partner, directResult, viewer] = await Promise.all([
+  const [partner, directCatalog, viewer] = await Promise.all([
     source === "jobiverse"
       ? Promise.resolve<PartnerJobSearch>({ configured: true, totalCount: 0, jobs: [], nationalFeed: false })
-      : discoverPartnerJobs({ keywords: partnerKeywords, location, page, radius, companySearch: searchIn === "company" }),
+      : getCachedPartnerJobs(partnerKeywords, location, page, radius ?? "", searchIn === "company"),
     source === "partner"
-      ? Promise.resolve({ data: [], error: null })
-      : adminSupabase
-          .from("requirements")
-          .select("id,job_title,department,employment_type,work_mode,experience,vacancies,location,primary_skills,job_description,budget_ctc,published_at,expires_at,is_promoted,promoted_until,company_id,employer_id,companies(company_name,is_verified,industry,location)")
-          .eq("is_public", true)
-          .not("status", "in", '("Closed","Cancelled")')
-          .order("published_at", { ascending: false })
-          .limit(30),
+      ? Promise.resolve({ jobs: [], ownerCompanies: [] })
+      : getCachedPublicDirectJobs(),
     getJobsViewer(),
   ]);
 
-  const directRows = directResult.data ?? [];
-  const ownerIds = Array.from(new Set(directRows.filter((job) => !job.companies?.[0] && job.employer_id).map((job) => job.employer_id)));
-  const { data: ownerCompanies } = ownerIds.length
-    ? await adminSupabase.from("companies").select("owner_id,company_name,is_verified,industry,location").in("owner_id", ownerIds)
-    : { data: [] };
-  const ownerCompanyMap = new Map((ownerCompanies ?? []).map((company) => [company.owner_id, company]));
+  const directRows = directCatalog.jobs;
+  const ownerCompanyMap = new Map(directCatalog.ownerCompanies.map((company) => [company.owner_id, company]));
   const directJobsFiltered = directRows.filter((job) => {
     const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
     const searchable = searchIn === "company"
@@ -171,7 +164,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness || collection);
   const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : Math.max(partnerJobs.length, partner.totalCount);
-  const partnerHasNextPage = !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
+  const partnerHasNextPage = page < MAX_BROWSABLE_PARTNER_PAGES && !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
   const savedSearches = viewer.savedSearches.map((item) => ({
@@ -369,6 +362,10 @@ function TrustBadge({score,label}:{score:number;label:string}){const tone=score>
 function salaryEstimateLabel(salary:{min:number;max:number;unit:string}){return `₹${salary.min}–₹${salary.max} ${salary.unit}`;}
 
 async function getJobsViewer() {
+  const cookieStore = await cookies();
+  const hasSupabaseSession = cookieStore.getAll().some(({ name }) => /^sb-.*-auth-token(?:\.\d+)?$/.test(name));
+  if (!hasSupabaseSession) return { isCandidate: false, profile: null, savedSearches: [] as SavedSearchRow[] };
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { isCandidate: false, profile: null, savedSearches: [] as SavedSearchRow[] };
@@ -565,6 +562,55 @@ async function discoverPartnerJobs({
       : undefined,
   };
 }
+
+const getCachedPartnerJobs = unstable_cache(
+  async (
+    keywords: string,
+    location: string,
+    page: number,
+    radius: string,
+    companySearch: boolean,
+  ) => discoverPartnerJobs({
+    keywords,
+    location,
+    page,
+    radius: allowedRadii.has(radius) ? radius as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined,
+    companySearch,
+  }),
+  ["jobiverse-partner-catalog-v1"],
+  { revalidate: 1_800, tags: ["partner-jobs"] },
+);
+
+const getCachedPublicDirectJobs = unstable_cache(
+  async () => {
+    const { data: jobs, error } = await adminSupabase
+      .from("requirements")
+      .select("id,job_title,department,employment_type,work_mode,experience,vacancies,location,primary_skills,job_description,budget_ctc,published_at,expires_at,is_promoted,promoted_until,company_id,employer_id,companies(company_name,is_verified,industry,location)")
+      .eq("is_public", true)
+      .not("status", "in", '("Closed","Cancelled")')
+      .order("published_at", { ascending: false })
+      .limit(30);
+    if (error) throw new Error(error.message);
+
+    const directJobs = jobs ?? [];
+    const ownerIds = Array.from(new Set(
+      directJobs
+        .filter((job) => !job.companies?.[0] && job.employer_id)
+        .map((job) => job.employer_id),
+    ));
+    const { data: ownerCompanies, error: ownerError } = ownerIds.length
+      ? await adminSupabase
+          .from("companies")
+          .select("owner_id,company_name,is_verified,industry,location")
+          .in("owner_id", ownerIds)
+      : { data: [], error: null };
+    if (ownerError) throw new Error(ownerError.message);
+
+    return { jobs: directJobs, ownerCompanies: ownerCompanies ?? [] };
+  },
+  ["jobiverse-public-direct-jobs-v1"],
+  { revalidate: 300, tags: ["public-direct-jobs"] },
+);
 
 async function withPartnerDeadline(request: Promise<PartnerJobSearch>) {
   let timeout: ReturnType<typeof setTimeout> | undefined;
