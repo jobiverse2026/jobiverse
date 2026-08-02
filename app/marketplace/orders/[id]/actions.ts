@@ -16,7 +16,7 @@ async function context(orderId: string) {
   if (error || !order) throw new Error(error?.message ?? "Order not found.");
   return { supabase,user,order };
 }
-function refresh(id:string){ revalidatePath(`/marketplace/orders/${id}`); revalidatePath("/marketplace/orders"); revalidatePath("/earn-with-jobiverse/dashboard/orders"); }
+function refresh(id:string){ revalidatePath(`/marketplace/orders/${id}`); revalidatePath("/marketplace/orders"); revalidatePath("/earn-with-jobiverse/dashboard/orders"); revalidatePath("/consultations/my"); revalidatePath("/admin/consultations"); }
 
 export async function cancelPendingOrder(formData:FormData){
   const id=String(formData.get("orderId")??"");
@@ -25,6 +25,8 @@ export async function cancelPendingOrder(formData:FormData){
   if(order.status!=="pending_payment")throw new Error("Only an unpaid order can be cancelled instantly.");
   const {error}=await supabase.from("marketplace_orders").update({status:"cancelled"}).eq("id",id).eq("customer_id",user.id).eq("status","pending_payment");
   if(error)throw new Error(error.message);
+  const {error:consultationError}=await adminSupabase.from("consultation_bookings").update({status:"cancelled",payment_status:"not_required"}).eq("marketplace_order_id",id).eq("status","pending_payment");
+  if(consultationError)throw new Error(consultationError.message);
   refresh(id);
 }
 
@@ -50,7 +52,6 @@ export async function reopenDispute(formData:FormData){const disputeId=String(fo
 
 export type ScheduleProposalState={error?:string;success?:string};
 export async function proposeOrderScheduleWithState(_state:ScheduleProposalState,formData:FormData):Promise<ScheduleProposalState>{try{await proposeOrderSchedule(formData);return{success:"Schedule proposal sent successfully."};}catch(error){return{error:error instanceof Error?error.message:"Unable to propose this schedule."};}}
-
 
 
 
