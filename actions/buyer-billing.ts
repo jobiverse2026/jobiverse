@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -23,4 +23,5 @@ export async function saveBuyerBillingProfile(formData:FormData){
   revalidatePath("/account/billing");
   revalidatePath("/marketplace/checkout");
   revalidatePath("/candidates/resume-checkout");
+  refresh();
 }
