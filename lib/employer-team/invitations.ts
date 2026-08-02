@@ -36,7 +36,7 @@ export async function claimPendingEmployerTeamInvite({
   const invitedRole: EmployerTeamRole = invite.role === "employer" ? "employer" : "recruiter";
   const { data: account, error: accountError } = await adminSupabase
     .from("users")
-    .select("role")
+    .select("role,full_name")
     .eq("id", userId)
     .maybeSingle();
 
@@ -46,10 +46,22 @@ export async function claimPendingEmployerTeamInvite({
   }
 
   const now = new Date().toISOString();
+  const fullName =
+    typeof account?.full_name === "string" && account.full_name.trim()
+      ? account.full_name.trim()
+      : normalizedEmail.split("@")[0] || "JobiVerse User";
   const { error: roleError } = await adminSupabase
     .from("users")
-    .update({ role: invitedRole, updated_at: now })
-    .eq("id", userId);
+    .upsert(
+      {
+        id: userId,
+        email: normalizedEmail,
+        full_name: fullName,
+        role: invitedRole,
+        updated_at: now,
+      },
+      { onConflict: "id" }
+    );
 
   if (roleError) throw new Error(roleError.message);
 

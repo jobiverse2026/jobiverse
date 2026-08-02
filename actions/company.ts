@@ -19,6 +19,17 @@ async function notifyAdminsAboutFreeEmployer(company: { id: string; company_name
   })));
 }
 
+async function requireEmployerAccount(userId: string) {
+  const { data, error } = await adminSupabase
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (data?.role !== "employer") throw new Error("Employer access is required.");
+}
+
 export async function getCompany() {
   const supabase = await createServerSupabaseClient();
 
@@ -62,11 +73,13 @@ export async function createCompany(values: unknown) {
     throw new Error("Unauthorized");
   }
 
+  await requireEmployerAccount(user.id);
+
   const parsed = companySchema.parse(values);
   const access = await getEmployerCompanyAccess(user.id).catch(() => null);
   if (access && !access.isMasterEmployer) throw new Error("Only the master employer can edit the company profile.");
 
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("companies")
     .insert({
       owner_id: user.id,
@@ -95,12 +108,14 @@ export async function updateCompany(values: unknown) {
     throw new Error("Unauthorized");
   }
 
+  await requireEmployerAccount(user.id);
+
   const parsed = companySchema.parse(values);
   const access = await getEmployerCompanyAccess(user.id).catch(() => null);
   if (access && !access.isMasterEmployer) throw new Error("Only the master employer can edit the company profile.");
 
   // Check if company already exists
-  const { data: existingCompany } = await supabase
+  const { data: existingCompany } = await adminSupabase
     .from("companies")
     .select("id")
     .eq("owner_id", user.id)
@@ -108,7 +123,7 @@ export async function updateCompany(values: unknown) {
 
   // First time -> Create
   if (!existingCompany) {
-    const { data, error } = await supabase
+    const { data, error } = await adminSupabase
       .from("companies")
       .insert({
         owner_id: user.id,
@@ -127,7 +142,7 @@ export async function updateCompany(values: unknown) {
   }
 
   // Existing -> Update
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("companies")
     .update({
       ...parsed,

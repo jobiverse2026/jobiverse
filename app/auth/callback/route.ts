@@ -82,7 +82,31 @@ export async function GET(request: Request) {
     }
   }
 
-  const { data: profile, error: profileError } = await supabase.from("users").select("role").eq("id", user.id).single();
+  let { data: profile, error: profileError } = await adminSupabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  // OAuth can create the auth identity before the public user profile exists.
+  // Self-service roles are provisioned here; controlled employer-team roles remain gated.
+  if ((!profile || profileError) && ["candidate", "employer", "creator"].includes(requestedRole)) {
+    const { name, avatarUrl } = oauthProfile(user);
+    const { error: provisionError } = await adminSupabase.from("users").upsert({
+      id: user.id,
+      email: user.email ?? "",
+      full_name: name ?? user.email?.split("@")[0] ?? "JobiVerse User",
+      role: requestedRole,
+      avatar_url: avatarUrl,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" });
+
+    if (!provisionError) {
+      profile = { role: requestedRole };
+      profileError = null;
+    }
+  }
+
   if (profileError || !profile || !(profile.role in roleRedirect)) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login/${requestedRole}?error=profile_missing`);
@@ -96,7 +120,7 @@ export async function GET(request: Request) {
     if (name) updates.full_name = name;
     if (avatarUrl) updates.avatar_url = avatarUrl;
     if (Object.keys(updates).length) {
-      await supabase.from("users").update(updates).eq("id", user.id);
+      await adminSupabase.from("users").update(updates).eq("id", user.id);
     }
   }
 
@@ -132,5 +156,6 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? roleRedirect[actualRole]));
+  const defaultDestination = creatorAccess ? roleRedirect.creator : roleRedirect[actualRole];
+  return NextResponse.redirect(freshAuthRedirect(origin, requestedNext ?? defaultDestination));
 }
