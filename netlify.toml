@@ -1,0 +1,8 @@
+[functions."process-email"]
+  schedule = "*/10 * * * *"
+
+[functions."interview-reminders"]
+  schedule = "*/15 * * * *"
+
+[functions."jobs-cleanup"]
+  schedule = "0 2 * * *"

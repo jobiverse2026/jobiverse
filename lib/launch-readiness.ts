@@ -7,6 +7,7 @@ export type ReadinessItem = {
 };
 
 const configured = (name: string) => Boolean(process.env[name]?.trim());
+const enabled = (name: string) => process.env[name]?.trim().toLowerCase() === "true";
 
 export function getLaunchReadiness() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
@@ -38,7 +39,7 @@ export function getLaunchReadiness() {
       title: "Transactional email",
       description: "Brevo/Supabase email delivery for auth and platform notifications.",
       items: [
-        { label: "Supabase Auth SMTP", detail: "Configure Brevo SMTP inside Supabase Auth for signup, confirmation and password reset emails.", ready: configured("SUPABASE_AUTH_SMTP_READY") },
+        { label: "Supabase Auth SMTP", detail: "Configure Brevo SMTP inside Supabase Auth for signup, confirmation and password reset emails.", ready: enabled("SUPABASE_AUTH_SMTP_READY") },
         { label: "Brevo transactional API", detail: hasBrevo ? "Brevo API key is configured for JobiVerse notification emails." : hasResend ? "Resend fallback key is configured. Brevo is preferred for this project." : "BREVO_API_KEY is missing for platform notification emails.", ready: hasBrevo || hasResend },
         { label: "Verified sender address", detail: "TRANSACTIONAL_EMAIL_FROM is configured, e.g. JobiVerse <jobiverse@outlook.com>.", ready: configured("TRANSACTIONAL_EMAIL_FROM") },
         { label: "Email worker secret", detail: "Internal queue processor is protected.", ready: configured("EMAIL_WORKER_SECRET") },
