@@ -621,7 +621,9 @@ const getCachedPartnerJobs = unstable_cache(
     companySearch,
   }),
   ["jobiverse-partner-catalog-v4-full-source-totals"],
-  { revalidate: 1_800, tags: ["partner-jobs"] },
+  // Partner catalogues do not need to be rebuilt every 30 minutes. A longer
+  // shared cache keeps external API latency and serverless compute predictable.
+  { revalidate: 21_600, tags: ["partner-jobs"] },
 );
 
 const getCachedPublicDirectJobs = unstable_cache(

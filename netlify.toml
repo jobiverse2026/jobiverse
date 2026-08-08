@@ -1,8 +1,11 @@
 [functions."process-email"]
-  schedule = "*/10 * * * *"
+  # Drain the queue in batches instead of waking two serverless functions six
+  # times an hour when the site is idle.
+  schedule = "*/30 * * * *"
 
 [functions."interview-reminders"]
-  schedule = "*/15 * * * *"
+  # Hourly is sufficient because the reminder endpoint works from time windows.
+  schedule = "5 * * * *"
 
 [functions."jobs-cleanup"]
   schedule = "0 2 * * *"
