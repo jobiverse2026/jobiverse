@@ -7,7 +7,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { calculateOpportunityTrust, estimateSalaryRange } from "@/lib/jobs/intelligence";
 
 type Props = { params: Promise<{ id: string }> };
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.jobiverse.in").replace(/\/$/, "");
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://jobiverse.in").replace(/\/$/, "");
 
 async function getPublicJob(id: string) {
   const { data } = await adminSupabase.from("requirements")

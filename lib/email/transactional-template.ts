@@ -18,7 +18,7 @@ function escapeHtml(value: string) {
 }
 
 export function renderTransactionalEmail(payload: EmailPayload) {
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.jobiverse.in").replace(/\/$/, "");
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://jobiverse.in").replace(/\/$/, "");
   const name = escapeHtml(payload.recipient_name ?? "JobiVerse member");
   const title = escapeHtml(payload.title ?? "JobiVerse update");
   const message = escapeHtml(payload.message ?? "You have a new update.");

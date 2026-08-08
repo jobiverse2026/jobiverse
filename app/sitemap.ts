@@ -7,7 +7,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 export const revalidate = 3600;
 
 export default async function sitemap():Promise<MetadataRoute.Sitemap>{
-  const base=(process.env.NEXT_PUBLIC_SITE_URL??"https://www.jobiverse.in").replace(/\/$/,"");
+  const base=(process.env.NEXT_PUBLIC_SITE_URL??"https://jobiverse.in").replace(/\/$/,"");
   const pages=[["",1,"daily"],["/jobs",1,"daily"],["/services",.9,"weekly"],["/pricing",.8,"weekly"],["/employers",.9,"weekly"],["/candidates",.9,"weekly"],["/students",.9,"weekly"],["/career-services",.8,"weekly"],["/earn-with-jobiverse",.8,"weekly"],["/marketplace",.9,"daily"],["/why-jobiverse",.8,"monthly"],["/about",.7,"monthly"],["/industries",.7,"monthly"],["/resources",.7,"weekly"],["/contact",.7,"monthly"],["/privacy-policy",.3,"yearly"],["/refund-policy",.3,"yearly"],["/terms",.3,"yearly"]] as const;
   const now=new Date();
   const {data:directJobs}=await adminSupabase.from("requirements").select("id,published_at,updated_at").eq("is_public",true).not("status","in",'("Closed","Cancelled")').limit(5000);
