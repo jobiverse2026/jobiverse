@@ -21,7 +21,7 @@ export async function scheduleEmployerInterview(values: unknown) {
   const result = interviewSchema.safeParse(values);
 
   if (!result.success) {
-    throw new Error(result.error.issues[0]?.message ?? "Please check the interview details.");
+    return { success: false as const, error: result.error.issues[0]?.message ?? "Please check the interview details." };
   }
 
   const parsed = result.data;
@@ -37,12 +37,12 @@ export async function scheduleEmployerInterview(values: unknown) {
       const url = new URL(meetingLink);
       if (!url.hostname.includes(".")) throw new Error();
     } catch {
-      throw new Error("Please enter a valid meeting link, for example meet.google.com/abc-defg-hij.");
+      return { success: false as const, error: "Please enter a valid meeting link, for example meet.google.com/abc-defg-hij." };
     }
   }
 
   if (Number.isNaN(interviewDate.getTime()) || interviewDate.getTime() <= Date.now()) {
-    throw new Error("Please select a valid future interview date and time.");
+    return { success: false as const, error: "Please select a valid future interview date and time." };
   }
 
   const { supabase, user, profile } = await requireRole(["employer"]);
@@ -55,7 +55,7 @@ export async function scheduleEmployerInterview(values: unknown) {
     p_interviewer_name: parsed.interviewerName || null,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) return { success: false as const, error: error.message };
 
   const { data: candidate } = await adminSupabase
     .from("candidates")
@@ -94,5 +94,5 @@ export async function scheduleEmployerInterview(values: unknown) {
   revalidatePath("/employers/candidates");
   revalidatePath("/employers/dashboard");
 
-  return { interviewId: data };
+  return { success: true as const, interviewId: data };
 }

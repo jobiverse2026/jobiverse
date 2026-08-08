@@ -22,7 +22,7 @@ export default function InterviewScheduler({ candidateId }: { candidateId: strin
     const hour24 = meridiem === "PM" ? (hour12 % 12) + 12 : hour12 % 12;
     const interviewDate = `${form.get("interview_day")}T${String(hour24).padStart(2, "0")}:${minute}`;
     try {
-      await scheduleEmployerInterview({
+      const result = await scheduleEmployerInterview({
         candidateId,
         interviewRound: form.get("interview_round"),
         interviewDate,
@@ -30,6 +30,10 @@ export default function InterviewScheduler({ candidateId }: { candidateId: strin
         meetingLink: form.get("meeting_link"),
         interviewerName: form.get("interviewer_name"),
       });
+      if (!result.success) {
+        setMessage(result.error);
+        return;
+      }
       formElement.reset();
       setMessage("Interview scheduled successfully.");
     } catch (error) {
