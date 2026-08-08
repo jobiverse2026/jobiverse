@@ -200,8 +200,8 @@ export default function Sidebar({ open = false, onClose }: { open?: boolean; onC
     const loadCounts=()=>fetch("/api/admin/pending-counts").then(response=>response.json()).then(data=>{if(active)setCounts(data)}).catch(()=>{});
     loadCounts();
     // Pending badges do not need near-realtime polling. Refresh on navigation,
-    // focus and once per minute to avoid four API invocations per admin minute.
-    const interval=window.setInterval(loadCounts,60000);
+    // focus and every five minutes to keep background invocations predictable.
+    const interval=window.setInterval(loadCounts,300000);
     window.addEventListener("focus",loadCounts);
     return()=>{active=false;window.clearInterval(interval);window.removeEventListener("focus",loadCounts)};
   },[pathname]);
