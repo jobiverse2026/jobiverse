@@ -91,7 +91,7 @@ const menuItems = [
     icon: ReceiptIndianRupee,
   },
   {
-    title: "Growth Analytics",
+    title: "Registration Tracker",
     href: "/admin/growth",
     icon: TrendingUp,
   },

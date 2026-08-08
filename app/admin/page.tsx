@@ -87,6 +87,7 @@ export default async function AdminDashboardPage() {
     },
   ];
   const launchControl = [
+    { title: "Registration tracker", value: stats.employers + stats.candidates, note: "Signups, verification and role-wise growth", href: "/admin/growth", icon: Users },
     { title: "Business health", value: stats.activeOrders + stats.openRequirements, note: "Growth, retention and attention signals", href: "/admin/business-health", icon: Activity },
     { title: "JobiVerse hiring queue", value: stats.jobiverseRequirements, note: "Assigned requirements to work", href: "/admin/requirements", icon: BriefcaseBusiness },
     { title: "Candidate intelligence", value: stats.candidates, note: "Profiles tracked inside hiring ops", href: "/admin/candidates", icon: Users },
