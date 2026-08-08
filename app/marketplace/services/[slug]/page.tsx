@@ -81,7 +81,7 @@ export default async function ServiceDetailPage({ params, searchParams }: { para
     }
   }
   if (jobiVerseOffer) {
-    service.providers = [{ name: "JobiVerse Personal", title: jobiVerseOffer.description, rating: 5, completedOrders: 0, startingPrice: jobiVerseOffer.price, priceLabel: jobiVerseOffer.priceLabel, delivery: jobiVerseOffer.delivery, verified: true, isJobiVerse: true, logoUrl: "/images/branding/jobiverse-logo.svg" }, ...service.providers];
+    service.providers = [{ name: "JobiVerse Personal", title: jobiVerseOffer.description, rating: 5, completedOrders: 0, startingPrice: jobiVerseOffer.price, priceLabel: jobiVerseOffer.priceLabel, delivery: jobiVerseOffer.delivery, verified: true, isJobiVerse: true, logoUrl: "/images/branding/jobiverse-logo.webp" }, ...service.providers];
     service.expertCount += 1;
     if (jobiVerseOffer.price > 0) service.startingPrice = service.startingPrice > 0 ? Math.min(service.startingPrice, jobiVerseOffer.price) : jobiVerseOffer.price;
   }

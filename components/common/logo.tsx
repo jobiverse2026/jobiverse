@@ -17,7 +17,7 @@ export function Logo() {
       {/* Logo Icon */}
 
       <Image
-        src="/images/branding/jobiverse-logo.svg?v=transparent-2"
+        src="/images/branding/jobiverse-logo.webp"
         alt="JobiVerse Logo"
         width={44}
         height={44}

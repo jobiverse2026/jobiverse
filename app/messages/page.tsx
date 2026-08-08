@@ -569,7 +569,7 @@ function Avatar({
   if (official) {
     return (
       <div className={`grid ${size} shrink-0 place-items-center rounded-full bg-white p-1 shadow-sm`}>
-        <Image src="/images/branding/jobiverse-logo.svg" alt="JobiVerse" width={44} height={44} />
+        <Image src="/images/branding/jobiverse-logo.webp" alt="JobiVerse" width={44} height={44} />
       </div>
     );
   }

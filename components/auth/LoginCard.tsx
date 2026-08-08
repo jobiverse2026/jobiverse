@@ -121,7 +121,7 @@ export default function LoginCard({ role = "candidate" }: Props) {
             className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-white shadow-sm"
           >
             <Image
-              src="/images/branding/jobiverse-logo.svg?v=transparent-2"
+              src="/images/branding/jobiverse-logo.webp"
               alt="JobiVerse"
               width={48}
               height={48}
