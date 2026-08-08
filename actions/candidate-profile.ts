@@ -75,6 +75,7 @@ export async function saveCandidateProfile(formData: FormData) {
 
   revalidatePath("/candidates/profile");
   revalidatePath("/candidates/dashboard");
+  revalidatePath("/candidates/resume-builder");
   return {
     resumeChanged: Boolean(newResumePath),
     resumeReplaced: Boolean(newResumePath && existing?.resume_path),
