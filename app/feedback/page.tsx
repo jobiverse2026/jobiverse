@@ -1,11 +1,19 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CheckCircle2, Headphones, Lightbulb, MessageSquareText } from "lucide-react";
 
 import { submitFeedback } from "./actions";
 import { requireRole } from "@/lib/auth/authorization";
 
 export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ submitted?: string }> }) {
-  const [{ submitted }, { supabase, user }] = await Promise.all([searchParams, requireRole(["candidate", "employer", "recruiter", "creator", "admin"])]);
+  const [params, access] = await Promise.all([
+    searchParams,
+    requireRole(["candidate", "employer", "recruiter", "creator", "admin"]).catch(() => null),
+  ]);
+  if (!access) redirect("/login/candidate?next=%2Ffeedback");
+
+  const { submitted } = params;
+  const { supabase, user } = access;
   const { data: history } = await supabase.from("user_feedback").select("id,category,area,subject,status,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8);
   return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-6xl">
     <section className="overflow-hidden rounded-[2.75rem] bg-[radial-gradient(circle_at_85%_12%,rgba(255,255,255,.18),transparent_22rem),linear-gradient(135deg,#09090b,#3f3f46)] p-8 text-white sm:p-12"><span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[.18em]"><MessageSquareText size={15}/>Feedback centre</span><h1 className="mt-7 max-w-4xl text-4xl font-semibold tracking-[-.05em] sm:text-6xl">Help us make your universe better.</h1><p className="mt-5 max-w-2xl leading-7 text-zinc-300">Report an issue, suggest a feature or request a service. Every submission becomes a trackable JobiVerse ticket.</p></section>
@@ -26,4 +34,3 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Pro
 
 const input = "mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 outline-none transition focus:border-zinc-500 focus:bg-white";
 function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="text-sm font-semibold text-zinc-700">{label}{children}</label>; }
-
