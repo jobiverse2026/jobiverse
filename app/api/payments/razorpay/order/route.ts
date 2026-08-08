@@ -6,6 +6,7 @@ import { amountWithPaymentProcessing, paymentProcessingFeeFor } from "@/lib/paym
 import { getResumeTemplate } from "@/lib/resume-templates";
 import { featuredListingPrice } from "@/lib/marketplace/pricing";
 import { isPaidAIEnabled } from "@/lib/ai/launch";
+import { getEmployerCompanyAccess } from "@/lib/employer-team/access";
 
 export async function POST(request: Request) {
   try {
@@ -54,7 +55,13 @@ export async function POST(request: Request) {
       if (service.is_featured && (!service.featured_until || new Date(service.featured_until) > new Date())) return Response.json({ alreadyPaid: true, redirectUrl: "/earn-with-jobiverse/dashboard?featured=active" });
       amount = featuredListingPrice(Number(service.price)); title = `Featured placement: ${service.title}`;
     } else if (body.targetType === "job_promotion") {
-      const { data: role } = await supabase.from("requirements").select("id,job_title,is_public,is_promoted,promoted_until").eq("id", body.targetId).maybeSingle();
+      const access = await getEmployerCompanyAccess(user.id);
+      const { data: role } = await adminSupabase
+        .from("requirements")
+        .select("id,job_title,is_public,is_promoted,promoted_until")
+        .eq("id", body.targetId)
+        .eq("company_id", access.company.id)
+        .maybeSingle();
       if (!role) return Response.json({ error: "Requirement not found or you do not have access." }, { status: 404 });
       if (!role.is_public) return Response.json({ error: "Publish this role to JobiVerse Jobs before promoting it." }, { status: 400 });
       if (role.is_promoted && role.promoted_until && new Date(role.promoted_until) > new Date()) return Response.json({ alreadyPaid: true, redirectUrl: `/employers/requirements/${role.id}?promoted=active` });
