@@ -5,11 +5,12 @@ import { JobiVerseCard } from "@/components/candidate/jobiverse-card";
 import { OpenToWorkToggle } from "@/components/candidate/OpenToWorkToggle";
 import { CareerIntelligencePanel } from "@/components/candidate/CareerIntelligencePanel";
 import { isPaidAIEnabled } from "@/lib/ai/launch";
+import { NextBestAction } from "@/components/candidate/next-best-action";
 
 export default async function CandidateDashboardPage({ searchParams }: { searchParams: Promise<{ visibility?: string }> }) {
   const { supabase, user, profile: userProfile } = await requireRole(["candidate"]);
   const params = await searchParams;
-  const [profileResult, passportResult, itemsResult, applicationsResult, interviewsResult, offersResult, savedResult, resumeVersionsResult] = await Promise.all([
+  const [profileResult, passportResult, itemsResult, applicationsResult, interviewsResult, offersResult, savedResult, resumeVersionsResult, jobAlertsResult] = await Promise.all([
     supabase.from("candidate_profiles").select("profile_completion, headline, phone, resume_path,current_location,total_experience,primary_skills,preferred_roles,preferred_locations,role_level,industry,functional_area,work_mode,employment_type,expected_salary_min,expected_salary_max,expected_ctc,notice_period,linkedin,portfolio_url,bio,open_to_work,job_search_status,interview_availability,deal_breakers,career_wallet_notes").eq("user_id", user.id).maybeSingle(),
     supabase.from("career_passports").select("headline,summary,visibility,public_slug,open_to_opportunities").eq("user_id", user.id).maybeSingle(),
     supabase.from("career_passport_items").select("id,verification_status").eq("user_id", user.id),
@@ -18,6 +19,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     supabase.from("candidate_applications").select("id", { count: "exact", head: true }).eq("candidate_user_id", user.id).eq("status", "Offered"),
     supabase.from("candidate_saved_jobs").select("id", { count: "exact", head: true }).eq("candidate_user_id", user.id),
     supabase.from("candidate_resume_versions").select("id", { count: "exact", head: true }).eq("candidate_user_id", user.id),
+    supabase.from("candidate_job_alert_preferences").select("id,is_active").eq("user_id", user.id).maybeSingle(),
   ]);
   const professional = profileResult.data;
   const isOpenToWork = Boolean(professional?.open_to_work);
@@ -27,8 +29,16 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     ["Applications", applicationsResult.count ?? 0, BriefcaseBusiness, "/candidates/applications"], ["Interviews", interviewsResult.count ?? 0, CalendarDays, "/candidates/applications"],
     ["Offers", offersResult.count ?? 0, Sparkles, "/candidates/applications"], ["Saved jobs", savedResult.count ?? 0, Bookmark, "/candidates/saved-jobs"],
   ] as const;
+  const nextActions = [
+    { title: "Complete your professional profile", description: "Add a headline, skills, preferred roles and location so JobiVerse can personalize opportunities.", href: "/candidates/profile", done: Boolean(professional?.headline && professional?.primary_skills && professional?.preferred_roles && professional?.current_location) },
+    { title: "Upload your latest resume", description: "A current resume makes direct applications faster and improves hiring readiness.", href: "/candidates/resume", done: Boolean(professional?.resume_path) },
+    { title: "Turn on job alerts", description: "Save role and location preferences to receive personalized opportunity digests.", href: "/candidates/job-alerts", done: Boolean(jobAlertsResult.data?.is_active) },
+    { title: "Save your first relevant job", description: "Build a focused shortlist before applying.", href: "/candidates/jobs", done: (savedResult.count ?? 0) > 0 },
+    { title: "Submit your first application", description: "Apply to a suitable role and track every hiring stage from JobiVerse.", href: "/candidates/jobs", done: (applicationsResult.count ?? 0) > 0 },
+  ];
   return <main className="relative min-h-screen overflow-hidden bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,white,transparent_28%),radial-gradient(circle_at_88%_22%,rgba(99,102,241,.11),transparent_24%)]" /><div className="relative mx-auto max-w-7xl">
     <section className="rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl sm:p-12"><p className="text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Talent workspace</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.04em] sm:text-6xl">Welcome, {userProfile.full_name ?? "Professional"}.</h1><p className="mt-5 max-w-2xl text-zinc-300">{professional?.headline ?? "Complete your professional profile to unlock smarter career opportunities."}</p></section>
+    <NextBestAction actions={nextActions} />
     <section className="relative mt-6 overflow-hidden rounded-[2.5rem] border border-white bg-white p-6 shadow-xl sm:p-8 lg:grid lg:grid-cols-[1.05fr_.95fr] lg:gap-8">
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(39,39,42,.16),transparent_65%)]" />
       <div className="relative">

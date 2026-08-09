@@ -6,6 +6,7 @@ import { SaveJobButton } from "@/components/candidate/SaveJobButton";
 import { applicationHealth, jobiverseApplicationFeedback } from "@/lib/candidate/intelligence";
 import { CareerServiceNudge } from "@/components/candidate/CareerServiceNudge";
 import { updateTrackedApplication } from "@/app/jobs/track/actions";
+import { ApplicationFollowUpAssistant } from "@/components/candidate/application-follow-up-assistant";
 
 type SearchParams = Promise<{ tracked?: string; updated?: string }>;
 
@@ -93,6 +94,7 @@ export default async function CandidateCareerActivityPage({ searchParams }: { se
                       <Link href={`/candidates/interview-prep?application=${application.id}`} className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">Prepare for interview</Link>
                     </div>
                     <JobiVerseFeedback feedback={feedback} />
+                    <ApplicationFollowUpAssistant jobTitle={job?.job_title ?? "Opportunity"} company={job?.companies?.[0]?.company_name ?? "the company"} appliedAt={application.applied_at} status={application.status} />
                     <CareerServiceNudge type={nudgeTypeForStatus(application.status)} compact />
                     <p className="mt-3 flex items-center gap-2 text-[11px] text-zinc-400">
                       <CalendarDays size={12} />Applied {new Date(application.applied_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}

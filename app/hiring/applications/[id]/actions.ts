@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/authorization";
+import { notifyUser } from "@/lib/notifications/notify-user";
 
 const uuid = z.string().uuid();
 
@@ -27,9 +28,11 @@ export async function sendApplicationMessage(formData: FormData) {
   const attachmentUrlRaw = String(formData.get("attachmentUrl") ?? "").trim();
   const attachmentUrl = attachmentUrlRaw ? z.string().url().max(1000).parse(attachmentUrlRaw) : null;
   const attachmentName = attachmentUrl ? z.string().trim().max(160).parse(formData.get("attachmentName") || "Shared document") : null;
-  const { user } = await applicationContext(applicationId);
+  const { user, application, requirement } = await applicationContext(applicationId);
   const { error } = await adminSupabase.from("application_messages").insert({ application_id: applicationId, sender_id: user.id, body, attachment_url: attachmentUrl, attachment_name: attachmentName });
   if (error) throw new Error(error.message);
+  const recipient = user.id === application.candidate_user_id ? requirement?.employer_id : application.candidate_user_id;
+  if (recipient) await notifyUser({ userId: recipient, type: "application_message", title: "New application message", body: `A new message was shared for ${requirement?.job_title || "your application"}.`, href: `/hiring/applications/${applicationId}`, referenceId: applicationId, tag: `application-${applicationId}` });
   revalidatePath(`/hiring/applications/${applicationId}`);
 }
 
@@ -45,7 +48,7 @@ export async function sendEmploymentOffer(formData: FormData) {
   const { error } = await adminSupabase.from("employment_offers").upsert(payload, { onConflict: "application_id" });
   if (error) throw new Error(error.message);
   await adminSupabase.from("candidate_applications").update({ status: "Offered" }).eq("id", applicationId);
-  await adminSupabase.from("notifications").insert({ user_id: application.candidate_user_id, type: "offer_update", title: "Employment offer received", message: `${requirement?.job_title || "A role"} offer is ready for your review.`, href: `/hiring/applications/${applicationId}`, reference_id: applicationId });
+  await notifyUser({ userId: application.candidate_user_id, type: "offer_update", title: "Employment offer received", body: `${requirement?.job_title || "A role"} offer is ready for your review.`, href: `/hiring/applications/${applicationId}`, referenceId: applicationId, tag: `offer-${applicationId}` });
   revalidatePath(`/hiring/applications/${applicationId}`);
   revalidatePath("/candidates/applications");
 }
@@ -61,7 +64,7 @@ export async function respondToEmploymentOffer(formData: FormData) {
   const { error } = await adminSupabase.from("employment_offers").update({ status: decision, candidate_response: response || null, counter_annual_ctc: counterAnnualCtc, responded_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("application_id", applicationId).eq("candidate_user_id", user.id);
   if (error) throw new Error(error.message);
   await adminSupabase.from("candidate_applications").update({ status: decision === "accepted" ? "Accepted" : decision === "declined" ? "Declined" : "Offer negotiation" }).eq("id", applicationId);
-  if (requirement?.employer_id) await adminSupabase.from("notifications").insert({ user_id: requirement.employer_id, type: "offer_update", title: `Offer ${decision}`, message: `The candidate responded to the ${requirement.job_title || "role"} offer.`, href: `/hiring/applications/${applicationId}`, reference_id: applicationId });
+  if (requirement?.employer_id) await notifyUser({ userId: requirement.employer_id, type: "offer_update", title: `Offer ${decision}`, body: `The candidate responded to the ${requirement.job_title || "role"} offer.`, href: `/hiring/applications/${applicationId}`, referenceId: applicationId, tag: `offer-${applicationId}` });
   revalidatePath(`/hiring/applications/${applicationId}`);
   revalidatePath("/candidates/applications");
 }

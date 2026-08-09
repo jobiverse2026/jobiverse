@@ -7,13 +7,14 @@ import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerJoinedRequirementQuery } from "@/lib/employer-team/access";
 import { formatIndiaDateTime } from "@/lib/format/date-time";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { notifyUser } from "@/lib/notifications/notify-user";
 
 async function ownedApplication(id: string, userId: string) {
   const access = await getEmployerCompanyAccess(userId);
   const { data } = await scopeEmployerJoinedRequirementQuery(
     adminSupabase
       .from("candidate_applications")
-      .select("id,requirement_id,applicant_name,status,requirements!inner(job_title,employer_id,company_id,companies(company_name))")
+      .select("id,requirement_id,candidate_user_id,applicant_name,status,requirements!inner(job_title,employer_id,company_id,companies(company_name))")
       .eq("id", id),
     access,
     userId
@@ -55,6 +56,7 @@ export async function updateExternalApplicationStatus(applicationId: string, sta
     .eq("application_id", applicationId);
 
   const requirement = Array.isArray((application as any).requirements) ? (application as any).requirements[0] : (application as any).requirements;
+  if (application.candidate_user_id) await notifyUser({ userId: application.candidate_user_id, type: "application_status", title: `Application ${parsed.toLowerCase()}`, body: `Your application for ${requirement?.job_title || "a role"} moved to ${parsed}.`, href: `/hiring/applications/${application.id}`, referenceId: application.id, tag: `application-${application.id}` });
   await notifyAdminsAboutExternalApplication(
     application,
     "External applicant status changed",
@@ -149,6 +151,7 @@ export async function scheduleExternalApplicantInterview(values: unknown) {
   if (error) throw new Error(error.message);
   await adminSupabase.from("candidate_applications").update({ status: "Interview", updated_at: new Date().toISOString() }).eq("id", application.id);
   const requirement = Array.isArray((application as any).requirements) ? (application as any).requirements[0] : (application as any).requirements;
+  if (application.candidate_user_id) await notifyUser({ userId: application.candidate_user_id, type: "interview_scheduled", title: "Interview scheduled", body: `${parsed.round} for ${requirement?.job_title || "your application"} is scheduled for ${formatIndiaDateTime(interviewDate)}.`, href: `/hiring/applications/${application.id}`, referenceId: application.id, tag: `interview-${application.id}` });
   await notifyAdminsAboutExternalApplication(
     application,
     "External applicant interview scheduled",
