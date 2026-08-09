@@ -1,12 +1,14 @@
 import "server-only";
 import { buildPushPayload, type PushSubscription } from "@block65/webcrypto-web-push";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { notificationCategory } from "@/lib/notifications/preferences";
 
 export type JobiVersePushMessage = {
   title: string;
   body: string;
   href?: string;
   tag?: string;
+  type?: string;
 };
 
 function vapidKeys() {
@@ -27,14 +29,23 @@ export async function sendPushToUser(userId: string, message: JobiVersePushMessa
 
   const { data: rows, error } = await adminSupabase
     .from("push_subscriptions")
-    .select("id,endpoint,p256dh,auth")
+    .select("id,endpoint,p256dh,auth,quiet_hours_start,quiet_hours_end,categories")
     .eq("user_id", userId)
     .eq("is_active", true);
   if (error || !rows?.length) return { delivered: 0, failed: error ? 1 : 0, skipped: !error };
 
   let delivered = 0;
   let failed = 0;
-  await Promise.all(rows.map(async (row) => {
+  const category = notificationCategory(message.type ?? message.tag ?? "message");
+  const localTime = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+  const eligibleRows = rows.filter((row) => {
+    if (row.categories?.length && !row.categories.includes(category)) return false;
+    const start = row.quiet_hours_start?.slice(0, 5); const end = row.quiet_hours_end?.slice(0, 5);
+    if (!start || !end || start === end) return true;
+    const quiet = start < end ? localTime >= start && localTime < end : localTime >= start || localTime < end;
+    return !quiet;
+  });
+  await Promise.all(eligibleRows.map(async (row) => {
     try {
       const subscription: PushSubscription = {
         endpoint: row.endpoint,

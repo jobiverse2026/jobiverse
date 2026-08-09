@@ -7,6 +7,7 @@ import { applicationHealth, jobiverseApplicationFeedback } from "@/lib/candidate
 import { CareerServiceNudge } from "@/components/candidate/CareerServiceNudge";
 import { updateTrackedApplication } from "@/app/jobs/track/actions";
 import { ApplicationFollowUpAssistant } from "@/components/candidate/application-follow-up-assistant";
+import { ApplicationWithdrawal } from "@/components/candidate/application-withdrawal";
 
 type SearchParams = Promise<{ tracked?: string; updated?: string }>;
 
@@ -95,6 +96,7 @@ export default async function CandidateCareerActivityPage({ searchParams }: { se
                     </div>
                     <JobiVerseFeedback feedback={feedback} />
                     <ApplicationFollowUpAssistant jobTitle={job?.job_title ?? "Opportunity"} company={job?.companies?.[0]?.company_name ?? "the company"} appliedAt={application.applied_at} status={application.status} />
+                    {!/withdraw|reject|hired|joined|accept/i.test(application.status)&&<ApplicationWithdrawal applicationId={application.id}/>}
                     <CareerServiceNudge type={nudgeTypeForStatus(application.status)} compact />
                     <p className="mt-3 flex items-center gap-2 text-[11px] text-zinc-400">
                       <CalendarDays size={12} />Applied {new Date(application.applied_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}

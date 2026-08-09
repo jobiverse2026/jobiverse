@@ -23,6 +23,6 @@
     "enabled": false
   },
   "triggers": {
-    "crons": ["30 3 * * *"]
+    "crons": ["30 * * * *"]
   }
 }

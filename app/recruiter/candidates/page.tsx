@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import CandidatePipeline from "@/components/recruiter/candidate/CandidatePipeline";
@@ -70,7 +71,7 @@ export default async function RecruiterCandidatesPage() {
     >
       {/* Header */}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between"><Link href="/account/talent-folders" className="rounded-xl bg-zinc-950 px-4 py-3 text-sm font-semibold text-white">Talent folders</Link>
         <div>
           <h1 className="text-4xl font-bold">
             Candidate Pipeline

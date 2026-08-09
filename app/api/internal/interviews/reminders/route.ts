@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { sendTodayInterviewRemindersToAll } from "@/lib/hiring/interview-calendar";
+import { sendConfiguredInterviewReminders } from "@/lib/hiring/configured-interview-reminders";
 
 function isAuthorized(request: Request) {
   const secret = process.env.EMAIL_WORKER_SECRET;
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await sendTodayInterviewRemindersToAll();
+  const result = await sendConfiguredInterviewReminders();
   return NextResponse.json({ ok: true, ...result });
 }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, BadgeIndianRupee, BookmarkCheck, BriefcaseBusiness, CalendarCheck, Filter, MapPin, ShieldCheck, UserRoundSearch, Users } from "lucide-react";
+import { ArrowLeft, BadgeIndianRupee, BookmarkCheck, BriefcaseBusiness, CalendarCheck, Filter, MapPin, ShieldCheck, UserRoundSearch, Users, FolderHeart } from "lucide-react";
 
 import { requireRole } from "@/lib/auth/authorization";
 import { firstRelation } from "@/lib/relations";
@@ -87,7 +87,7 @@ export default async function EmployerCandidatesPage({ searchParams }: { searchP
       <div className="relative mx-auto max-w-7xl">
         <Link href="/employers/dashboard" className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm backdrop-blur-xl transition hover:-translate-x-1">
           <ArrowLeft size={16} /> Employer Dashboard
-        </Link>
+        </Link><Link href="/account/talent-folders" className="ml-3 inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm font-semibold"><FolderHeart size={15}/>Talent folders</Link>
 
         <div className="mt-8 flex flex-col justify-between gap-6 rounded-[2.5rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-[0_35px_100px_-45px_rgba(0,0,0,.65)] sm:p-12 md:flex-row md:items-end">
           <div>
