@@ -88,6 +88,10 @@ export default async function CandidateCareerActivityPage({ searchParams }: { se
                       <MapPin size={13} />{job?.location ?? "India"} | {job?.work_mode ?? "Flexible"}
                     </p>
                     <ApplicationTracker stages={health.stages} activeIndex={health.activeIndex} closed={health.closed} />
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link href={`/hiring/applications/${application.id}`} className="rounded-xl bg-zinc-950 px-4 py-2 text-xs font-semibold text-white">Messages & offer</Link>
+                      <Link href={`/candidates/interview-prep?application=${application.id}`} className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-800">Prepare for interview</Link>
+                    </div>
                     <JobiVerseFeedback feedback={feedback} />
                     <CareerServiceNudge type={nudgeTypeForStatus(application.status)} compact />
                     <p className="mt-3 flex items-center gap-2 text-[11px] text-zinc-400">

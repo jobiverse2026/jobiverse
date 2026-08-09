@@ -168,12 +168,15 @@ export default async function RecruiterReportsPage({ searchParams }: { searchPar
           </div>
         </section>
 
-        <section className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric icon={<BriefcaseBusiness size={18} />} label="Requirements" value={totals.requirements} />
           <Metric icon={<Users size={18} />} label="Candidates submitted" value={totals.submitted} />
           <Metric icon={<CalendarDays size={18} />} label="L1 interviews" value={totals.l1} />
           <Metric icon={<BarChart3 size={18} />} label="L2 interviews" value={totals.l2} />
           <Metric icon={<CheckCircle2 size={18} />} label="Quality score" value={`${quality.score} / ${quality.label}`} />
+          <Metric icon={<BarChart3 size={18} />} label="Interview conversion" value={`${pct(totals.l1, totals.submitted)}%`} />
+          <Metric icon={<CheckCircle2 size={18} />} label="Submission to joining" value={`${pct(totals.fulfilled, totals.submitted)}%`} />
+          <Metric icon={<BriefcaseBusiness size={18} />} label="Opening fulfilment" value={`${pct(totals.fulfilled, totals.openings)}%`} />
         </section>
 
         <section className="mt-7 rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">

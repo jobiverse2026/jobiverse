@@ -8,6 +8,7 @@ const roleRoutes: Record<string, string> = {
   "/candidates/applications": "candidate",
   "/candidates/dashboard": "candidate",
   "/candidates/jobs": "candidate",
+  "/candidates/interview-prep": "candidate",
   "/candidates/profile": "candidate",
   "/candidates/resume": "candidate",
   "/candidates/resume-analysis": "candidate",
@@ -26,6 +27,8 @@ const roleRoutes: Record<string, string> = {
   "/employers/team": "employer",
 };
 
+const authenticatedRoutes = ["/hiring/applications"] as const;
+
 // OpenNext Cloudflare 1.20.2 does not support the Node.js Proxy runtime yet.
 // Keep the deprecated Middleware convention until the adapter adds support.
 export async function middleware(request: NextRequest) {
@@ -40,7 +43,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(path)
   );
 
-  if (!matchedRoute) {
+  const requiresAuthentication = authenticatedRoutes.some((path) => pathname.startsWith(path));
+
+  if (!matchedRoute && !requiresAuthentication) {
     return NextResponse.next();
   }
 
@@ -67,11 +72,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const requiredRole = roleRoutes[matchedRoute];
+  const requiredRole = matchedRoute ? roleRoutes[matchedRoute] : null;
 
   if (!user) {
-    const loginRole = requiredRole === "creator" ? "creator" : requiredRole;
-    const loginUrl = new URL(`/login/${loginRole}`, request.url);
+    const loginUrl = new URL(requiredRole ? `/login/${requiredRole}` : "/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
@@ -81,6 +85,8 @@ export async function middleware(request: NextRequest) {
     .select("role, is_active")
     .eq("id", user.id)
     .single();
+
+  if (!requiredRole) return response;
 
   const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(userRow?.role ?? "");
   if (userRow?.is_active === false || (!hasCreatorAccess && userRow?.role !== requiredRole)) {

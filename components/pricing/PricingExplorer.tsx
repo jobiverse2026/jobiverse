@@ -68,7 +68,7 @@ const sections: PricingSection[] = [
     icon: UsersRound,
     items: [
       { name: "Career Free", price: "Free", note: "JobiVerse Card, job applications, resume upload, saved jobs, application tracker and Open to Work visibility." },
-      { name: "Career Plus", price: "₹199/month", note: "Career score guidance, profile improvement, priority job alerts and application health tracking." },
+      { name: "Career Plus", price: "₹199/month", note: "Career score guidance, profile improvement, priority job alerts, application health tracking and the saved STAR interview-prep notebook." },
       { name: "Career Pro", price: "₹499/month", note: "Career Plus + resume review credit, interview prep discount, guidance discount and premium CV template discount." },
       { name: "Resume Writing", price: "₹299", note: "Professional ATS-ready resume from scratch." },
       { name: "Resume Review & Optimization", price: "₹299", note: "Expert review and improvement of an existing resume." },

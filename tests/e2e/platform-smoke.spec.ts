@@ -23,5 +23,5 @@ test.describe("Role workspace regression coverage",()=>{
 });
 
 test.describe("Access-control smoke coverage",()=>{
-  test("anonymous user cannot stay on protected workspaces",async({page})=>{test.setTimeout(120_000);for(const route of ["/admin/finance","/employers/dashboard","/recruiter","/candidates/dashboard","/earn-with-jobiverse/dashboard","/employers/requirements/new","/earn-with-jobiverse/dashboard/services/new"]){await page.goto(route);await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/","\\/")}$`))}})
+  test("anonymous user cannot stay on protected workspaces",async({page})=>{test.setTimeout(120_000);for(const route of ["/admin/finance","/employers/dashboard","/recruiter","/candidates/dashboard","/earn-with-jobiverse/dashboard","/employers/requirements/new","/earn-with-jobiverse/dashboard/services/new","/candidates/interview-prep","/hiring/applications/00000000-0000-0000-0000-000000000000"]){await page.goto(route);await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/","\\/")}$`))}})
 });

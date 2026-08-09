@@ -77,6 +77,7 @@ export function planChecklist(slug?: string | null, name?: string | null): PlanC
           "Verify subscription/payment approval.",
           "Enable Career Plus support note for the user.",
           "Offer career score/profile improvement guidance.",
+          "Unlock the saved STAR interview-preparation notebook.",
           "Prioritize service recommendations and career nudges.",
           "Do not promise job placement.",
         ],
