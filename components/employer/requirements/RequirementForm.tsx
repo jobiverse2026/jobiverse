@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createRequirement, updateRequirement } from "@/actions/requirements";
 import { ArrowRight, BadgeCheck, FileText, Globe2, Target, UsersRound } from "lucide-react";
 import { trackEvent } from "@/lib/analytics/client";
+import { JobQualityAssistant } from "./job-quality-assistant";
 
 type RequirementFormProps = {
   mode?: "create" | "edit";
@@ -368,6 +369,8 @@ const [form, setForm] = useState({
         </div>
 
       </div>
+
+      <JobQualityAssistant input={{job_title:form.job_title,job_description:form.job_description,budget_ctc:form.budget_ctc,experience:form.experience,skills:form.skills,location:form.location,employment_type:form.employment_type,work_mode:form.work_mode,education:form.education}} publishing={form.publish_to_jobs}/>
 
       <section className="border-t border-zinc-100 pt-8">
         <div className="flex items-start gap-4">

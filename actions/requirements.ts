@@ -6,6 +6,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 import { requirementSchema } from "@/validation/requirement";
 import { requireRole } from "@/lib/auth/authorization";
 import { getEmployerCompanyAccess, scopeEmployerRequirementQuery } from "@/lib/employer-team/access";
+import { analyzeJobQuality } from "@/lib/jobs/job-quality";
 
 function isMissingRequirementAssignmentsTable(error: any) {
   const message = String(error?.message ?? "").toLowerCase();
@@ -194,6 +195,8 @@ export async function createRequirement(values: unknown) {
     
     const parsed =
       requirementSchema.parse(values);
+    const quality=analyzeJobQuality({job_title:parsed.job_title,job_description:parsed.job_description,budget_ctc:parsed.budget_ctc,experience:parsed.experience,skills:parsed.skills,location:parsed.location,employment_type:parsed.employment_type,work_mode:parsed.work_mode,education:parsed.education});
+    if(parsed.publish_to_jobs&&!quality.canPublish)throw new Error(`Fix critical job quality issues before publishing: ${quality.issues.filter(issue=>issue.severity==="critical").map(issue=>issue.title).join(", ")}. Save privately if you want to continue later.`);
 
 
 
@@ -233,6 +236,10 @@ export async function createRequirement(values: unknown) {
       hiring_team_requested: parsed.assign_to_jobiverse,
       is_public: parsed.publish_to_jobs,
       published_at: parsed.publish_to_jobs ? new Date().toISOString() : null,
+      quality_score: quality.score,
+      quality_grade: quality.grade,
+      quality_issues: quality.issues,
+      quality_checked_at: new Date().toISOString(),
 
     };
 
@@ -327,6 +334,8 @@ export async function updateRequirement(
 
   const parsed =
     requirementSchema.parse(values);
+  const quality=analyzeJobQuality({job_title:parsed.job_title,job_description:parsed.job_description,budget_ctc:parsed.budget_ctc,experience:parsed.experience,skills:parsed.skills,location:parsed.location,employment_type:parsed.employment_type,work_mode:parsed.work_mode,education:parsed.education});
+  if(parsed.publish_to_jobs&&!quality.canPublish)throw new Error(`Fix critical job quality issues before publishing: ${quality.issues.filter(issue=>issue.severity==="critical").map(issue=>issue.title).join(", ")}.`);
 
 
 
@@ -359,6 +368,10 @@ export async function updateRequirement(
         hiring_team_requested: parsed.assign_to_jobiverse,
         is_public: parsed.publish_to_jobs,
         published_at: parsed.publish_to_jobs ? new Date().toISOString() : null,
+      quality_score: quality.score,
+      quality_grade: quality.grade,
+      quality_issues: quality.issues,
+      quality_checked_at: new Date().toISOString(),
 
         updated_at:
           new Date().toISOString(),
