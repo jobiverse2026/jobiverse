@@ -9,6 +9,9 @@ test.describe("Public platform smoke coverage",()=>{
   for(const route of ["/","/services","/students","/candidates","/employers","/about","/contact","/marketplace"]){test(`${route} renders without a runtime failure`,async({page})=>{await page.goto(route);await expect(page.locator("body")).not.toContainText(/Application error|Internal Server Error|Runtime Error/i);await expect(page.locator("main")).toBeVisible()})}
   test("employer marketplace filter hides unrelated audiences",async({page})=>{await page.goto("/marketplace?audience=employer");await expect(page.getByText("For Employers",{exact:true})).toBeVisible();await expect(page.getByText("For Professionals",{exact:true})).toHaveCount(0);await expect(page.getByText("For Students & Graduates",{exact:true})).toHaveCount(0)})
   test("SEO endpoints are available",async({request})=>{for(const route of ["/robots.txt","/sitemap.xml","/manifest.webmanifest"]){const response=await request.get(route);expect(response.ok(),`${route} should respond successfully`).toBeTruthy()}})
+  test("unknown routes use the JobiVerse recovery page",async({page})=>{const response=await page.goto("/this-page-does-not-exist");expect(response?.status()).toBe(404);await expect(page.getByText("This page is not in orbit.")).toBeVisible()})
+  test("private data export rejects anonymous access",async({request})=>{const response=await request.get("/api/account/data-export");expect(response.status()).toBe(401)})
+  test("analytics remains off before explicit consent",async({page})=>{await page.goto("/");await expect(page.locator('script[src*="googletagmanager"]')).toHaveCount(0)})
 });
 
 test.describe("Role workspace regression coverage",()=>{
@@ -20,5 +23,5 @@ test.describe("Role workspace regression coverage",()=>{
 });
 
 test.describe("Access-control smoke coverage",()=>{
-  test("anonymous user cannot stay on protected workspaces",async({page})=>{test.setTimeout(120_000);for(const route of ["/admin/finance","/employers/dashboard","/recruiter","/candidates/dashboard","/earn-with-jobiverse/dashboard"]){await page.goto(route);await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/","\\/")}$`))}})
+  test("anonymous user cannot stay on protected workspaces",async({page})=>{test.setTimeout(120_000);for(const route of ["/admin/finance","/employers/dashboard","/recruiter","/candidates/dashboard","/earn-with-jobiverse/dashboard","/employers/requirements/new","/earn-with-jobiverse/dashboard/services/new"]){await page.goto(route);await expect(page).not.toHaveURL(new RegExp(`${route.replaceAll("/","\\/")}$`))}})
 });

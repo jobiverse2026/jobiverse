@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
+import { trackEvent } from "@/lib/analytics/client";
 
 const messages: Record<string, string> = {
   passport_saved: "JobiVerse Card saved successfully.",
@@ -22,13 +23,20 @@ export function GlobalActionSuccess() {
   const pathname = usePathname();
   const router = useRouter();
   const code = searchParams.get("success");
-  const [visible, setVisible] = useState(Boolean(code));
+  const [dismissedCode, setDismissedCode] = useState<string | null>(null);
+  const trackedCode = useRef<string | null>(null);
 
-  useEffect(() => setVisible(Boolean(code)), [code]);
+  useEffect(() => {
+    if (code && trackedCode.current !== code) {
+      trackEvent("action_success", { action_code: code, page_path: pathname });
+      trackedCode.current = code;
+    }
+  }, [code, pathname]);
+  const visible = Boolean(code && dismissedCode !== code);
   if (!code || !visible) return null;
 
   const close = () => {
-    setVisible(false);
+    setDismissedCode(code);
     const next = new URLSearchParams(searchParams.toString());
     next.delete("success");
     router.replace(next.size ? `${pathname}?${next}` : pathname, { scroll: false });

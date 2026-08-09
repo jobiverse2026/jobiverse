@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createRequirement, updateRequirement } from "@/actions/requirements";
 import { ArrowRight, BadgeCheck, FileText, Globe2, Target, UsersRound } from "lucide-react";
+import { trackEvent } from "@/lib/analytics/client";
 
 type RequirementFormProps = {
   mode?: "create" | "edit";
@@ -94,8 +95,11 @@ const [form, setForm] = useState({
       if (editing) {
         if (!requirementId) throw new Error("Requirement ID missing.");
         await updateRequirement(requirementId, form);
+        trackEvent("requirement_updated", { requirement_id: requirementId, published: form.publish_to_jobs });
       } else {
-        await createRequirement(form);
+        const requirement = await createRequirement(form);
+        trackEvent("requirement_created", { requirement_id: requirement.id, published: form.publish_to_jobs });
+        if (form.publish_to_jobs) trackEvent("requirement_published", { requirement_id: requirement.id });
       }
 
       alert(editing ? "Requirement updated successfully." : "Requirement created successfully.");

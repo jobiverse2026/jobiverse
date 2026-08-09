@@ -1,0 +1,3 @@
+export default function Loading() {
+  return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8" aria-busy="true" aria-label="Loading JobiVerse"><div className="mx-auto max-w-7xl animate-pulse"><div className="h-64 rounded-[2.75rem] bg-zinc-200"/><div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }, (_, index) => <div key={index} className="h-44 rounded-3xl border border-zinc-200 bg-white"/>)}</div></div></main>;
+}

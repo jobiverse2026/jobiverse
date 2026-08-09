@@ -2,6 +2,7 @@
 
 import { CreditCard, LoaderCircle } from "lucide-react";
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics/client";
 
 declare global {
   interface Window {
@@ -34,6 +35,7 @@ export function RazorpayPaymentButton({ targetType, targetId, label = "Pay Secur
     setError(null);
     try {
       if (!await loadScript()) throw new Error("Unable to load secure payment checkout.");
+      trackEvent("checkout_started", { target_type: targetType, target_id: targetId });
       const response = await fetch("/api/payments/razorpay/order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ targetType, targetId }) });
       const order = await response.json();
       if (!response.ok) throw new Error(order.error ?? "Unable to start payment.");
@@ -44,11 +46,12 @@ export function RazorpayPaymentButton({ targetType, targetId, label = "Pay Secur
           const verified = await fetch("/api/payments/razorpay/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payment) });
           const result = await verified.json();
           if (!verified.ok) { setError(result.error ?? "Payment verification failed."); setLoading(false); return; }
+          trackEvent("payment_success", { target_type: targetType, target_id: targetId, currency: order.currency, value: Number(order.amount) / 100 });
           window.location.href = result.redirectUrl;
         },
-        modal: { ondismiss: () => setLoading(false) },
+        modal: { ondismiss: () => { trackEvent("checkout_dismissed", { target_type: targetType, target_id: targetId }); setLoading(false); } },
       });
-      checkout.on("payment.failed", (failure) => { setError(failure.error?.description ?? "Payment failed. Please try again."); setLoading(false); });
+      checkout.on("payment.failed", (failure) => { trackEvent("payment_failed", { target_type: targetType, target_id: targetId }); setError(failure.error?.description ?? "Payment failed. Please try again."); setLoading(false); });
       checkout.open();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Unable to start payment.");

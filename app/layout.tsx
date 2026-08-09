@@ -11,6 +11,7 @@ import { GlobalMessagesButton } from "@/components/messages/global-messages-butt
 import { AttachmentNameEnhancer } from "@/components/forms/attachment-name-enhancer";
 import { GlobalActionSuccess } from "@/components/forms/global-action-success";
 import { ConsentManager } from "@/components/privacy/consent-manager";
+import { WebVitals } from "@/components/analytics/web-vitals";
 
 
 export const metadata: Metadata = {
@@ -53,6 +54,7 @@ export default function RootLayout({
           <AttachmentNameEnhancer />
           <Suspense fallback={null}><GlobalActionSuccess /></Suspense>
           <ConsentManager />
+          <WebVitals />
           <div id="main-content" tabIndex={-1}>{children}</div>
           <GlobalFooter />
         </AuthProvider>

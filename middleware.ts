@@ -26,8 +26,8 @@ const roleRoutes: Record<string, string> = {
   "/employers/team": "employer",
 };
 
-// Cloudflare's OpenNext adapter currently requires the deprecated Middleware
-// convention because Next.js 16 Proxy always runs in the Node.js runtime.
+// OpenNext Cloudflare 1.20.2 does not support the Node.js Proxy runtime yet.
+// Keep the deprecated Middleware convention until the adapter adds support.
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const maintenanceMode = process.env.MAINTENANCE_MODE === "true";

@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Building2, Check, GraduationCap, LoaderCircle, Sparkles, UserRoundCheck } from "lucide-react";
 import { createMarketplaceService, type CreateServiceState } from "./actions";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { creatorServiceGroups } from "@/lib/marketplace/creator-service-options";
+import { trackEvent } from "@/lib/analytics/client";
 
 type Audience = "professional" | "student" | "employer";
 type ServiceOption = { title: string; description: string };
@@ -22,6 +23,13 @@ export function ServiceForm() {
   const [state, action, pending] = useActionState(createMarketplaceService, initialState);
   const [selected, setSelected] = useState<Array<{ audience: Audience; service: ServiceOption }>>([]);
   const [showForms, setShowForms] = useState(false);
+  const trackedSuccess = useRef<string | null>(null);
+  useEffect(() => {
+    if (state.success && trackedSuccess.current !== state.success) {
+      trackEvent("creator_service_published");
+      trackedSuccess.current = state.success;
+    }
+  }, [state.success]);
 
   const choose = (audience: Audience, service: ServiceOption) => {
     const key = `${audience}:${service.title}`;
@@ -129,7 +137,7 @@ function TemplateUploadPanel() {
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [target, setTarget] = useState<HTMLFormElement | null>(null);
-  useEffect(() => { const input = document.querySelector<HTMLInputElement>('input[name="category"][value="Editable CV Template"]'); setTarget(input?.closest("form") ?? null); }, []);
+  useEffect(() => { const frame = window.requestAnimationFrame(() => { const input = document.querySelector<HTMLInputElement>('input[name="category"][value="Editable CV Template"]'); setTarget(input?.closest("form") ?? null); }); return () => window.cancelAnimationFrame(frame); }, []);
   const upload = async (file?: File) => {
     if (!file) return;
     const extension = file.name.split(".").pop()?.toLowerCase();

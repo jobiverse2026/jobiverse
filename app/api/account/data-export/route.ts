@@ -8,7 +8,7 @@ export async function GET() {
 
   const tables = ["users", "candidate_profiles", "candidate_applications", "candidate_saved_jobs", "candidate_resume_versions", "marketplace_orders", "marketplace_offers", "marketplace_reviews", "consultation_bookings", "buyer_billing_profiles", "notification_preferences", "user_privacy_preferences", "privacy_requests"] as const;
   const entries = await Promise.all(tables.map(async (table) => {
-    const key = table === "users" ? "id" : table === "candidate_profiles" ? "user_id" : table === "candidate_applications" ? "candidate_user_id" : table === "candidate_saved_jobs" ? "candidate_user_id" : table === "candidate_resume_versions" ? "user_id" : table === "marketplace_orders" ? "customer_id" : table === "marketplace_offers" ? "customer_id" : table === "marketplace_reviews" ? "reviewer_id" : "user_id";
+    const key = table === "users" ? "id" : table === "candidate_profiles" ? "user_id" : table === "candidate_applications" ? "candidate_user_id" : table === "candidate_saved_jobs" ? "candidate_user_id" : table === "candidate_resume_versions" ? "candidate_user_id" : table === "marketplace_orders" ? "customer_id" : table === "marketplace_offers" ? "customer_id" : table === "marketplace_reviews" ? "reviewer_id" : "user_id";
     const { data, error } = await adminSupabase.from(table).select("*").eq(key, user.id);
     return [table, error ? { unavailable: error.message } : data] as const;
   }));

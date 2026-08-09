@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { ArrowLeft, Compass } from "lucide-react";
+
+export default function NotFound() {
+  return <main className="grid min-h-[80vh] place-items-center bg-[#f5f5f3] px-5 py-32"><section className="w-full max-w-2xl rounded-[2.5rem] bg-zinc-950 p-9 text-center text-white sm:p-14"><Compass className="mx-auto text-violet-300" size={38}/><p className="mt-6 text-xs font-bold uppercase tracking-[.22em] text-zinc-500">404 · Lost in the universe</p><h1 className="mt-4 text-4xl font-semibold sm:text-6xl">This page is not in orbit.</h1><p className="mx-auto mt-5 max-w-lg leading-7 text-zinc-400">The link may be outdated, or the page may have moved.</p><div className="mt-8 flex flex-wrap justify-center gap-3"><Link href="/" className="rounded-xl bg-white px-6 py-3 font-bold text-zinc-950">Go home</Link><Link href="/jobs" className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-6 py-3 font-semibold"><ArrowLeft size={16}/>Explore jobs</Link></div></section></main>;
+}
