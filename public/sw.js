@@ -1,4 +1,4 @@
-const CACHE_VERSION = "jobiverse-pwa-v1";
+const CACHE_VERSION = "jobiverse-pwa-v2";
 const OFFLINE_URL = "/offline";
 const APP_SHELL = [OFFLINE_URL, "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
@@ -55,3 +55,26 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data?.json() ?? {}; } catch { data = { body: event.data?.text() }; }
+  event.waitUntil(self.registration.showNotification(data.title || "JobiVerse", {
+    body: data.body || "You have a new update.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: data.tag || "jobiverse-update",
+    data: { href: data.href || "/dashboard" },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const href = new URL(event.notification.data?.href || "/dashboard", self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windowClients) => {
+    for (const client of windowClients) {
+      if (client.url === href && "focus" in client) return client.focus();
+    }
+    return self.clients.openWindow(href);
+  }));
+});
