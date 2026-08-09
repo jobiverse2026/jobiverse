@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 
 import "./globals.css";
@@ -12,6 +12,7 @@ import { AttachmentNameEnhancer } from "@/components/forms/attachment-name-enhan
 import { GlobalActionSuccess } from "@/components/forms/global-action-success";
 import { ConsentManager } from "@/components/privacy/consent-manager";
 import { WebVitals } from "@/components/analytics/web-vitals";
+import { PwaRegister } from "@/components/pwa/pwa-register";
 
 
 export const metadata: Metadata = {
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
   description:
     "Technology-driven hiring, career growth and expert services across India. Every Hire. Every Career. One Universe.",
   applicationName:"JobiVerse",
+  manifest:"/manifest.webmanifest",
+  appleWebApp:{capable:true,title:"JobiVerse",statusBarStyle:"black-translucent"},
+  formatDetection:{telephone:false},
   keywords:["recruitment company India","IT recruitment","non-IT hiring","career services","resume services","HR technology","Mumbai recruitment"],
   authors:[{name:"JobiVerse"}],
   creator:"JobiVerse",
@@ -35,6 +39,11 @@ export const metadata: Metadata = {
   robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},
 };
 
+
+export const viewport: Viewport = {
+  themeColor: "#18181b",
+  colorScheme: "light",
+};
 
 export default function RootLayout({
   children,
@@ -55,6 +64,7 @@ export default function RootLayout({
           <Suspense fallback={null}><GlobalActionSuccess /></Suspense>
           <ConsentManager />
           <WebVitals />
+          <PwaRegister />
           <div id="main-content" tabIndex={-1}>{children}</div>
           <GlobalFooter />
         </AuthProvider>
