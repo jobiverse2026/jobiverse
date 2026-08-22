@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 import {
   ArrowRight,
   BadgeCheck,
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/common/page-header";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { adminSupabase } from "@/lib/supabase/admin";
 import { serviceSlugForCategory } from "@/lib/marketplace/category-map";
 import { customerPrice } from "@/lib/marketplace/pricing";
 import { creatorServiceGroups } from "@/lib/marketplace/creator-service-options";
@@ -60,17 +61,10 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
   const audienceFilter=audience==="employer"||audience==="student"||audience==="professional"?audience:null;
   const visibleGroups=audienceFilter?groups.filter(group=>group.audience===audienceFilter):groups;
   const normalizedSearch = search.trim().toLowerCase();
-  const supabase = await createServerSupabaseClient();
-  let servicesQuery = supabase
-    .from("marketplace_services")
-    .select("id,provider_id,title,slug,category,audience,short_description,price,delivery_days,delivery_mode,average_rating,total_orders,is_featured,featured_until,quality_score")
-    .eq("status", "published").or("is_editable.eq.false,template_review_status.eq.approved");
-  if(audienceFilter)servicesQuery=servicesQuery.eq("audience",audienceFilter);
-  const {data:publishedServices}=await servicesQuery.order("created_at",{ascending:false});
-  const featuredServices=(publishedServices??[]).filter(service=>service.is_featured&&(!service.featured_until||new Date(service.featured_until)>new Date())).sort((a,b)=>Number(b.quality_score)-Number(a.quality_score)).slice(0,6);
-  const featuredProviderIds=[...new Set(featuredServices.map(service=>service.provider_id))];
-  const [{data:featuredPeople},{data:featuredVerification}]=await Promise.all([featuredProviderIds.length?supabase.from("users").select("id,full_name").in("id",featuredProviderIds):Promise.resolve({data:[]}),featuredProviderIds.length?supabase.from("creator_marketplace_profiles").select("creator_id,verification_status").in("creator_id",featuredProviderIds):Promise.resolve({data:[]})]);
-  const featuredNames=new Map((featuredPeople??[]).map(person=>[person.id,person.full_name]));const verifiedCreators=new Set((featuredVerification??[]).filter(row=>row.verification_status==="verified").map(row=>row.creator_id));
+  const {publishedServices,featuredPeople,featuredVerification}=await getCachedMarketplaceData(audienceFilter);
+  const featuredServices=publishedServices.filter(service=>service.is_featured&&(!service.featured_until||new Date(service.featured_until)>new Date())).sort((a,b)=>Number(b.quality_score)-Number(a.quality_score)).slice(0,6);
+  const featuredNames=new Map(featuredPeople.map(person=>[person.id,person.full_name]));const verifiedCreators=new Set(featuredVerification.filter(row=>row.verification_status==="verified").map(row=>row.creator_id));
+  const listingStats=buildListingStats(publishedServices);
   return (
     <main className="min-h-screen bg-[#f6f6f3] text-zinc-950">
       <PageHeader
@@ -149,7 +143,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
                     <p className={`mt-4 text-xs font-semibold ${dark ? "text-zinc-300" : "text-zinc-700"}`}>Creator-powered service</p>
                     <div className={`mt-5 flex items-center gap-4 text-xs ${dark ? "text-zinc-500" : "text-zinc-500"}`}>
                       <span className="inline-flex items-center gap-1">
-                        <UsersRound size={14} /> {countExperts(publishedServices ?? [], service.category)} available
+                        <UsersRound size={14} /> {countExperts(listingStats, service.category)} available
                       </span>
                       {false && service.providers[0] && (
                         <span className="inline-flex items-center gap-1">
@@ -159,7 +153,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
                     </div>
                     <div className={`my-5 h-px ${dark ? "bg-white/10" : "bg-zinc-200"}`} />
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{publicStartingPrice(publishedServices ?? [], service.category) !== null ? `From ₹${publicStartingPrice(publishedServices ?? [], service.category)!.toLocaleString("en-IN")}` : "Creators joining soon"}</p>
+                      <p className="font-semibold">{publicStartingPrice(listingStats, service.category) !== null ? `From ₹${publicStartingPrice(listingStats, service.category)!.toLocaleString("en-IN")}` : "Creators joining soon"}</p>
                       <Link
                         href={`/marketplace/services/${service.slug}?type=${encodeURIComponent(service.category)}`}
                         className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold ${dark ? "bg-white text-black" : "bg-black text-white"}`}
@@ -180,17 +174,33 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
 
 type PublicListing = { provider_id: string; category: string; price: number | string };
 
-function matchingListings(listings: PublicListing[], category: string) {
-  return listings.filter(listing => listing.category === category);
+const getCachedMarketplaceData=unstable_cache(async(audience:ServiceAudience|null)=>{
+  let query=adminSupabase.from("marketplace_services").select("id,provider_id,title,slug,category,audience,short_description,price,delivery_days,average_rating,total_orders,is_featured,featured_until,quality_score").eq("status","published").or("is_editable.eq.false,template_review_status.eq.approved");
+  if(audience)query=query.eq("audience",audience);
+  const {data:services,error}=await query.order("created_at",{ascending:false}).limit(250);
+  if(error)throw error;
+  const publishedServices=services??[];
+  const featuredProviderIds=[...new Set(publishedServices.filter(service=>service.is_featured).map(service=>service.provider_id))].slice(0,24);
+  if(!featuredProviderIds.length)return{publishedServices,featuredPeople:[],featuredVerification:[]};
+  const [{data:featuredPeople},{data:featuredVerification}]=await Promise.all([
+    adminSupabase.from("users").select("id,full_name").in("id",featuredProviderIds),
+    adminSupabase.from("creator_marketplace_profiles").select("creator_id,verification_status").in("creator_id",featuredProviderIds),
+  ]);
+  return{publishedServices,featuredPeople:featuredPeople??[],featuredVerification:featuredVerification??[]};
+},["public-marketplace-data-v1"],{revalidate:300,tags:["marketplace-services"]});
+
+type ListingStat={count:number;minimum:number|null};
+function buildListingStats(listings:PublicListing[]){
+  const stats=new Map<string,ListingStat>();
+  for(const listing of listings){const price=customerPrice(Number(listing.price));const current=stats.get(listing.category)??{count:0,minimum:null};current.count+=1;current.minimum=current.minimum===null?price:Math.min(current.minimum,price);stats.set(listing.category,current)}
+  return stats;
 }
 
-function countExperts(listings: PublicListing[], category: string) {
-  return matchingListings(listings, category).length + 1;
-}
+function countExperts(stats:Map<string,ListingStat>,category:string){return(stats.get(category)?.count??0)+1}
 
-function publicStartingPrice(listings: PublicListing[], category: string) {
-  const prices = matchingListings(listings, category).map(listing => customerPrice(Number(listing.price)));
-  const jobiVerseOffer = getJobiVerseOffer(category);
-  if (jobiVerseOffer?.price) prices.push(jobiVerseOffer.price);
-  return prices.length ? Math.min(...prices) : null;
+function publicStartingPrice(stats:Map<string,ListingStat>,category:string){
+  const listingMinimum=stats.get(category)?.minimum??null;
+  const offerPrice=getJobiVerseOffer(category)?.price??null;
+  if(listingMinimum===null)return offerPrice;
+  return offerPrice===null?listingMinimum:Math.min(listingMinimum,offerPrice);
 }

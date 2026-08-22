@@ -15,13 +15,14 @@ export default async function SignupPage({
     redirect("/login/admin?access=restricted");
   }
 
+  const studentPortal = params.role === "student";
   const role = validRoles.includes(params.role as Role)
     ? (params.role as Role)
     : "candidate";
 
   return (
     <LoginShell>
-      <SignupCard role={role} referralCode={params.ref} nextPath={params.next} />
+      <SignupCard role={role} portal={studentPortal ? "student" : "default"} referralCode={params.ref} nextPath={params.next} />
     </LoginShell>
   );
 }

@@ -13,6 +13,8 @@ import { GlobalActionSuccess } from "@/components/forms/global-action-success";
 import { ConsentManager } from "@/components/privacy/consent-manager";
 import { WebVitals } from "@/components/analytics/web-vitals";
 import { PwaRegister } from "@/components/pwa/pwa-register";
+import { MilestoneCelebration } from "@/components/motion/milestone-celebration";
+import { GlobalMotionLayer } from "@/components/motion/global-motion-layer";
 
 
 export const metadata: Metadata = {
@@ -61,10 +63,11 @@ export default function RootLayout({
           <LogoutSuccessNotice />
           <GlobalMessagesButton />
           <AttachmentNameEnhancer />
-          <Suspense fallback={null}><GlobalActionSuccess /></Suspense>
+          <Suspense fallback={null}><GlobalActionSuccess /><MilestoneCelebration /></Suspense>
           <ConsentManager />
           <WebVitals />
           <PwaRegister />
+          <GlobalMotionLayer />
           <div id="main-content" tabIndex={-1}>{children}</div>
           <GlobalFooter />
         </AuthProvider>

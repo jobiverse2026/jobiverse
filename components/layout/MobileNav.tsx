@@ -70,7 +70,7 @@ export default function MobileNav({
         "
       >
 
-        {!authenticated && <div className="mb-4 rounded-2xl bg-zinc-950 p-2 text-white"><p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Sign up</p>{signupMenu.map(item=><Link key={item.title} href={item.href} onClick={onClose} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm hover:bg-white/10">{item.title}<ArrowRight size={15}/></Link>)}</div>}
+        {!authenticated && <div className="mb-4 rounded-2xl bg-zinc-950 p-2 text-white"><p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Sign up</p>{signupMenu.map(item=><Link prefetch={false} key={item.title} href={item.href} onClick={onClose} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm hover:bg-white/10">{item.title}<ArrowRight size={15}/></Link>)}</div>}
 
         {
           (pathname.startsWith("/earn-with-jobiverse/dashboard") ? roleNavigation.creator : role ? roleNavigation[role] : publicNavigation).map((item)=>(
@@ -153,7 +153,7 @@ export default function MobileNav({
                             item.children.map(
                               (child)=>(
 
-                                <Link
+                                <Link prefetch={false}
 
                                   key={child.title}
 
@@ -189,7 +189,7 @@ export default function MobileNav({
 
                 ) : (
 
-                  <Link
+                  <Link prefetch={false}
 
                     href={item.href ?? "#"}
 
@@ -253,7 +253,7 @@ export default function MobileNav({
         {
           loginMenu.map((item)=>(
 
-            <Link
+            <Link prefetch={false}
 
               key={item.title}
 
@@ -293,7 +293,7 @@ export default function MobileNav({
       {/* CTA */}
 
       {authenticated && (
-        <Link href={dashboardHref} onClick={onClose} className="mb-3 mt-8 flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-6 py-4 font-semibold text-zinc-900">
+        <Link prefetch={false} href={dashboardHref} onClick={onClose} className="mb-3 mt-8 flex items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 px-6 py-4 font-semibold text-zinc-900">
           {dashboardLabel} <ArrowRight className="ml-2" size={18} />
         </Link>
       )}

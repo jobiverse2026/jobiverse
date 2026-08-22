@@ -32,7 +32,7 @@ export function TeamInviteForm({
         {canInviteEmployers ? (
           <label className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold">
             <input type="radio" name="inviteRole" value="employer" className="mr-2" />
-            Employer access
+            Sub-employer access
             <span className="mt-1 block text-xs font-normal text-zinc-500">{employerSeatsLeft} seats left</span>
           </label>
         ) : (

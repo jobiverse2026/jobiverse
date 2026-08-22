@@ -16,6 +16,7 @@ type RequirementFormProps = {
     employment_type: string | null;
     work_mode: string | null;
     experience: string | null;
+    target_audience: string | null;
     vacancies: number | null;
     budget_ctc: string | null;
     location: string | null;
@@ -53,6 +54,8 @@ const [form, setForm] = useState({
   work_mode: initialValues?.work_mode ?? "",
 
   experience: initialValues?.experience ?? "",
+
+  target_audience: initialValues?.target_audience ?? "all",
 
   vacancies: initialValues?.vacancies ?? 1,
 
@@ -217,7 +220,20 @@ const [form, setForm] = useState({
 
             <option>Remote</option>
           </select>
-        </div>        <div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium">Who should apply?</label>
+          <select value={form.target_audience} onChange={(e) => updateField("target_audience", e.target.value)} className="w-full rounded-xl border px-4 py-3">
+            <option value="all">All suitable talent</option>
+            <option value="experienced">Experienced professionals</option>
+            <option value="freshers">Freshers / recent graduates</option>
+            <option value="students">Current students</option>
+            <option value="internships">Internship seekers</option>
+          </select>
+        </div>
+
+        <div>
           <label className="mb-2 block text-sm font-medium">
             Experience
           </label>

@@ -24,6 +24,7 @@ export function PwaRegister() {
     if (!("serviceWorker" in navigator)) return;
 
     let refreshing = false;
+    const hadController = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((registration) => {
       registration.update().catch(() => undefined);
       if (registration.waiting) setUpdateReady(true);
@@ -35,7 +36,7 @@ export function PwaRegister() {
     }).catch(() => undefined);
 
     const controllerChange = () => {
-      if (refreshing) return;
+      if (!hadController || refreshing) return;
       refreshing = true;
       window.location.reload();
     };

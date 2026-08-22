@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function Logo() {
   return (
-    <Link
+    <Link prefetch={false}
       href="/"
       className="
       flex

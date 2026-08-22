@@ -1,0 +1,16 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { getGuide, guides } from "@/lib/guides";
+
+export function generateStaticParams(){return guides.map(({slug})=>({slug}));}
+type GuidePageProps={params:Promise<{slug:string}>};
+export async function generateMetadata({params}:GuidePageProps):Promise<Metadata>{const guide=getGuide((await params).slug);return guide?{title:`${guide.title} | JobiVerse`,description:guide.description}:{};}
+
+export default async function GuidePage({params}:GuidePageProps){const guide=getGuide((await params).slug);if(!guide)notFound();const Icon=guide.icon;return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-6xl">
+  <Link href="/guides" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600"><ArrowLeft size={16}/>All guides</Link>
+  <section className="jv-noise relative mt-7 overflow-hidden rounded-[3rem] bg-[radial-gradient(circle_at_85%_12%,rgba(124,58,237,.32),transparent_24rem),linear-gradient(135deg,#09090b,#18181b_60%,#3f3f46)] p-8 text-white shadow-2xl sm:p-14"><div aria-hidden="true" className="absolute -right-24 -top-24 h-80 w-80 rounded-full border border-white/10"/><div className="relative"><Icon size={31}/><p className="mt-6 text-xs font-bold uppercase tracking-[.2em] text-zinc-400">{guide.eyebrow}</p><h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-[-.05em] sm:text-6xl">{guide.title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-300">{guide.description}</p><Link href={guide.startHref} className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-4 font-semibold text-zinc-950">{guide.startLabel}<ArrowRight size={17}/></Link></div></section>
+  <div className="mt-8 grid gap-5 lg:grid-cols-[240px_1fr]"><aside className="h-fit rounded-[1.75rem] border border-zinc-200 bg-white p-5 lg:sticky lg:top-32"><p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Your journey</p><nav className="mt-4 space-y-1">{guide.sections.map((section,index)=><a key={section.title} href={`#section-${index+1}`} className="block rounded-xl px-3 py-2 text-sm text-zinc-600 transition hover:bg-violet-50 hover:text-violet-800">{String(index+1).padStart(2,"0")} · {section.title}</a>)}</nav></aside>
+  <article className="space-y-5">{guide.sections.map((section,index)=><section id={`section-${index+1}`} key={section.title} className="scroll-mt-32 rounded-[2rem] border border-zinc-200 bg-white p-7 shadow-sm sm:p-9"><div className="flex items-start gap-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-zinc-950 text-sm font-bold text-white">{String(index+1).padStart(2,"0")}</span><div><p className="text-xs font-bold uppercase tracking-[.18em] text-violet-600">Guide chapter</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">{section.title}</h2></div></div><ul className="mt-7 grid gap-3 sm:grid-cols-2">{section.items.map(item=><li key={item} className="flex gap-3 rounded-2xl bg-zinc-50 p-4 text-sm leading-6 text-zinc-700"><CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600" size={18}/><span>{item}</span></li>)}</ul></section>)}</article></div>
+</div></main>}

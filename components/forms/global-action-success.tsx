@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, X } from "lucide-react";
+import { X } from "lucide-react";
+import { SuccessCelebration } from "@/components/motion/success-celebration";
 import { trackEvent } from "@/lib/analytics/client";
 
 const messages: Record<string, string> = {
@@ -43,9 +44,9 @@ export function GlobalActionSuccess() {
   };
 
   return (
-    <div role="status" aria-live="polite" className="fixed bottom-6 left-1/2 z-[100] w-[min(92vw,520px)] -translate-x-1/2 rounded-2xl border border-emerald-200 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(5,150,105,.5)]">
+    <div role="status" aria-live="polite" className="jv-success-toast fixed bottom-6 left-1/2 z-[100] w-[min(92vw,520px)] -translate-x-1/2 rounded-2xl border border-emerald-200 bg-white p-4 shadow-[0_24px_70px_-24px_rgba(5,150,105,.5)]">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-700"><CheckCircle2 size={20}/></span>
+        <SuccessCelebration />
         <p className="min-w-0 flex-1 text-sm font-semibold text-zinc-800">{messages[code] ?? "Action completed successfully."}</p>
         <button type="button" onClick={close} aria-label="Close confirmation" className="cursor-pointer rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"><X size={17}/></button>
       </div>

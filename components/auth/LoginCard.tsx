@@ -7,6 +7,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { loginWithRoleAction } from "@/app/login/actions";
+import { loginWithRole } from "@/lib/auth/login";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 
@@ -35,9 +36,10 @@ const accessMessage: Record<string, string> = {
 
 type Props = {
   role?: Role;
+  portal?: "default" | "student";
 };
 
-export default function LoginCard({ role = "candidate" }: Props) {
+export default function LoginCard({ role = "candidate", portal = "default" }: Props) {
   const supabase = createBrowserSupabaseClient();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -53,9 +55,10 @@ export default function LoginCard({ role = "candidate" }: Props) {
     ?? (access ? accessMessage[access] ?? null : null)
     ?? (urlError ? urlErrorMessage[urlError] ?? "Access could not be completed. Please try again." : null);
 
+  const studentPortal = portal === "student";
   const oauthCallbackUrl = () => {
     const params = new URLSearchParams({ role });
-    const requestedNext = searchParams.get("next");
+    const requestedNext = searchParams.get("next") ?? (studentPortal ? "/students/dashboard" : null);
     if (requestedNext?.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\")) params.set("next", requestedNext);
     return `${window.location.origin}/auth/callback?${params.toString()}`;
   };
@@ -69,17 +72,17 @@ export default function LoginCard({ role = "candidate" }: Props) {
 
   try {
 
-    const result = await loginWithRoleAction(
-        email,
-        password,
-        role,
-        searchParams.get("next") ?? undefined
-      );
-
-    if("error" in result && result.error)throw new Error(result.error);
-    if(!result.redirect)throw new Error("Unable to open your dashboard. Please try again.");
-    await new Promise((resolve) => window.setTimeout(resolve, 150));
-    window.location.replace(result.redirect);
+    const requestedNext=searchParams.get("next") ?? (studentPortal ? "/students/dashboard" : undefined);
+    if(role==="employer"||role==="recruiter"){
+      const result=await loginWithRoleAction(email,password,role,requestedNext);
+      if("error" in result&&result.error)throw new Error(result.error);
+      if(!result.redirect)throw new Error("Unable to open your dashboard. Please try again.");
+      window.location.replace(result.redirect);
+    }else{
+      const result=await loginWithRole(email,password,role);
+      const destination=requestedNext?.startsWith("/")&&!requestedNext.startsWith("//")&&!requestedNext.includes("\\")?requestedNext:result.redirect;
+      window.location.replace(destination);
+    }
 
 
   } catch (error: unknown) {
@@ -133,11 +136,11 @@ export default function LoginCard({ role = "candidate" }: Props) {
 
         <div className="text-center">
           <span className="mb-4 inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-600">
-            {roleLabel[role]}
+            {studentPortal ? "Student Universe" : roleLabel[role]}
           </span>
           <h2 className="text-3xl font-semibold tracking-[-.035em]">Welcome back</h2>
           <p className="mt-2 text-sm text-zinc-500">
-            Login to your JobiVerse account
+            {studentPortal ? "Continue to your student career launchpad" : "Login to your JobiVerse account"}
           </p>
         </div>
 
@@ -238,7 +241,7 @@ export default function LoginCard({ role = "candidate" }: Props) {
         {(role === "candidate" || role === "employer" || role === "recruiter" || role === "creator") && <p className="text-center text-sm text-zinc-500">
           New to JobiVerse?{" "}
           <Link
-            href={`/signup?role=${role}`}
+            href={studentPortal ? "/signup?role=student&next=%2Fstudents%2Fdashboard" : `/signup?role=${role}`}
             className="cursor-pointer font-semibold text-zinc-950"
           >
             Create account

@@ -66,6 +66,12 @@ export async function POST(request: Request) {
       if (!role.is_public) return Response.json({ error: "Publish this role to JobiVerse Jobs before promoting it." }, { status: 400 });
       if (role.is_promoted && role.promoted_until && new Date(role.promoted_until) > new Date()) return Response.json({ alreadyPaid: true, redirectUrl: `/employers/requirements/${role.id}?promoted=active` });
       amount = Number(process.env.JOB_PROMOTION_PRICE_INR || "499"); title = `Spotlight Role: ${role.job_title}`;
+    } else if (body.targetType === "custom_portal_milestone") {
+      const access = await getEmployerCompanyAccess(user.id).catch(() => null);
+      const { data: milestone } = await adminSupabase.from("custom_portal_milestones").select("id,title,amount,status,request_id,custom_portal_requests(requester_user_id,company_id,reference)").eq("id", body.targetId).eq("status", "payment_due").maybeSingle();
+      const portalRequest = Array.isArray(milestone?.custom_portal_requests) ? milestone.custom_portal_requests[0] : milestone?.custom_portal_requests;
+      if (!milestone || !portalRequest || (portalRequest.requester_user_id !== user.id && (!access || portalRequest.company_id !== access.company.id))) return Response.json({ error: "Payable portal milestone not found." }, { status: 404 });
+      amount = Number(milestone.amount); title = `Custom Portal: ${milestone.title}`;
     } else if (body.targetType === "ai_resume_analysis") {
       if (!isPaidAIEnabled()) return Response.json({ error: "JobiVerse AI Resume Analyzer is coming soon." }, { status: 403 });
       if (String(body.targetId) !== "resume_analyzer") return Response.json({ error: "Invalid AI feature." }, { status: 400 });

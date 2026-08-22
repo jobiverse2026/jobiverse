@@ -122,7 +122,7 @@ export function Navbar() {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className={`relative flex h-20 items-center justify-between overflow-visible rounded-[1.75rem] border border-white/75 bg-white/72 px-5 backdrop-blur-2xl transition-all duration-500 before:pointer-events-none before:absolute before:inset-x-16 before:bottom-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-500/25 before:to-transparent xl:px-6 ${
+          className={`relative flex h-20 items-center justify-between overflow-visible rounded-[1.75rem] border border-white/75 bg-white/72 px-5 backdrop-blur-2xl transition-all duration-500 before:pointer-events-none before:absolute before:inset-x-16 before:bottom-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-violet-500/35 before:to-transparent xl:px-6 ${
             scrolled ? "shadow-[0_24px_70px_-30px_rgba(15,23,42,.38)] ring-1 ring-black/5" : "shadow-[0_18px_55px_-34px_rgba(15,23,42,.4)]"
           }`}
         >
@@ -140,8 +140,8 @@ export function Navbar() {
     const isOpen = openMenu === item.title;
     const navItemClass = `flex items-center gap-1 rounded-xl px-2.5 py-2.5 text-[13px] font-medium transition-all duration-300 ${
       isActive
-        ? "bg-gradient-to-r from-black via-zinc-800 to-zinc-600 text-white shadow-md shadow-black/20"
-        : "text-zinc-700 hover:bg-violet-50 hover:text-violet-800"
+        ? "jv-brand-gradient text-white shadow-md shadow-violet-950/20"
+        : "text-zinc-700 hover:bg-violet-50 hover:text-violet-900"
     }`;
 
     return (
@@ -170,7 +170,7 @@ export function Navbar() {
             />
           </button>
         ) : (
-          <Link href={item.href ?? "#"} className={navItemClass}>
+          <Link prefetch={false} href={item.href ?? "#"} className={navItemClass}>
             {item.title}
           </Link>
         )}

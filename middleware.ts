@@ -1,4 +1,3 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const roleRoutes: Record<string, string> = {
@@ -29,70 +28,48 @@ const roleRoutes: Record<string, string> = {
 
 const authenticatedRoutes = ["/hiring/applications"] as const;
 
-// OpenNext Cloudflare 1.20.2 does not support the Node.js Proxy runtime yet.
-// Keep the deprecated Middleware convention until the adapter adds support.
+type AccessResult = {
+  authenticated?: boolean;
+  role?: string | null;
+  isActive?: boolean;
+};
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const maintenanceMode = process.env.MAINTENANCE_MODE === "true";
 
-  if (maintenanceMode && !pathname.startsWith("/maintenance")) {
+  if (process.env.MAINTENANCE_MODE === "true" && !pathname.startsWith("/maintenance")) {
     return NextResponse.redirect(new URL("/maintenance", request.url));
   }
 
-  const matchedRoute = Object.keys(roleRoutes).find((path) =>
-    pathname.startsWith(path)
-  );
-
+  const matchedRoute = Object.keys(roleRoutes).find((path) => pathname.startsWith(path));
   const requiresAuthentication = authenticatedRoutes.some((path) => pathname.startsWith(path));
+  if (!matchedRoute && !requiresAuthentication) return NextResponse.next();
 
-  if (!matchedRoute && !requiresAuthentication) {
-    return NextResponse.next();
-  }
+  const accessResponse = await fetch(new URL("/api/internal/route-access", request.url), {
+    headers: { cookie: request.headers.get("cookie") ?? "" },
+    cache: "no-store",
+  });
 
-  let response = NextResponse.next({ request });
+  if (!accessResponse.ok) return NextResponse.redirect(new URL("/login", request.url));
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const access = await accessResponse.json() as AccessResult;
   const requiredRole = matchedRoute ? roleRoutes[matchedRoute] : null;
 
-  if (!user) {
+  if (!access.authenticated) {
     const loginUrl = new URL(requiredRole ? `/login/${requiredRole}` : "/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("role, is_active")
-    .eq("id", user.id)
-    .single();
-
-  if (!requiredRole) return response;
-
-  const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(userRow?.role ?? "");
-  if (userRow?.is_active === false || (!hasCreatorAccess && userRow?.role !== requiredRole)) {
+  const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(access.role ?? "");
+  if (access.isActive === false || (requiredRole && !hasCreatorAccess && access.role !== requiredRole)) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  const response = NextResponse.next();
+  const getSetCookie = (accessResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie;
+  const refreshedCookies = getSetCookie?.call(accessResponse.headers) ?? [];
+  for (const cookie of refreshedCookies) response.headers.append("set-cookie", cookie);
   return response;
 }
 

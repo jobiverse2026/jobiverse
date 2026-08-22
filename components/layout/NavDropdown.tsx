@@ -57,9 +57,9 @@ export default function NavDropdown({
         absolute
         inset-0
         bg-gradient-to-br
-        from-blue-50
+        from-violet-50
         via-white
-        to-violet-50
+        to-fuchsia-50
         "
       />
 
@@ -92,7 +92,7 @@ export default function NavDropdown({
                 delay: index * 0.05,
               }}
             >
-              <Link
+              <Link prefetch={false}
                 href={item.href}
                 onClick={onItemClick}
                 className="
@@ -136,10 +136,10 @@ export default function NavDropdown({
                         justify-center
                         rounded-2xl
                         bg-gradient-to-br
-                        from-blue-50
-                        via-violet-50
-                        to-cyan-50
-                        text-blue-600
+                        from-violet-100
+                        via-fuchsia-50
+                        to-white
+                        text-violet-700
                         transition-all
                         duration-300
                         group-hover:scale-110
@@ -171,9 +171,9 @@ export default function NavDropdown({
                             className="
                             rounded-full
                             bg-gradient-to-r
-                            from-blue-600
-                            via-violet-600
-                            to-cyan-500
+                            from-zinc-950
+                            via-violet-950
+                            to-violet-700
                             px-2.5
                             py-1
                             text-[10px]
@@ -201,7 +201,7 @@ export default function NavDropdown({
                     </div>
                   </div>
 
-                  <ChevronRight
+                  <span aria-hidden="true" className="mt-1 flex gap-1 opacity-40 transition group-hover:opacity-100"><i className="h-1.5 w-1.5 rounded-full bg-violet-300"/><i className="h-1.5 w-4 rounded-full bg-violet-500"/></span><ChevronRight
                     size={18}
                     className="
                     mt-1
@@ -262,7 +262,7 @@ export default function NavDropdown({
             </p>
           </div>
 
-          <Link
+          <Link prefetch={false}
             href="/contact"
             onClick={onItemClick}
             className="

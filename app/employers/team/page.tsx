@@ -74,7 +74,7 @@ export default async function EmployerTeamPage({
     recruiter: Math.max(0, limits.recruiter - usage.recruiter.used),
   };
 
-  const invitedRole = params.role === "employer" ? "Employer" : "Recruiter";
+  const invitedRole = params.role === "employer" ? "Sub-employer" : "Recruiter";
   const successMessage = params.invited
     ? `${invitedRole} invitation created for ${params.invited}.`
     : params.invited_count
@@ -103,10 +103,10 @@ export default async function EmployerTeamPage({
 
         <section className="mt-7 overflow-hidden rounded-[2.75rem] bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-700 p-8 text-white shadow-2xl sm:p-12">
           <UserPlus />
-          <p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Company access seats</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em] sm:text-6xl">Invite the right people to the right portal.</h1>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[.2em] text-zinc-400">Organisation access</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-[-.045em] sm:text-6xl">Give your organisation team the right level of access.</h1>
           <p className="mt-4 max-w-3xl text-zinc-300">
-            Add exact email access for employer workspace users and recruiter desk users. Each invite opens only the portal assigned to that seat.
+            Add sub-employers as trusted organisation users. Recruiter desk access remains available separately when your team uses the Hiring Workspace.
           </p>
         </section>
 
@@ -225,7 +225,7 @@ export default async function EmployerTeamPage({
                         <div>
                           <p className="font-semibold">{invite.invited_email}</p>
                           <p className="mt-1 text-xs text-zinc-500">
-                            {invite.role === "employer" ? "Employer access" : "Recruiter access"} | Expires {new Date(invite.expires_at).toLocaleDateString("en-IN")}
+                            {invite.role === "employer" ? "Sub-employer access" : "Recruiter access"} | Expires {new Date(invite.expires_at).toLocaleDateString("en-IN")}
                           </p>
                         </div>
                         <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold capitalize">{invite.status}</span>
@@ -286,7 +286,7 @@ function SeatOverview({ employer, recruiter }: { employer: { limit: number; acti
         <Small label="Left" value={String(total.left)} />
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <SeatBreakdown title="Employer seats" data={employer} />
+        <SeatBreakdown title="Sub-employer seats" data={employer} />
         <SeatBreakdown title="Recruiter seats" data={recruiter} />
       </div>
     </article>

@@ -52,9 +52,9 @@ export default function LoginDropdown({ onItemClick, mode = "login" }: Props) {
       <div
         className="
         bg-gradient-to-br
-        from-zinc-50
+        from-violet-50
         via-white
-        to-zinc-100
+        to-fuchsia-50
         p-2
         "
       >
@@ -62,7 +62,7 @@ export default function LoginDropdown({ onItemClick, mode = "login" }: Props) {
           const Icon = item.icon;
 
           return (
-            <Link
+            <Link prefetch={false}
               key={item.title}
               href={item.href}
               onClick={onItemClick}
@@ -88,7 +88,7 @@ export default function LoginDropdown({ onItemClick, mode = "login" }: Props) {
                 items-center
                 justify-center
                 rounded-xl
-                bg-zinc-950
+                jv-brand-gradient
                 text-white
                 transition-transform
                 duration-300
@@ -115,7 +115,7 @@ export default function LoginDropdown({ onItemClick, mode = "login" }: Props) {
                 transition-all
                 duration-300
                 group-hover:translate-x-1
-                group-hover:text-black
+                group-hover:text-violet-800
                 "
               />
             </Link>

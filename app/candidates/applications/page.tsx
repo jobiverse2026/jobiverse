@@ -151,7 +151,7 @@ export default async function CandidateCareerActivityPage({ searchParams }: { se
 
 function Status({ status }: { status: string }) {
   const tone = status === "Offered" ? "bg-emerald-100 text-emerald-700" : status === "Rejected" ? "bg-red-100 text-red-700" : status === "Interview" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700";
-  return <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${tone}`}>{status}</span>;
+  return <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${status === "Interview" ? "jv-interview-urgent " : ""}${tone}`}>{status}</span>;
 }
 
 function Empty({ title, text }: { title: string; text: string }) {

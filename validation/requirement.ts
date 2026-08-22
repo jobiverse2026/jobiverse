@@ -13,6 +13,8 @@ export const requirementSchema = z.object({
 
   experience: z.string().optional(),
 
+  target_audience: z.enum(["all", "experienced", "freshers", "students", "internships"]).default("all"),
+
   vacancies: z.coerce
     .number()
     .min(1, "Minimum 1 vacancy required"),

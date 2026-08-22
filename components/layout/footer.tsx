@@ -53,6 +53,10 @@ const companyLinks = [
     name: "Feedback Centre",
     href: "/feedback",
   },
+  {
+    name: "Help & Guides",
+    href: "/guides",
+  },
 ];
 
 
@@ -302,7 +306,7 @@ export function Footer() {
             {/* LinkedIn */}
 
 
-            <Link
+            <Link prefetch={false}
 
               href="https://www.linkedin.com/in/jobiverse"
 
@@ -342,7 +346,7 @@ export function Footer() {
             {/* WhatsApp */}
 
 
-            <Link
+            <Link prefetch={false}
 
               href="https://wa.me/917738832231"
 
@@ -382,7 +386,7 @@ export function Footer() {
             {/* Instagram */}
 
 
-            <Link
+            <Link prefetch={false}
 
               href="https://www.instagram.com/jobiverse__/?utm_source=ig_web_button_share_sheet"
 
@@ -412,7 +416,7 @@ export function Footer() {
 
             </Link>
 
-            <Link
+            <Link prefetch={false}
               href="https://www.facebook.com/profile.php?id=61592181941812"
               target="_blank"
               rel="noreferrer"
@@ -422,7 +426,7 @@ export function Footer() {
               <FacebookIcon className="h-4 w-4" />
             </Link>
 
-            <Link
+            <Link prefetch={false}
               href="https://www.youtube.com/@Jobiverse2026"
               target="_blank"
               rel="noreferrer"
@@ -442,7 +446,7 @@ export function Footer() {
             {/* Email */}
 
 
-            <Link
+            <Link prefetch={false}
 
               href="mailto:jobiverse@outlook.com"
 
@@ -537,7 +541,7 @@ function FooterColumn({
           <li key={link.name}>
 
 
-            <Link
+            <Link prefetch={false}
 
               href={link.href}
 

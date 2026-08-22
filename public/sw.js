@@ -4,7 +4,6 @@ const APP_SHELL = [OFFLINE_URL, "/manifest.webmanifest", "/icon-192.png", "/icon
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
 });
 
 self.addEventListener("message", (event) => {

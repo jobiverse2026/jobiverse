@@ -51,6 +51,9 @@ export default function UserMenu() {
             ? "/earn-with-jobiverse/dashboard"
             : "/candidates/dashboard";
 
+  const guideLink = role === "employer" ? "/guides/employer" : role === "recruiter" ? "/guides/recruiter" : role === "creator" ? "/guides/creator" : role === "candidate" ? "/guides/candidate" : "/guides/features";
+  const guideLabel = role === "employer" ? "Employer Guide" : role === "recruiter" ? "Recruiter Guide" : role === "creator" ? "Creator Guide" : role === "candidate" ? "Candidate Guide" : "Complete Feature Guide";
+
 
 
   return (
@@ -134,7 +137,7 @@ export default function UserMenu() {
 
 
 
-          <Link
+          <Link prefetch={false}
             href={dashboardLink}
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -144,7 +147,7 @@ export default function UserMenu() {
 
 
 
-          <Link
+          <Link prefetch={false}
             href="/account/profile"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -152,7 +155,9 @@ export default function UserMenu() {
             Update Profile
           </Link>
 
-          {role === "candidate" && <Link
+          <Link prefetch={false} href={guideLink} onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-50">{guideLabel}</Link>
+
+          {role === "candidate" && <Link prefetch={false}
             href="/candidates/profile"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -160,7 +165,7 @@ export default function UserMenu() {
             Professional Profile
           </Link>}
 
-          {role === "candidate" && <Link
+          {role === "candidate" && <Link prefetch={false}
             href="/career-passport"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -168,7 +173,7 @@ export default function UserMenu() {
             JobiVerse Card
           </Link>}
 
-          <Link
+          <Link prefetch={false}
             href="/account/billing"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -176,7 +181,7 @@ export default function UserMenu() {
             Billing & Purchases
           </Link>
 
-          <Link
+          <Link prefetch={false}
             href="/account/notifications"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -184,7 +189,7 @@ export default function UserMenu() {
             Notification Preferences
           </Link>
 
-          <Link
+          <Link prefetch={false}
             href="/account/security"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"
@@ -192,7 +197,7 @@ export default function UserMenu() {
             Security & Change Password
           </Link>
 
-          <Link
+          <Link prefetch={false}
             href="/account/privacy"
             onClick={() => setOpen(false)}
             className="block rounded-xl px-3 py-2 text-sm transition hover:bg-zinc-100"

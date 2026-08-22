@@ -9,7 +9,6 @@ import {
   BellRing,
   BriefcaseBusiness,
   Building2,
-  ChevronDown,
   ExternalLink,
   Globe2,
   Flame,
@@ -18,7 +17,6 @@ import {
   MapPin,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
 } from "lucide-react";
 import { JobMatchBadge } from "@/components/candidate/JobMatchBadge";
@@ -43,6 +41,7 @@ import { getJobCollection, JOB_COLLECTIONS, matchesJobCollection } from "@/lib/j
 import { calculateListingMatch, calculateOpportunityTrust, estimateSalaryRange, freshnessLabel, isExpiredListing, listingKey } from "@/lib/jobs/intelligence";
 import { JobCompareButton } from "@/components/jobs/JobCompareButton";
 import { JobCompareTray } from "@/components/jobs/JobCompareTray";
+import { JobsFilterPanel } from "@/components/jobs/JobsFilterPanel";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { JOB_CITY_LANDINGS, JOB_ROLE_LANDINGS } from "@/lib/jobs/seo-landings";
@@ -94,6 +93,7 @@ const allowedJobTypes = new Set(["full-time", "part-time", "contract", "internsh
 const allowedWorkModes = new Set(["remote", "hybrid", "on-site"]);
 const allowedFreshness = new Set(["1", "3", "7", "30"]);
 const MAX_BROWSABLE_PARTNER_PAGES = 100;
+const PARTNER_JOBS_PER_PAGE = 30;
 
 export default async function PublicJobsPage({ searchParams }: { searchParams: SearchParams }) {
   const filters = await searchParams;
@@ -165,7 +165,8 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
   })})).sort((a,b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
   const hasAdvancedFilters = Boolean(jobType || workMode || freshness || collection);
   const partnerVisibleCount = hasAdvancedFilters ? partnerJobs.length : Math.max(partnerJobs.length, partner.totalCount);
-  const partnerHasNextPage = page < MAX_BROWSABLE_PARTNER_PAGES && !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * 20);
+  const partnerHasNextPage = page < MAX_BROWSABLE_PARTNER_PAGES && !hasAdvancedFilters && (partner.hasNextPage ?? partner.totalCount > page * PARTNER_JOBS_PER_PAGE);
+  const hasVisibleFilters = Boolean(query || sector || location.toLowerCase() !== "india" || source !== "all" || hasAdvancedFilters || filters.radius || searchIn === "company");
   const visibleCount = directJobs.length + partnerVisibleCount;
   const countLabel = visibleCount.toLocaleString("en-IN");
   const savedSearches = viewer.savedSearches.map((item) => ({
@@ -207,48 +208,36 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
         </section>
 
         <form action="/jobs" className="relative -mt-5 mx-auto max-w-6xl rounded-[2rem] border border-zinc-200 bg-white p-4 shadow-xl">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_230px_240px_190px_auto]">
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
             <label className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">Search roles</span><input name="q" defaultValue={query} placeholder={searchIn === "company" ? "Search company" : "Role or skill"} className="h-13 w-full rounded-xl border border-zinc-200 pl-12 pr-4 outline-none focus:border-zinc-500" /></label>
-            <label className="relative"><Layers3 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">Job sector</span><select name="sector" defaultValue={sector} className="h-13 w-full cursor-pointer appearance-none rounded-xl border border-zinc-200 bg-white pl-12 pr-4 outline-none focus:border-zinc-500"><option value="">All sectors</option>{JOB_SECTORS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-            <label className="relative"><MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">City or location</span><input name="location" list="job-cities" defaultValue={location} placeholder="City or location" className="h-13 w-full rounded-xl border border-zinc-200 pl-12 pr-4 outline-none focus:border-zinc-500" /><datalist id="job-cities">{popularCities.map((city) => <option key={city} value={city} />)}</datalist></label>
-            <label><span className="sr-only">Job source</span><select name="source" defaultValue={source} className="h-13 w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 outline-none"><option value="all">All opportunities</option><option value="jobiverse">JobiVerse direct</option><option value="partner">Partner jobs</option></select></label>
             <button className="h-13 cursor-pointer rounded-xl bg-zinc-950 px-7 font-semibold text-white">Search jobs</button>
           </div>
 
-          <details className="group mt-3 rounded-2xl border border-zinc-100 bg-zinc-50/80" open={hasAdvancedFilters || Boolean(filters.radius) || searchIn === "company"}>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-zinc-700">
-              <span className="flex items-center gap-2"><SlidersHorizontal size={16} />More filters</span>
-              <ChevronDown size={16} className="transition group-open:rotate-180" />
-            </summary>
-            <div className="grid gap-3 border-t border-zinc-200 p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <JobsFilterPanel hasActiveFilters={hasVisibleFilters}>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="relative"><Layers3 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">Job sector</span><select name="sector" defaultValue={sector} className="h-13 w-full cursor-pointer appearance-none rounded-xl border border-zinc-200 bg-white pl-12 pr-4 outline-none focus:border-zinc-500"><option value="">All sectors</option>{JOB_SECTORS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+              <label className="relative"><MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} /><span className="sr-only">City or location</span><input name="location" list="job-cities" defaultValue={location} placeholder="City or location" className="h-13 w-full rounded-xl border border-zinc-200 pl-12 pr-4 outline-none focus:border-zinc-500" /><datalist id="job-cities">{popularCities.map((city) => <option key={city} value={city} />)}</datalist></label>
+              <label><span className="sr-only">Job source</span><select name="source" defaultValue={source} className="h-13 w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 outline-none"><option value="all">All opportunities</option><option value="jobiverse">JobiVerse direct</option><option value="partner">Partner jobs</option></select></label>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <FilterSelect name="searchIn" label="Search in" value={searchIn} options={[["role", "Role & skills"], ["company", "Company name"]]} />
               <FilterSelect name="radius" label="Distance" value={filters.radius === "all" ? "all" : radius ?? "all"} options={[["all", "Any distance"], ["0", "Exact location"], ["26", "Within 26 km"], ["40", "Within 40 km"], ["80", "Within 80 km"]]} />
               <FilterSelect name="jobType" label="Employment" value={jobType} options={[["", "All job types"], ["full-time", "Full-time"], ["part-time", "Part-time"], ["contract", "Contract"], ["internship", "Internship"]]} />
               <FilterSelect name="workMode" label="Work mode" value={workMode} options={[["", "All work modes"], ["remote", "Remote"], ["hybrid", "Hybrid"], ["on-site", "On-site"]]} />
-              <FilterSelect name="freshness" label="Posted" value={freshness} options={[["", "Any time"], ["1", "Last 24 hours"], ["3", "Last 3 days"], ["7", "Last 7 days"], ["30", "Last 30 days"]]} />
+              <FilterSelect name="freshness" label="Recently uploaded" value={freshness} options={[["", "Any time"], ["1", "Last 24 hours"], ["3", "Last 3 days"], ["7", "Last 7 days"], ["30", "Last 30 days"]]} />
             </div>
-          </details>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 px-1">
-            <span className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Popular cities</span>
-            {popularCities.map((city) => <Link key={city} href={locationHref(filters, city)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${location.toLowerCase() === city.toLowerCase() ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"}`}>{city}</Link>)}
-            <Link href="/jobs" className="ml-auto inline-flex min-h-9 items-center justify-center rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-700 transition hover:border-zinc-950 hover:bg-zinc-950 hover:text-white">Clear filters</Link>
-          </div>
-
-          <div className="mt-4 border-t border-zinc-100 px-1 pt-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mr-1 text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Explore sectors</span>
-              {JOB_SECTORS.map((item) => <Link prefetch={false} key={item.value} href={sectorHref(filters, item.value)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${sector === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-800"}`}>{item.label}</Link>)}
-            </div>
-          </div>
+            <div className="mt-5 border-t border-zinc-200 pt-4"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Popular cities</span>{popularCities.map((city) => <Link key={city} href={locationHref(filters, city)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${location.toLowerCase() === city.toLowerCase() ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-600"}`}>{city}</Link>)}<Link href="/jobs" className="ml-auto rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-bold">Clear filters</Link></div></div>
+            <div className="mt-4 border-t border-zinc-200 pt-4"><p className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Explore sectors</p><div className="mt-3 flex flex-wrap gap-2">{JOB_SECTORS.map((item) => <Link prefetch={false} key={item.value} href={sectorHref(filters, item.value)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${sector === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-white text-zinc-600"}`}>{item.label}</Link>)}</div></div>
+            <div className="mt-4 border-t border-zinc-200 pt-4"><p className="text-xs font-bold uppercase tracking-[.14em] text-zinc-400">Quick collections</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{JOB_COLLECTIONS.map((item) => <Link prefetch={false} key={item.value} href={collectionHref(filters, item.value)} className={`rounded-xl border p-3 text-sm font-semibold ${collection === item.value ? "border-violet-700 bg-violet-700 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}>{item.label}</Link>)}</div></div>
+          </JobsFilterPanel>
         </form>
 
-        <section className="mt-7 grid gap-5 lg:grid-cols-2">
+        <section className="mt-7 hidden gap-5 md:grid lg:grid-cols-2">
           <div className="rounded-[2rem] border border-zinc-200 bg-white p-6"><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-700">Jobs by city</p><h2 className="mt-2 text-2xl font-bold">Explore local opportunity hubs.</h2><div className="mt-4 flex flex-wrap gap-2">{JOB_CITY_LANDINGS.map(item=><Link key={item.slug} href={`/jobs/in/${item.slug}`} className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold hover:bg-zinc-950 hover:text-white">{item.name}</Link>)}</div></div>
           <div className="rounded-[2rem] border border-zinc-200 bg-white p-6"><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-700">Jobs by career</p><h2 className="mt-2 text-2xl font-bold">Begin with the work you want.</h2><div className="mt-4 flex flex-wrap gap-2">{JOB_ROLE_LANDINGS.map(item=><Link key={item.slug} href={`/jobs/role/${item.slug}`} className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold hover:bg-zinc-950 hover:text-white">{item.name}</Link>)}</div></div>
         </section>
 
-        <section className="mt-7">
+        <section className="mt-7 hidden md:block">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div><p className="text-xs font-bold uppercase tracking-[.16em] text-violet-600">Curated collections</p><h2 className="mt-2 text-2xl font-bold">Start with the way you want to work.</h2></div>
             {collection && <Link href={collectionHref(filters, "")} className="text-sm font-semibold text-violet-700">View every opportunity</Link>}
@@ -283,7 +272,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
                 const company = job.companies?.[0] ?? ownerCompanyMap.get(job.employer_id);
                 const trust = calculateOpportunityTrust({ title: job.job_title, company: company?.company_name, location: job.location || company?.location, description: job.job_description, skills: job.primary_skills, salary: job.budget_ctc, workMode: job.work_mode, employmentType: job.employment_type, experience: job.experience, postedAt: job.published_at, direct: true, verifiedCompany: company?.is_verified, applyUrl: `https://www.jobiverse.in/jobs/${job.id}` });
                 const salary = estimateSalaryRange({ title: job.job_title, location: job.location || company?.location, description: job.job_description, skills: job.primary_skills, salary: job.budget_ctc, experience: job.experience, direct: true });
-                return <article key={job.id} className="flex flex-col rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
+                return <article key={job.id} className="jv-job-card flex flex-col rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-zinc-950 text-white"><BriefcaseBusiness size={20} /></span><div className="flex flex-col items-end gap-2">{isPromotionActive(job) && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold uppercase text-amber-800"><Gem size={11}/>Spotlight role</span>}<span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase text-emerald-700">JobiVerse Direct</span><FreshnessBadge value={job.published_at}/></div></div>
                   <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{company?.company_name || "JobiVerse hiring partner"}{company?.is_verified && <BadgeCheck size={15} className="text-emerald-600" />}</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.job_title}</h2>
@@ -310,7 +299,7 @@ export default async function PublicJobsPage({ searchParams }: { searchParams: S
             ) : partnerJobs.length ? (
               <>
                 <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {partnerJobs.map(({job,match}) => {const displayLocation=job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`);const trust=calculateOpportunityTrust({title:job.title,company:job.company,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,postedAt:job.updated,applyUrl:job.link,provider:job.provider||job.source,direct:false});const salary=estimateSalaryRange({title:job.title,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,direct:false});const trackHref=`/jobs/track?${new URLSearchParams({id:job.id,provider:job.provider||job.source||"Partner",title:job.title,company:job.company,location:displayLocation,url:job.link}).toString()}`;return <article key={`${job.provider ?? "partner"}-${job.id}`} className="flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                  {partnerJobs.map(({job,match}) => {const displayLocation=job.displayLocation || partnerLocationLabel(job.location, location, Boolean(partner.locationMatchedByText), `${job.title} ${plainTextSnippet(job.snippet)}`);const trust=calculateOpportunityTrust({title:job.title,company:job.company,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,postedAt:job.updated,applyUrl:job.link,provider:job.provider||job.source,direct:false});const salary=estimateSalaryRange({title:job.title,location:displayLocation,description:plainTextSnippet(job.snippet),salary:job.salary,employmentType:job.type,direct:false});const trackHref=`/jobs/track?${new URLSearchParams({id:job.id,provider:job.provider||job.source||"Partner",title:job.title,company:job.company,location:displayLocation,url:job.link}).toString()}`;return <article key={`${job.provider ?? "partner"}-${job.id}`} className="jv-job-card flex flex-col rounded-[2rem] border border-violet-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
                     <div className="flex items-start justify-between gap-3"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-violet-950 text-white"><Globe2 size={20} /></span><div className="flex flex-col items-end gap-2"><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-bold uppercase text-violet-700">Partner Job</span><FreshnessBadge value={job.updated}/></div></div>
                     <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-zinc-600"><Building2 size={15} />{job.company}</p>
                     <h2 className="mt-2 text-2xl font-semibold tracking-tight">{job.title}</h2>
@@ -446,7 +435,7 @@ async function legacyDiscoverJoobleJobs({
   companySearch: boolean;
 }): Promise<PartnerJobSearch> {
   if (location.toLowerCase() !== "india") {
-    return searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
+    return searchJoobleJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, radius, companySearch });
   }
 
   const cityPool = popularCities.slice(0, 8);
@@ -457,7 +446,7 @@ async function legacyDiscoverJoobleJobs({
   const cities = cityPool.slice(batchIndex * batchSize, (batchIndex + 1) * batchSize);
   const [totalResult, pageResult, cityResults] = await Promise.all([
     searchJoobleJobs({ keywords, location: "India", page: 1, resultsPerPage: 1, companySearch }),
-    searchJoobleJobs({ keywords, location: "India", page, resultsPerPage: 20, companySearch }),
+    searchJoobleJobs({ keywords, location: "India", page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }),
     Promise.all(cities.map(async (city) => ({
       city,
       result: await searchJoobleJobs({
@@ -498,9 +487,9 @@ async function legacyDiscoverJoobleJobs({
     ...pageResult,
     configured: totalResult.configured || pageResult.configured || cityResults.some(({ result }) => result.configured),
     totalCount: totalResult.totalCount || pageResult.totalCount,
-    jobs: [...cityJobs, ...fallbackJobs].slice(0, 20),
+    jobs: [...cityJobs, ...fallbackJobs].slice(0, PARTNER_JOBS_PER_PAGE),
     nationalFeed: true,
-    hasNextPage: (totalResult.totalCount || pageResult.totalCount) > page * 20,
+    hasNextPage: (totalResult.totalCount || pageResult.totalCount) > page * PARTNER_JOBS_PER_PAGE,
   };
 }
 
@@ -517,7 +506,7 @@ async function discoverJoobleJobs({
   radius?: "0" | "4" | "8" | "16" | "26" | "40" | "80";
   companySearch: boolean;
 }): Promise<PartnerJobSearch> {
-  const result = await searchJoobleJobs({ keywords, location, page, resultsPerPage: 20, radius, companySearch });
+  const result = await searchJoobleJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, radius, companySearch });
   if (location.toLowerCase() !== "india") return result;
 
   return {
@@ -563,16 +552,16 @@ async function discoverPartnerJobs({
     sources.push({ name: "Jooble", request: () => discoverJoobleJobs({ keywords, location, page, radius, companySearch }) });
   }
   if (process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY) {
-    sources.push({ name: "Adzuna", request: () => searchAdzunaJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) });
+    sources.push({ name: "Adzuna", request: () => searchAdzunaJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) });
   }
   sources.push(
-    { name: "Himalayas", request: () => searchHimalayasJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
-    { name: "Arbeitnow", request: () => searchArbeitnowJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
-    { name: "Remotive", request: () => searchRemotiveJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
-    { name: "Jobicy", request: () => searchJobicyJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) },
+    { name: "Himalayas", request: () => searchHimalayasJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) },
+    { name: "Arbeitnow", request: () => searchArbeitnowJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) },
+    { name: "Remotive", request: () => searchRemotiveJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) },
+    { name: "Jobicy", request: () => searchJobicyJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) },
   );
   if (process.env.THE_MUSE_API_KEY) {
-    sources.push({ name: "The Muse", request: () => searchMuseJobs({ keywords, location, page, resultsPerPage: 20, companySearch }) });
+    sources.push({ name: "The Muse", request: () => searchMuseJobs({ keywords, location, page, resultsPerPage: PARTNER_JOBS_PER_PAGE, companySearch }) });
   }
 
   // Fetch every connected source concurrently. Only 20 cards are rendered,
@@ -580,7 +569,7 @@ async function discoverPartnerJobs({
   // providers instead of a rotating subset of two sources.
   const results = await Promise.all(sources.map((source) => withPartnerDeadline(source.request())));
   const configuredResults = results.filter((result) => result.configured);
-  const jobs = interleavePartnerJobs(results, 20);
+  const jobs = interleavePartnerJobs(results, PARTNER_JOBS_PER_PAGE);
   const providers = sources
     .map((source, index) => ({
       name: source.name,
@@ -598,7 +587,7 @@ async function discoverPartnerJobs({
     totalCount: configuredResults.reduce((sum, result) => sum + result.totalCount, 0),
     jobs,
     nationalFeed: location.toLowerCase() === "india",
-    hasNextPage: configuredResults.some((result) => result.hasNextPage ?? result.totalCount > page * 20),
+    hasNextPage: configuredResults.some((result) => result.hasNextPage ?? result.totalCount > page * PARTNER_JOBS_PER_PAGE),
     providers,
     error: jobs.length === 0 && allConfiguredSourcesFailed
       ? "Connected job feeds are temporarily unavailable."
@@ -620,7 +609,7 @@ const getCachedPartnerJobs = unstable_cache(
     radius: allowedRadii.has(radius) ? radius as "0" | "4" | "8" | "16" | "26" | "40" | "80" : undefined,
     companySearch,
   }),
-  ["jobiverse-partner-catalog-v4-full-source-totals"],
+  ["jobiverse-partner-catalog-v5-30-per-page"],
   // Partner catalogues do not need to be rebuilt every 30 minutes. A longer
   // shared cache keeps external API latency and serverless compute predictable.
   { revalidate: 21_600, tags: ["partner-jobs"] },

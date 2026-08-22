@@ -295,6 +295,17 @@ html {
   }
 }
 
+@keyframes jv-orbit-spin { to { transform: rotate(360deg); } }
+@keyframes jv-toast-in { 0% { opacity: 0; transform: translate(-50%, 18px) scale(.96); } 100% { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes jv-card-rise { 0% { opacity: .4; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+
+.jv-hero-orb { animation: jv-orbit-spin 22s linear infinite; }
+.jv-hero-orb::after { content: ""; position: absolute; width: 12px; height: 12px; border-radius: 999px; background: #c4b5fd; top: 50%; right: -6px; box-shadow: 0 0 24px rgba(196,181,253,.9); }
+.jv-universe-gateway { animation: jv-card-rise .55s both; will-change: transform; }
+.jv-success-toast { animation: jv-toast-in .38s cubic-bezier(.22,1,.36,1) both; }
+.jv-job-card { animation: jv-card-rise .45s both; content-visibility: auto; contain-intrinsic-size: 480px; }
+.jv-job-card:hover { border-color: rgba(124,58,237,.28); box-shadow: 0 28px 70px -42px rgba(76,29,149,.55); }
+
 @keyframes jv-float {
   0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
   50% { transform: translate3d(0, -18px, 0) rotate(2deg); }
@@ -333,3 +344,79 @@ html.jv-intro-active [data-site-navbar] {
   .cv-print-page { width: 210mm !important; height: 297mm !important; max-width: none !important; margin: 0 !important; break-after: page; page-break-after: always; }
   .cv-print-page:last-child { break-after: auto; page-break-after: auto; }
 }
+
+
+/* JobiVerse charcoal-violet visual system */
+:root {
+  --jv-charcoal: #0b0b0f;
+  --jv-plum: #241733;
+  --jv-purple: #4a3064;
+  --jv-purple-soft: #72538d;
+  --jv-surface: #f8f6fa;
+}
+
+@layer components {
+  .jv-brand-gradient {
+    background-color: var(--jv-charcoal);
+    background-image:
+      radial-gradient(circle at 92% 8%, rgba(117, 75, 158, .34), transparent 30rem),
+      radial-gradient(circle at 64% 36%, rgba(67, 40, 91, .46), transparent 36rem),
+      linear-gradient(135deg, #09090d 0%, #14131a 42%, #2d1f3f 74%, #3d2a51 100%);
+  }
+
+  .jv-brand-gradient-soft {
+    background-image:
+      radial-gradient(circle at 90% 0%, rgba(102, 65, 133, .13), transparent 28rem),
+      linear-gradient(180deg, #fbfafc, #f5f1f8);
+  }
+}
+
+body {
+  background-color: var(--jv-surface);
+  background-image:
+    radial-gradient(circle at 92% 2%, rgba(92, 57, 121, .10), transparent 30rem),
+    radial-gradient(circle at 8% 22%, rgba(51, 38, 64, .06), transparent 26rem);
+}
+
+body .bg-zinc-950,
+body .bg-black {
+  background-color: var(--jv-charcoal);
+  background-image: linear-gradient(135deg, #0a0a0e 0%, #17131d 52%, #342345 100%);
+}
+
+body .from-zinc-950 { --tw-gradient-from: #0a0a0e var(--tw-gradient-from-position); }
+body .via-zinc-900 { --tw-gradient-via: #21172b var(--tw-gradient-via-position); }
+body .to-zinc-700 { --tw-gradient-to: #4a3261 var(--tw-gradient-to-position); }
+
+
+
+/* JobiVerse coordinated experience motion */
+.jv-ambient-tone{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.42;transition:background 900ms ease}
+.jv-ambient-tone[data-tone=professional]{background:radial-gradient(circle at 8% 55%,rgba(91,33,182,.09),transparent 35rem)}
+.jv-ambient-tone[data-tone=student]{background:radial-gradient(circle at 8% 55%,rgba(37,99,235,.08),transparent 35rem)}
+.jv-ambient-tone[data-tone=employer]{background:radial-gradient(circle at 8% 55%,rgba(30,41,59,.10),transparent 35rem)}
+.jv-ambient-tone[data-tone=creator]{background:radial-gradient(circle at 8% 55%,rgba(147,51,234,.09),transparent 35rem)}
+.jv-magnetic{transform:translate(var(--jv-mx,0),var(--jv-my,0));transition:transform .18s ease,box-shadow .25s ease}
+.jv-spotlight{position:relative;overflow:hidden}
+.jv-spotlight::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(220px circle at var(--jv-x,50%) var(--jv-y,50%),rgba(196,181,253,.16),transparent 70%)}
+.jv-spotlight:hover::after{opacity:1}
+.jv-scroll-orbit{position:fixed;right:14px;top:30%;z-index:45;width:3px;height:38vh;border-radius:99px;background:rgba(124,58,237,.12);pointer-events:none}
+.jv-scroll-orbit span{position:absolute;inset:0;border-radius:99px;background:linear-gradient(#c4b5fd,#6d28d9);transform-origin:top}
+.jv-scroll-orbit i{position:absolute;left:50%;width:11px;height:11px;border:2px solid white;border-radius:50%;background:#7c3aed;transform:translate(-50%,-50%);box-shadow:0 0 18px rgba(124,58,237,.55)}
+@media(max-width:767px),(prefers-reduced-motion:reduce){.jv-scroll-orbit,.jv-ambient-tone{display:none}.jv-magnetic{transform:none!important}.jv-spotlight::after{display:none}}
+
+html[data-universe-tone] body{transition:background-color .9s ease,background-image .9s ease}
+html[data-universe-tone=professional] body{background-color:#f8f6fa;background-image:radial-gradient(circle at 8% 52%,rgba(91,33,182,.11),transparent 36rem)}
+html[data-universe-tone=student] body{background-color:#f8f9fc;background-image:radial-gradient(circle at 8% 52%,rgba(37,99,235,.09),transparent 36rem)}
+html[data-universe-tone=employer] body{background-color:#f7f6f9;background-image:radial-gradient(circle at 8% 52%,rgba(45,28,61,.12),transparent 36rem)}
+html[data-universe-tone=creator] body{background-color:#faf7fc;background-image:radial-gradient(circle at 8% 52%,rgba(147,51,234,.10),transparent 36rem)}
+
+@keyframes jv-skeleton-sweep{to{transform:translateX(120%)}}
+@keyframes jv-upload-fill{from{width:12%}to{width:100%}}
+@keyframes jv-upload-loop{0%{transform:translateX(-110%)}100%{transform:translateX(310%)}}
+@keyframes jv-review-rise{from{opacity:0;transform:translateY(16px) rotateX(-5deg)}to{opacity:1;transform:none}}
+.jv-skeleton{position:relative;overflow:hidden;background:rgba(255,255,255,.10)}.jv-skeleton:after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.18),transparent);transform:translateX(-120%);animation:jv-skeleton-sweep 1.4s infinite}
+.jv-upload-ready{animation:jv-upload-fill .7s cubic-bezier(.22,1,.36,1) both}.jv-uploading{width:32%!important;animation:jv-upload-loop 1s ease-in-out infinite}
+.jv-compare-drag{cursor:grab;transition:opacity .2s,transform .2s}.jv-compare-drag:active{cursor:grabbing;transform:scale(.98)}
+.jv-review-reveal{animation:jv-review-rise .55s both}.jv-review-reveal:nth-child(2){animation-delay:.08s}.jv-review-reveal:nth-child(3){animation-delay:.16s}
+.jv-empty-jovi{animation:jv-float 4.8s ease-in-out infinite}.jv-interview-urgent{animation:jv-urgent-pulse 1.8s ease-in-out infinite}@keyframes jv-urgent-pulse{50%{box-shadow:0 0 0 6px rgba(124,58,237,.10)}}

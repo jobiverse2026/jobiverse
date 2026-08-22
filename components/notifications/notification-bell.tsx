@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Archive, Bell, CheckCheck, Inbox, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -28,6 +29,8 @@ export function NotificationBell({ userId }: { userId: string }) {
   const [view, setView] = useState<View>("all");
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultNotificationPreferences);
   const rootRef = useRef<HTMLDivElement>(null);
+  const previousUnread = useRef(0);
+  const [bellPulse,setBellPulse]=useState(0);
 
   const load = useCallback(async () => {
     const [{data},{data:preferenceRow}] = await Promise.all([supabase.from("notifications").select("id,title,message,type,href,read_at,archived_at,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50),supabase.from("notification_preferences").select("*").eq("user_id",userId).maybeSingle()]);
@@ -63,6 +66,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   const allowedItems=items.filter(item=>preferences[`in_app_${notificationCategory(item.type)}`]);
   const activeItems = allowedItems.filter((item) => !item.archived_at);
   const unread = activeItems.filter((item) => !item.read_at).length;
+  useEffect(()=>{if(unread>previousUnread.current)setBellPulse(value=>value+1);previousUnread.current=unread},[unread]);
   const visibleItems = view === "archived" ? allowedItems.filter((item) => item.archived_at) : view === "unread" ? activeItems.filter((item) => !item.read_at) : activeItems;
   async function markAllRead() {
     await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("user_id", userId).is("read_at", null).is("archived_at", null);
@@ -81,7 +85,7 @@ export function NotificationBell({ userId }: { userId: string }) {
 
   return <div ref={rootRef} onMouseLeave={() => setOpen(false)} className="relative">
     <button type="button" onClick={() => setOpen((value) => !value)} aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-xl text-zinc-700 transition hover:bg-zinc-100">
-      <Bell size={19}/>{unread > 0 && <span className="absolute right-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[9px] font-bold text-white">{unread > 9 ? "9+" : unread}</span>}
+      <motion.span key={bellPulse} animate={bellPulse?{rotate:[0,-14,12,-8,0]}:undefined} transition={{duration:.5}}><Bell size={19}/></motion.span>{unread > 0 && <span className="absolute right-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-zinc-950 px-1 text-[9px] font-bold text-white">{unread > 9 ? "9+" : unread}</span>}
     </button>
     {open && <div className="absolute right-0 top-10 z-[120] w-[min(390px,calc(100vw-2rem))] overflow-hidden rounded-[1.5rem] border border-zinc-200 bg-white shadow-2xl">
       <div className="border-b border-zinc-100 px-5 py-4"><div className="flex items-center justify-between"><div><p className="font-semibold">Notifications</p><p className="text-xs text-zinc-400">{unread} unread</p></div><div className="flex gap-3">{unread > 0 && <button onClick={markAllRead} className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-zinc-600"><CheckCheck size={14}/> Read all</button>}{activeItems.some(item=>item.read_at)&&<button onClick={archiveRead} className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-zinc-600"><Archive size={14}/> Archive read</button>}</div></div><div className="mt-4 grid grid-cols-3 rounded-xl bg-zinc-100 p-1">{(["all","unread","archived"] as View[]).map(tab=><button key={tab} onClick={()=>setView(tab)} className={`cursor-pointer rounded-lg py-2 text-[11px] font-bold capitalize transition ${view===tab?"bg-white text-zinc-950 shadow-sm":"text-zinc-500"}`}>{tab}</button>)}</div></div>

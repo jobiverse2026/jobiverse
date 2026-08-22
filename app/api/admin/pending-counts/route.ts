@@ -28,6 +28,7 @@ export async function GET() {
       support,
       emailFailures,
       feedback,
+      customPortals,
     ] = await Promise.all([
       supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
       supabase.from("requirements").select("id", { count: "exact", head: true }).eq("hiring_team_requested", true).not("status", "in", '("Closed","Cancelled")'),
@@ -51,12 +52,14 @@ export async function GET() {
       supabase.from("support_conversations").select("unread_for_admin"),
       adminSupabase.from("transactional_email_outbox").select("id", { count: "exact", head: true }).eq("status", "failed"),
       adminSupabase.from("user_feedback").select("id", { count: "exact", head: true }).in("status", ["new", "reviewing", "planned"]),
+      adminSupabase.from("custom_portal_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
     ]);
     return Response.json({
       "/admin": unreadNotifications.count ?? 0,
       "/admin/requirements": requirements.count ?? 0,
       "/admin/free-hiring": freeHiringNotifications.count ?? 0,
       "/admin/analytics": 0,
+      "/admin/custom-portals": customPortals.count ?? 0,
       "/admin/growth": 0,
       "/admin/campus": campusEnquiries.count ?? 0,
       "/admin/memberships": membershipRequests.count ?? 0,

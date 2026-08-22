@@ -33,35 +33,36 @@ export type NavItem = {
   children?: NavChild[];
 };
 
-const exploreNavigation: NavChild[] = [
-  { title: "Why JobiVerse", description: "Trust, protection and intelligence behind the platform.", href: "/why-jobiverse", icon: ShieldCheck },
-  { title: "Consultations", description: "Book focused guidance with a JobiVerse expert.", href: "/consultations", icon: UserRound },
-  { title: "Events & Workshops", description: "Join career clinics, webinars and hiring drives.", href: "/events", icon: Sparkles },
-  { title: "Campus Partnerships", description: "Career and placement programmes for institutions.", href: "/campus-partnerships", icon: GraduationCap },
-  { title: "JobiVerse Card", description: "Build a shareable professional identity.", href: "/login/candidate?next=%2Fcareer-passport", icon: Briefcase },
-  { title: "Pricing", description: "See JobiVerse paid plans and revenue streams.", href: "/pricing", icon: Target },
-  { title: "Referrals", description: "Invite genuine professionals to JobiVerse.", href: "/referrals", icon: Users },
-  { title: "Responsible AI", description: "See AI safeguards and feature status.", href: "/ai", icon: WandSparkles },
-];
-
 export const publicNavigation: NavItem[] = [
   { title: "Home", href: "/" },
   { title: "Jobs", href: "/jobs" },
-  { title: "Services", href: "/services" },
   {
-    title: "Explore the Verse",
+    title: "Career Growth",
     children: [
-      { title: "Professionals", description: "Opportunities, career growth and expert support.", href: "/candidates", icon: Briefcase },
-      { title: "Students & Graduates", description: "Career tools and first-opportunity guidance.", href: "/students", icon: GraduationCap },
-      { title: "Employers", description: "Recruitment solutions and people advisory.", href: "/employers", icon: Building2 },
+      { title: "Students & Graduates", description: "Fresh jobs, first resumes and early-career guidance.", href: "/students", icon: GraduationCap },
+      { title: "Professionals", description: "Opportunities, career identity and professional growth.", href: "/candidates", icon: Briefcase },
+      { title: "Career Services", description: "Resume, interview, LinkedIn and career support.", href: "/career-services", icon: Compass },
     ],
   },
-  { title: "Discover More", children: exploreNavigation },
-  { title: "Earn", href: "/earn-with-jobiverse" },
+  { title: "Hire Talent", href: "/employers" },
+  { title: "Create & Earn", href: "/earn-with-jobiverse" },
+  {
+    title: "Explore More",
+    children: [
+      { title: "Help & Guides", description: "Learn every JobiVerse workflow.", href: "/guides", icon: FileText },
+      { title: "Campus Partnerships", description: "Placement programmes for institutions.", href: "/campus-partnerships", icon: GraduationCap },
+      { title: "Pricing", description: "Plans, services and premium unlocks.", href: "/pricing", icon: Target },
+      { title: "Events & Workshops", description: "Career clinics, webinars and hiring drives.", href: "/events", icon: Sparkles },
+      { title: "Consultations", description: "Focused career and hiring guidance.", href: "/consultations", icon: UserRound },
+      { title: "Why JobiVerse", description: "Trust, protection and platform intelligence.", href: "/why-jobiverse", icon: ShieldCheck },
+    ],
+  },
   { title: "About Us", href: "/about" },
 ];
 
 const mainSiteMenu: NavChild[] = [
+  { title: "Help & Guides", description: "Role-specific JobiVerse product guides.", href: "/guides", icon: FileText },
+  { title: "Student Guide", description: "A first-career path from profile to placement.", href: "/guides/student", icon: GraduationCap },
   { title: "Home", description: "Return to the JobiVerse homepage.", href: "/", icon: Sparkles },
   { title: "Jobs", description: "Explore direct and clearly attributed partner opportunities.", href: "/jobs", icon: Briefcase },
   { title: "Services", description: "Explore services for every JobiVerse audience.", href: "/services", icon: Compass },
@@ -87,6 +88,7 @@ export const marketplaceNavigation: NavItem[] = [
 export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "admin" | "creator", NavItem[]> = {
   candidate: [
     { title: "Dashboard", href: "/candidates/dashboard" },
+    { title: "Candidate Guide", href: "/guides/candidate" },
     { title: "Explore Opportunities", href: "/jobs" },
     { title: "Career", children: [
       { title: "Jobs", description: "Discover direct and partner opportunities.", href: "/jobs", icon: Briefcase },
@@ -106,6 +108,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
   ],
   employer: [
     { title: "Dashboard", href: "/employers/dashboard" },
+    { title: "Employer Guide", href: "/guides/employer" },
     { title: "Hiring", children: [
       { title: "Requirements", description: "Create and track hiring mandates.", href: "/employers/requirements", icon: Briefcase },
       { title: "Candidates", description: "Review submitted talent and offers.", href: "/employers/candidates", icon: Users },
@@ -125,6 +128,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
   ],
   recruiter: [
     { title: "Dashboard", href: "/recruiter" },
+    { title: "Recruiter Guide", href: "/guides/recruiter" },
     { title: "Recruitment", children: [
       { title: "Requirements", description: "Work on assigned hiring roles.", href: "/recruiter/requirements", icon: Briefcase },
       { title: "Candidates", description: "Manage sourcing and delivery pipelines.", href: "/recruiter/candidates", icon: Users },
@@ -153,6 +157,7 @@ export const roleNavigation: Record<"candidate" | "employer" | "recruiter" | "ad
   ],
   creator: [
     { title: "Dashboard", href: "/earn-with-jobiverse/dashboard" },
+    { title: "Creator Guide", href: "/guides/creator" },
     { title: "Create Service", href: "/earn-with-jobiverse/dashboard/services/new" },
     { title: "Creator Business", children: [
       { title: "Negotiations", description: "Review customer offers and counters.", href: "/earn-with-jobiverse/dashboard/offers", icon: Users },
@@ -354,54 +359,17 @@ export const navigation: NavItem[] = [
 
 
 export const loginMenu = [
-
-  {
-    title: "Creator Login",
-    description: "Publish services, manage orders and track earnings.",
-    href: "/login/creator",
-    icon: WandSparkles,
-  },
-
-  {
-    title: "Recruiter Login",
-    description:
-      "Manage candidates and recruitment workflow.",
-    href: "/login/recruiter",
-    icon: Users,
-  },
-
-
-  {
-    title: "Employer Login",
-    description:
-      "Manage hiring requirements and connect with talent.",
-    href: "/login/employer",
-    icon: Building2,
-  },
-
-
-  {
-    title: "Candidate Login",
-    description:
-      "Track applications and explore career opportunities.",
-    href: "/login/candidate",
-    icon: Briefcase,
-  },
-
-
-  {
-    title: "Admin Login",
-    description:
-      "Access JobiVerse platform management.",
-    href: "/login/admin",
-    icon: Target,
-  },
-
+  { title: "Student Login", description: "Fresh jobs, applications and first-career tools.", href: "/login/student", icon: GraduationCap },
+  { title: "Professional Login", description: "Career profile, applications and opportunities.", href: "/login/candidate", icon: Briefcase },
+  { title: "Employer Login", description: "Requirements, candidates and hiring workspace.", href: "/login/employer", icon: Building2 },
+  { title: "Creator Login", description: "Services, orders and creator earnings.", href: "/login/creator", icon: WandSparkles },
+  { title: "Recruiter Login", description: "Invite-only employer recruitment workspace.", href: "/login/recruiter", icon: Users },
+  { title: "Admin Login", description: "Secure JobiVerse administration access.", href: "/login/admin", icon: ShieldCheck },
 ];
 
 export const signupMenu = [
-  { title: "Creator Sign Up", description: "Create a dedicated creator account to publish services and earn.", href: "/signup?role=creator", icon: WandSparkles },
-  { title: "Candidate Sign Up", description: "Create a career profile and access opportunities.", href: "/signup?role=candidate", icon: Briefcase },
-  { title: "Employer Sign Up", description: "Create a company account and start hiring.", href: "/signup?role=employer", icon: Building2 },
-  { title: "Recruiter Sign Up", description: "Request a verified JobiVerse recruiter workspace.", href: "/signup?role=recruiter", icon: Users },
+  { title: "Student Sign Up", description: "Start your student career launchpad.", href: "/signup?role=student&next=%2Fstudents%2Fdashboard", icon: GraduationCap },
+  { title: "Professional Sign Up", description: "Build your career profile and access opportunities.", href: "/signup?role=candidate", icon: Briefcase },
+  { title: "Employer Sign Up", description: "Create a company workspace and start hiring.", href: "/signup?role=employer", icon: Building2 },
+  { title: "Creator Sign Up", description: "Publish career services and earn.", href: "/signup?role=creator", icon: WandSparkles },
 ];

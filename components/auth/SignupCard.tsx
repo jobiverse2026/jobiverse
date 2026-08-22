@@ -84,9 +84,10 @@ type Props = {
   role?: Role;
   referralCode?: string;
   nextPath?: string;
+  portal?: "default" | "student";
 };
 
-export default function SignupCard({ role = "candidate", referralCode, nextPath }: Props) {
+export default function SignupCard({ role = "candidate", referralCode, nextPath, portal = "default" }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -99,7 +100,9 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
 
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
-  const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") && !nextPath.includes("\\") ? nextPath : null;
+  const studentPortal = portal === "student";
+  const safeNextInput = nextPath ?? (studentPortal ? "/students/dashboard" : undefined);
+  const safeNext = safeNextInput?.startsWith("/") && !safeNextInput.startsWith("//") && !safeNextInput.includes("\\") ? safeNextInput : null;
   const socialSignupAllowed = !["employer", "recruiter"].includes(role);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -147,6 +150,7 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
             role,
             full_name: fullName,
             referral_code: referralCode?.trim().toUpperCase() || undefined,
+            career_stage: studentPortal ? "student" : undefined,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`,
         },
@@ -285,9 +289,9 @@ export default function SignupCard({ role = "candidate", referralCode, nextPath 
         </div>
 
         <div className="text-center">
-          <h2 className="text-3xl font-semibold tracking-[-.035em]">{signupTitle[role]}</h2>
+          <h2 className="text-3xl font-semibold tracking-[-.035em]">{studentPortal ? "Student Sign Up" : signupTitle[role]}</h2>
           <p className="mt-2 text-sm text-zinc-500">
-            {signupSubtitle[role]}
+            {studentPortal ? "Create your student career launchpad" : signupSubtitle[role]}
           </p>
         </div>
 
