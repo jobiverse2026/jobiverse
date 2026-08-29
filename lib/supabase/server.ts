@@ -9,30 +9,14 @@ export async function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
+        getAll() {
+          return cookieStore.getAll();
         },
-
-        set(name: string, value: string, options: any) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({
-              name,
-              value,
-              ...options,
-            });
-          } catch {
-            // Called from a Server Component.
-          }
-        },
-
-        remove(name: string, options: any) {
-          try {
-            cookieStore.set({
-              name,
-              value: "",
-              ...options,
-              maxAge: 0,
-            });
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
           } catch {
             // Called from a Server Component.
           }

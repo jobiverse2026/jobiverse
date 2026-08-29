@@ -22,13 +22,13 @@ async function login(page: Page, role: TestRole, expectedPath: RegExp) {
   await page.getByPlaceholder("Password").fill(account.password);
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(expectedPath, { timeout: 30_000 });
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(/Application error|Internal Server Error|Runtime Error|Worker exceeded resource limits/i);
 }
 
 test.describe("JobiVerse finance access", () => {
   test("admin can inspect live finance and Razorpay ledgers", async ({ page }) => {
     test.skip(!hasCredentials("admin"), "Admin test credentials are not configured.");
-    await login(page, "admin", /\/admin(?:\/)?$/);
+    await login(page, "admin", /^https?:\/\/[^/]+\/admin(?:\/)?$/);
     await page.goto("/admin/finance");
     await expect(page.getByRole("heading", { name: "Finance & Payouts" })).toBeVisible();
     await expect(page.getByText("Captured collections")).toBeVisible();

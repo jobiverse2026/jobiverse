@@ -7,6 +7,7 @@ export type EmployerCompanyAccess = {
     id: string;
     owner_id: string;
     company_name: string;
+    industry: string | null;
     recruiter_seat_limit: number;
     employer_seat_limit: number;
     recruiter_seat_allowance?: number;
@@ -35,7 +36,7 @@ export function scopeEmployerJoinedRequirementQuery(
 export async function getEmployerCompanyAccess(userId: string): Promise<EmployerCompanyAccess> {
   const { data: ownedCompany, error: ownedError } = await adminSupabase
     .from("companies")
-    .select("id,owner_id,company_name,recruiter_seat_limit,employer_seat_limit")
+    .select("id,owner_id,company_name,industry,recruiter_seat_limit,employer_seat_limit")
     .eq("owner_id", userId)
     .maybeSingle();
 
@@ -46,7 +47,7 @@ export async function getEmployerCompanyAccess(userId: string): Promise<Employer
 
   const { data: membership, error: memberError } = await adminSupabase
     .from("employer_team_members")
-    .select("company_id,employer_id,role,status,recruiter_seat_limit,companies(id,owner_id,company_name,recruiter_seat_limit,employer_seat_limit)")
+    .select("company_id,employer_id,role,status,recruiter_seat_limit,companies(id,owner_id,company_name,industry,recruiter_seat_limit,employer_seat_limit)")
     .eq("user_id", userId)
     .eq("role", "employer")
     .eq("status", "active")
@@ -70,6 +71,7 @@ function normalizeCompany(company: any, recruiterSeatAllowance?: number) {
     id: company.id,
     owner_id: company.owner_id,
     company_name: company.company_name,
+    industry: company.industry ?? null,
     recruiter_seat_limit: Number(company.recruiter_seat_limit ?? 0),
     employer_seat_limit: Number(company.employer_seat_limit ?? 0),
     recruiter_seat_allowance: recruiterSeatAllowance,

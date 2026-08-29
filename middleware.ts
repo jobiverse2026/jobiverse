@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 const roleRoutes: Record<string, string> = {
   "/earn-with-jobiverse/dashboard": "creator",
@@ -28,12 +29,6 @@ const roleRoutes: Record<string, string> = {
 
 const authenticatedRoutes = ["/hiring/applications"] as const;
 
-type AccessResult = {
-  authenticated?: boolean;
-  role?: string | null;
-  isActive?: boolean;
-};
-
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -45,36 +40,43 @@ export async function middleware(request: NextRequest) {
   const requiresAuthentication = authenticatedRoutes.some((path) => pathname.startsWith(path));
   if (!matchedRoute && !requiresAuthentication) return NextResponse.next();
 
-  const accessResponse = await fetch(new URL("/api/internal/route-access", request.url), {
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-    cache: "no-store",
-  });
-
-  if (!accessResponse.ok) return NextResponse.redirect(new URL("/login", request.url));
-
-  const access = await accessResponse.json() as AccessResult;
+  let response = NextResponse.next({ request });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll(cookiesToSet) {
+          for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
+          response = NextResponse.next({ request });
+          for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
+        },
+      },
+    },
+  );
+  const { data: verifiedToken } = await supabase.auth.getClaims();
   const requiredRole = matchedRoute ? roleRoutes[matchedRoute] : null;
 
-  if (!access.authenticated) {
+  if (!verifiedToken?.claims?.sub) {
     const loginUrl = new URL(requiredRole ? `/login/${requiredRole}` : "/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  const hasCreatorAccess = requiredRole === "creator" && ["candidate", "creator"].includes(access.role ?? "");
-  if (access.isActive === false || (requiredRole && !hasCreatorAccess && access.role !== requiredRole)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  // Protected pages and layouts perform the authoritative database-backed role check.
+  // Middleware verifies the signed session without a redundant role query.
 
-  const response = NextResponse.next();
-  const getSetCookie = (accessResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie;
-  const refreshedCookies = getSetCookie?.call(accessResponse.headers) ?? [];
-  for (const cookie of refreshedCookies) response.headers.append("set-cookie", cookie);
   return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|sitemap.xml|robots.txt|images).*)",
+    "/admin/:path*",
+    "/recruiter/:path*",
+    "/candidates/:path*",
+    "/employers/:path*",
+    "/earn-with-jobiverse/dashboard/:path*",
+    "/hiring/applications/:path*",
   ],
 };

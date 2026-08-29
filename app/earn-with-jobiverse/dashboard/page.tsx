@@ -5,21 +5,23 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { CreatorListingStats } from "@/components/marketplace/creator-listing-stats";
 
 type DashboardProps = { searchParams: Promise<{ published?: string; updated?: string; featured?: string }> };
+type CreatorDashboardData = {
+  profile: { full_name: string | null; role: string | null } | null;
+  listings: Array<{ id: string; title: string; slug: string; audience: string; price: number; status: string; total_orders: number; view_count: number; is_featured: boolean; featured_until: string | null; created_at: string }>;
+  orders: Array<{ service_id: string | null; amount: number; status: string }>;
+};
 
 export default async function CreatorDashboardPage({ searchParams }: DashboardProps) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login/candidate?next=/earn-with-jobiverse/dashboard");
-  const { data: profile } = await supabase.from("users").select("full_name, role").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.rpc("creator_dashboard_data");
+  const dashboard = (data ?? { profile: null, listings: [], orders: [] }) as CreatorDashboardData;
+  const { profile, listings, orders } = dashboard;
   if (!profile?.role || !["candidate", "creator"].includes(profile.role)) redirect("/login/creator?error=creator_required");
-
-  const [{ data: listings }, { data: orders }] = await Promise.all([
-    supabase.from("marketplace_services").select("id,title,slug,audience,price,status,total_orders,view_count,is_featured,featured_until,created_at").eq("provider_id", user.id).order("created_at", { ascending: false }),
-    supabase.from("marketplace_orders").select("service_id,amount:creator_earning,status").eq("provider_id", user.id),
-  ]);
-  const completedOrders = (orders ?? []).filter(order => order.status === "completed");
+  const completedOrders = orders.filter(order => order.status === "completed");
   const totalEarnings = completedOrders.reduce((sum, order) => sum + Number(order.amount), 0);
-  const pendingEarnings = (orders ?? []).filter(order => ["paid", "in_progress", "delivered"].includes(order.status)).reduce((sum, order) => sum + Number(order.amount), 0);
+  const pendingEarnings = orders.filter(order => ["paid", "in_progress", "delivered"].includes(order.status)).reduce((sum, order) => sum + Number(order.amount), 0);
   const orderCountByListing = new Map<string, number>();
   for (const order of orders ?? []) {
     if (order.service_id && !["cancelled", "refunded"].includes(order.status)) {
@@ -29,7 +31,7 @@ export default async function CreatorDashboardPage({ searchParams }: DashboardPr
   for (const listing of listings ?? []) {
     listing.total_orders = orderCountByListing.get(listing.id) ?? 0;
   }
-  const stats = [["Total earnings", `INR ${totalEarnings.toLocaleString("en-IN")}`, CircleDollarSign], ["Total sales", String(completedOrders.length), BarChart3], ["Active listings", String((listings ?? []).filter(item => item.status === "published").length), PackageOpen], ["Pending earnings", `INR ${pendingEarnings.toLocaleString("en-IN")}`, WalletCards]] as const;
+  const stats = [["Total earnings", `INR ${totalEarnings.toLocaleString("en-IN")}`, CircleDollarSign], ["Total sales", String(completedOrders.length), BarChart3], ["Active listings", String(listings.filter(item => item.status === "published").length), PackageOpen], ["Pending earnings", `INR ${pendingEarnings.toLocaleString("en-IN")}`, WalletCards]] as const;
   const { published, updated, featured } = await searchParams;
 
   return <main className="min-h-screen bg-[#f5f5f3] px-5 pb-24 pt-36 sm:px-8"><div className="mx-auto max-w-7xl">

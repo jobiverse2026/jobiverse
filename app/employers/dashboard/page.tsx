@@ -1,20 +1,19 @@
 import DashboardLayout from "./DashboardLayout";
-import { getEmployerDashboardData } from "@/actions/employer-dashboard";
-import { getCompany } from "@/actions/company";
+import { getEmployerCommandCenterData } from "@/actions/employer-dashboard";
 import { EmployerCommandCenter } from "@/components/employer/EmployerCommandCenter";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployerDashboardPage() {
-  const [data, company] = await Promise.all([getEmployerDashboardData(), getCompany()]);
+  const data = await getEmployerCommandCenterData();
   return (
     <DashboardLayout>
       <EmployerCommandCenter
-        companyName={company?.company_name}
-        industry={company?.industry}
-        activeRequirements={data.stats.activeRequirements}
-        candidates={data.stats.candidates}
-        coreActive={data.entitlements.coreSubscriptionActive}
+        companyName={data.companyName}
+        industry={data.industry}
+        activeRequirements={data.activeRequirements}
+        candidates={data.candidates}
+        coreActive={data.coreActive}
       />
     </DashboardLayout>
   );

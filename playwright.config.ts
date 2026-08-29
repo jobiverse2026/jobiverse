@@ -8,6 +8,7 @@ export default defineConfig({
   timeout: 45_000,
   fullyParallel: false,
   reporter: [["list"]],
+  workers: 1,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3001",
     headless: true,
