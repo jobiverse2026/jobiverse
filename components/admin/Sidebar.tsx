@@ -34,7 +34,6 @@ import {
   ClipboardCheck,
   Activity,
   MessageSquareText,
-  Boxes,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -60,11 +59,6 @@ const menuItems = [
     title: "Companies",
     href: "/admin/companies",
     icon: Building2,
-  },
-  {
-    title: "Custom Portals",
-    href: "/admin/custom-portals",
-    icon: Boxes,
   },
   {
     title: "JobiVerse Candidates",

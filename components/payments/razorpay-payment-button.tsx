@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-type PaymentTarget = "marketplace_offer" | "marketplace_order" | "resume_download" | "featured_listing" | "job_promotion" | "ai_resume_analysis" | "custom_portal_milestone";
+type PaymentTarget = "marketplace_offer" | "marketplace_order" | "resume_download" | "featured_listing" | "job_promotion" | "ai_resume_analysis";
 
 export function RazorpayPaymentButton({ targetType, targetId, label = "Pay Securely" }: { targetType: PaymentTarget; targetId: string; label?: string }) {
   const [loading, setLoading] = useState(false);
