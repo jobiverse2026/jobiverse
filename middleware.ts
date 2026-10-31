@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 
 const roleRoutes: Record<string, string> = {
   "/earn-with-jobiverse/dashboard": "creator",
@@ -40,34 +39,21 @@ export async function middleware(request: NextRequest) {
   const requiresAuthentication = authenticatedRoutes.some((path) => pathname.startsWith(path));
   if (!matchedRoute && !requiresAuthentication) return NextResponse.next();
 
-  let response = NextResponse.next({ request });
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll(cookiesToSet) {
-          for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
-          response = NextResponse.next({ request });
-          for (const { name, value, options } of cookiesToSet) response.cookies.set(name, value, options);
-        },
-      },
-    },
-  );
-  const { data: verifiedToken } = await supabase.auth.getClaims();
   const requiredRole = matchedRoute ? roleRoutes[matchedRoute] : null;
+  const hasSessionCookie = request.cookies
+    .getAll()
+    .some(({ name, value }) => name.startsWith("sb-") && name.includes("auth-token") && value.length > 0);
 
-  if (!verifiedToken?.claims?.sub) {
+  if (!hasSessionCookie) {
     const loginUrl = new URL(requiredRole ? `/login/${requiredRole}` : "/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Protected pages and layouts perform the authoritative database-backed role check.
-  // Middleware verifies the signed session without a redundant role query.
+  // Keep middleware CPU-light on Cloudflare's free tier. Protected pages and
+  // layouts perform the authoritative, database-backed user and role checks.
 
-  return response;
+  return NextResponse.next({ request });
 }
 
 export const config = {
