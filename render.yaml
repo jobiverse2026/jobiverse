@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: jobiverse
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://jobiverse.in
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://jobiverse.in
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: TRANSACTIONAL_EMAIL_FROM
+        sync: false
+      - key: EMAIL_WORKER_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_RESUME_MODEL
+        value: gpt-4.1-mini
+      - key: ENABLE_PAID_AI
+        value: "false"
+      - key: JOOBLE_API_KEY
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false
+      - key: THE_MUSE_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_GA_MEASUREMENT_ID
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
