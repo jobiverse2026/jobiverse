@@ -35,8 +35,6 @@ services:
         sync: false
       - key: EMAIL_WORKER_SECRET
         generateValue: true
-      - key: OPENAI_API_KEY
-        sync: false
       - key: OPENAI_RESUME_MODEL
         value: gpt-4.1-mini
       - key: ENABLE_PAID_AI
@@ -48,12 +46,4 @@ services:
       - key: ADZUNA_APP_KEY
         sync: false
       - key: THE_MUSE_API_KEY
-        sync: false
-      - key: NEXT_PUBLIC_GA_MEASUREMENT_ID
-        sync: false
-      - key: VAPID_PUBLIC_KEY
-        sync: false
-      - key: VAPID_PRIVATE_KEY
-        sync: false
-      - key: VAPID_SUBJECT
         sync: false
