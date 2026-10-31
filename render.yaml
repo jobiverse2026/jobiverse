@@ -8,6 +8,9 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeployTrigger: commit
+    domains:
+      - jobiverse.in
+      - www.jobiverse.in
     envVars:
       - key: NODE_VERSION
         value: 22.20.0
