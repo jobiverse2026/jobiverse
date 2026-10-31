@@ -1,6 +1,7 @@
 import { PageHeader } from "@/components/common/page-header";
 import { PageSectionIndex } from "@/components/common/page-section-index";
 import { ExploreServicesSection } from "@/components/marketplace/explore-services-section";
+import EmployerLandingPage from "@/components/employer/EmployerLandingPage";
 
 import Link from "next/link";
 
@@ -131,6 +132,11 @@ const portalFlow = [
 
 
 export default function EmployersPage() {
+  if (process.env.NEXT_PUBLIC_LEGACY_EMPLOYER_PAGE === "true") return <LegacyEmployersPage />;
+  return <EmployerLandingPage />;
+}
+
+function LegacyEmployersPage() {
 
 
   return (
